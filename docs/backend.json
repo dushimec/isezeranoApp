@@ -1,0 +1,333 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the Isezerano CMS application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "User's phone number, used for OTP authentication."
+        },
+        "role": {
+          "type": "string",
+          "description": "User's role within the system (Singer, Secretary, Disciplinarian, Admin)."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The first name of the user."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the user."
+        },
+        "profileImageUrl": {
+          "type": "string",
+          "description": "URL of the user's profile image, stored in Cloudinary.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "phoneNumber",
+        "role",
+        "firstName",
+        "lastName"
+      ]
+    },
+    "Announcement": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Announcement",
+      "type": "object",
+      "description": "Represents an announcement sent to singers.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Announcement entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the announcement."
+        },
+        "content": {
+          "type": "string",
+          "description": "Content of the announcement."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the announcement was created.",
+          "format": "date-time"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who created the announcement. (Relationship: User 1:N Announcement)"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "content",
+        "createdAt",
+        "userId"
+      ]
+    },
+    "RehearsalSchedule": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "RehearsalSchedule",
+      "type": "object",
+      "description": "Represents a scheduled rehearsal.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the RehearsalSchedule entity."
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of the rehearsal.",
+          "format": "date-time"
+        },
+        "time": {
+          "type": "string",
+          "description": "Time of the rehearsal."
+        },
+        "location": {
+          "type": "string",
+          "description": "Location of the rehearsal."
+        },
+        "attire": {
+          "type": "string",
+          "description": "Attire required for the rehearsal."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User (Secretary) who created the schedule. (Relationship: User 1:N RehearsalSchedule)"
+        }
+      },
+      "required": [
+        "id",
+        "date",
+        "time",
+        "location",
+        "attire",
+        "userId"
+      ]
+    },
+    "ServiceSchedule": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ServiceSchedule",
+      "type": "object",
+      "description": "Represents a scheduled service.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ServiceSchedule entity."
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of the service.",
+          "format": "date-time"
+        },
+        "time": {
+          "type": "string",
+          "description": "Time of the service."
+        },
+        "location": {
+          "type": "string",
+          "description": "Location of the service."
+        },
+        "attire": {
+          "type": "string",
+          "description": "Attire required for the service."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User (Secretary) who created the schedule. (Relationship: User 1:N ServiceSchedule)"
+        }
+      },
+      "required": [
+        "id",
+        "date",
+        "time",
+        "location",
+        "attire",
+        "userId"
+      ]
+    },
+    "Attendance": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Attendance",
+      "type": "object",
+      "description": "Represents attendance record for a user at a specific event.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Attendance entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User whose attendance is being recorded. (Relationship: User 1:N Attendance)"
+        },
+        "eventTypeId": {
+          "type": "string",
+          "description": "Reference to the Event (Rehearsal/Service) for which attendance is being recorded. (Relationship: EventType 1:N Attendance)"
+        },
+        "eventType": {
+          "type": "string",
+          "description": "Type of the Event (Rehearsal/Service) for which attendance is being recorded."
+        },
+        "isPresent": {
+          "type": "boolean",
+          "description": "Indicates whether the user was present (true) or absent (false)."
+        },
+        "recordedByUserId": {
+          "type": "string",
+          "description": "Reference to the User (Disciplinarian) who recorded the attendance. (Relationship: User 1:N Attendance Recorded)"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Notes by Disciplinarian."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "eventTypeId",
+        "eventType",
+        "isPresent",
+        "recordedByUserId"
+      ]
+    },
+    "EventType": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "EventType",
+      "type": "object",
+      "description": "Represents the type of Event (Rehearsal or Service).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Event Type."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the event type (e.g., Rehearsal, Service)."
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles, including role information. User role is stored directly in the user document for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/announcements/{announcementId}",
+        "definition": {
+          "entityName": "Announcement",
+          "schema": {
+            "$ref": "#/backend/entities/Announcement"
+          },
+          "description": "Stores announcements. Includes the userId of the user who created the announcement.",
+          "params": [
+            {
+              "name": "announcementId",
+              "description": "Unique identifier for the announcement."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/rehearsalSchedules/{rehearsalScheduleId}",
+        "definition": {
+          "entityName": "RehearsalSchedule",
+          "schema": {
+            "$ref": "#/backend/entities/RehearsalSchedule"
+          },
+          "description": "Stores rehearsal schedules. Includes the userId of the Secretary who created the schedule.",
+          "params": [
+            {
+              "name": "rehearsalScheduleId",
+              "description": "Unique identifier for the rehearsal schedule."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/serviceSchedules/{serviceScheduleId}",
+        "definition": {
+          "entityName": "ServiceSchedule",
+          "schema": {
+            "$ref": "#/backend/entities/ServiceSchedule"
+          },
+          "description": "Stores service schedules. Includes the userId of the Secretary who created the schedule.",
+          "params": [
+            {
+              "name": "serviceScheduleId",
+              "description": "Unique identifier for the service schedule."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/attendances/{attendanceId}",
+        "definition": {
+          "entityName": "Attendance",
+          "schema": {
+            "$ref": "#/backend/entities/Attendance"
+          },
+          "description": "Stores attendance records. Includes the userId of the singer, eventTypeId, eventType (rehearsal or service), and the recordedByUserId of the disciplinarian.",
+          "params": [
+            {
+              "name": "attendanceId",
+              "description": "Unique identifier for the attendance record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/eventTypes/{eventTypeId}",
+        "definition": {
+          "entityName": "EventType",
+          "schema": {
+            "$ref": "#/backend/entities/EventType"
+          },
+          "description": "Stores event types (rehearsal and service).",
+          "params": [
+            {
+              "name": "eventTypeId",
+              "description": "Unique identifier for the event type."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support role-based access control (RBAC) and ensure data security and integrity for the Isezerano CMS application. The structure prioritizes authorization independence and follows the principles of denormalization and structural segregation to facilitate simple and robust security rules.\n\n*   **Users Collection:** The `/users/{userId}` collection stores user profiles and roles. This collection is central to authentication and authorization.\n*   **Announcements Collection:** Announcements are stored in the `/announcements/{announcementId}` collection. Each announcement includes the `userId` of the user who created it.\n*   **RehearsalSchedules and ServiceSchedules Collections:** Schedules for rehearsals and services are stored in their respective collections (`/rehearsalSchedules/{rehearsalScheduleId}` and `/serviceSchedules/{serviceScheduleId}`). These collections include the `userId` of the Secretary who created the schedule.\n*   **Attendance Collection:** Attendance records are stored in the `/attendances/{attendanceId}` collection. Each record includes the `userId` of the singer, the `eventTypeId`, `eventType` (rehearsal or service), and the `recordedByUserId` of the disciplinarian.\n*   **EventType Collection:** Event types (rehearsal and service) are stored in the `/eventTypes/{eventTypeId}` collection. This collection provides a lookup for event types.\n\n**Authorization Independence:**\n\nTo achieve authorization independence, the structure avoids hierarchical authorization dependencies. Role information is stored directly within the user document in the `/users/{userId}` collection. This eliminates the need for `get()` calls in security rules to verify user roles. For example, announcements do not need to verify roles from the user document because the `/announcements` collection security rules can validate against the user's role upon writing.\n\n**QAPs (Rules are not Filters):**\n\nThe structure supports secure `list` operations by segregating data based on roles and ownership. Secretaries and Disciplinarians can create rehearsal and service schedules, and disciplinarians record attendances. Admins have global access.\n\n**Role-Based Access Control (RBAC):**\n\n*   **Singer:** Can view announcements, schedules, and their attendance records.\n*   **Secretary:** Can post announcements and manage rehearsal and service schedules.\n*   **Disciplinarian:** Can mark attendance and manage attendance reports.\n*   **Admin:** Can manage users, assign roles, and access all data.\n\nThis structure ensures that security rules can be written clearly and efficiently, without relying on complex hierarchical lookups, and it aligns with the principles of Authorization Independence, Clarity of Intent, DBAC, and QAPs."
+  }
+}

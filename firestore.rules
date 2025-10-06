@@ -1,0 +1,153 @@
+/**
+ * @file Firebase Security Rules for Isezerano CMS.
+ *
+ * Core Philosophy:
+ * This ruleset implements role-based access control (RBAC) to secure the Isezerano CMS application.
+ * User roles (Singer, Secretary, Disciplinarian, Admin) are stored directly within the `/users/{userId}` documents.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores user profiles with role information.
+ * - /announcements/{announcementId}: Stores announcements created by users.
+ * - /rehearsalSchedules/{rehearsalScheduleId}: Stores rehearsal schedules created by Secretaries.
+ * - /serviceSchedules/{serviceScheduleId}: Stores service schedules created by Secretaries.
+ * - /attendances/{attendanceId}: Stores attendance records marked by Disciplinarians.
+ * - /eventTypes/{eventTypeId}: Stores event types (Rehearsal, Service).
+ *
+ * Key Security Decisions:
+ * - Authorization independence is achieved by storing role information directly in the user document.
+ * - Rules are written to prevent unauthorized data access based on roles.
+ * - List operations are secured based on roles and ownership.
+ * - Data validation is limited to authorization and relational integrity fields to allow rapid prototyping.
+ *
+ * Denormalization for Authorization:
+ * - The `role` field is stored directly in the `/users/{userId}` document to avoid `get()` calls for role verification.
+ * - The `userId` of the creator is stored in the `/announcements`, `/rehearsalSchedules`, and `/serviceSchedules` documents to enforce ownership.
+ * - The `recordedByUserId` is stored in the `/attendances` document to track who recorded the attendance.
+ *
+ * Structural Segregation: N/A (No private vs. public segregation used).
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Secures user profiles, allowing users to read their own profile and admins to manage all profiles.
+     * @path /users/{userId}
+     * @allow (get, list) if isSignedIn() && (isOwner(userId) || isAdmin());
+     * @allow (create) if isSignedIn() && isOwner(userId) && request.resource.data.id == request.auth.uid;
+     * @allow (update, delete) if isSignedIn() && (isOwner(userId) || isAdmin()) && resource != null && request.resource.data.id == resource.data.id;
+     * @deny (create) if !isSignedIn() || !isOwner(userId) || request.resource.data.id != request.auth.uid;
+     * @deny (update, delete) if !isSignedIn() || (!isOwner(userId) && !isAdmin()) || resource == null || request.resource.data.id != resource.data.id;
+     * @principle Enforces document ownership and admin override for user management.
+     */
+    match /users/{userId} {
+      allow get, list: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == request.auth.uid;
+      allow update, delete: if isSignedIn() && (isOwner(userId) || isAdmin()) && resource != null && request.resource.data.id == resource.data.id;
+    }
+
+    /**
+     * @description Secures announcements, allowing Secretaries and Admins to create and manage announcements. Singers can view announcements.
+     * @path /announcements/{announcementId}
+     * @allow get, list: if true;
+     * @allow create: if isSignedIn() && (isSecretary() || isAdmin()) && request.resource.data.userId == request.auth.uid;
+     * @allow update, delete: if isSignedIn() && (isSecretary() || isAdmin()) && resource != null && isOwner(resource.data.userId);
+     * @deny create: if !isSignedIn() || (!isSecretary() && !isAdmin()) || request.resource.data.userId != request.auth.uid;
+     * @deny update, delete: if !isSignedIn() || (!isSecretary() && !isAdmin()) || resource == null || !isOwner(resource.data.userId);
+     * @principle Enforces role-based access control for announcements. Allows public read, owner (secretary/admin) writes.
+     */
+    match /announcements/{announcementId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && (isSecretary() || isAdmin()) && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && (isSecretary() || isAdmin()) && resource != null && isOwner(resource.data.userId);
+    }
+
+    /**
+     * @description Secures rehearsal schedules, allowing Secretaries and Admins to manage schedules. Singers can view schedules.
+     * @path /rehearsalSchedules/{rehearsalScheduleId}
+     * @allow get, list: if true;
+     * @allow create: if isSignedIn() && (isSecretary() || isAdmin()) && request.resource.data.userId == request.auth.uid;
+     * @allow update, delete: if isSignedIn() && (isSecretary() || isAdmin()) && resource != null && isOwner(resource.data.userId);
+     * @deny create: if !isSignedIn() || (!isSecretary() && !isAdmin()) || request.resource.data.userId != request.auth.uid;
+     * @deny update, delete: if !isSignedIn() || (!isSecretary() && !isAdmin()) || resource == null || !isOwner(resource.data.userId);
+     * @principle Enforces role-based access control for rehearsal schedules. Allows public read, owner (secretary/admin) writes.
+     */
+    match /rehearsalSchedules/{rehearsalScheduleId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && (isSecretary() || isAdmin()) && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && (isSecretary() || isAdmin()) && resource != null && isOwner(resource.data.userId);
+    }
+
+    /**
+     * @description Secures service schedules, allowing Secretaries and Admins to manage schedules. Singers can view schedules.
+     * @path /serviceSchedules/{serviceScheduleId}
+     * @allow get, list: if true;
+     * @allow create: if isSignedIn() && (isSecretary() || isAdmin()) && request.resource.data.userId == request.auth.uid;
+     * @allow update, delete: if isSignedIn() && (isSecretary() || isAdmin()) && resource != null && isOwner(resource.data.userId);
+     * @deny create: if !isSignedIn() || (!isSecretary() && !isAdmin()) || request.resource.data.userId != request.auth.uid;
+     * @deny update, delete: if !isSignedIn() || (!isSecretary() && !isAdmin()) || resource == null || !isOwner(resource.data.userId);
+     * @principle Enforces role-based access control for service schedules. Allows public read, owner (secretary/admin) writes.
+     */
+    match /serviceSchedules/{serviceScheduleId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && (isSecretary() || isAdmin()) && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && (isSecretary() || isAdmin()) && resource != null && isOwner(resource.data.userId);
+    }
+
+    /**
+     * @description Secures attendance records, allowing Disciplinarians and Admins to manage attendance. Singers can view their own attendance records.
+     * @path /attendances/{attendanceId}
+     * @allow get: if isSignedIn() && (isOwner(resource.data.userId) || isDisciplinarian() || isAdmin());
+     * @allow list: if isSignedIn() && (isDisciplinarian() || isAdmin());
+     * @allow create: if isSignedIn() && (isDisciplinarian() || isAdmin()) && request.resource.data.recordedByUserId == request.auth.uid;
+     * @allow update, delete: if isSignedIn() && (isDisciplinarian() || isAdmin()) && resource != null && isExistingOwner(resource.data.recordedByUserId);
+     * @deny create: if !isSignedIn() || (!isDisciplinarian() && !isAdmin()) || request.resource.data.recordedByUserId != request.auth.uid;
+     * @deny update, delete: if !isSignedIn() || (!isDisciplinarian() && !isAdmin()) || resource == null || !isExistingOwner(resource.data.recordedByUserId);
+     * @principle Enforces role-based access control for attendance records. Disciplinarians and Admins can manage records.
+     */
+    match /attendances/{attendanceId} {
+      allow get: if isSignedIn() && (isOwner(resource.data.userId) || isDisciplinarian() || isAdmin());
+      allow list: if isSignedIn() && (isDisciplinarian() || isAdmin());
+      allow create: if isSignedIn() && (isDisciplinarian() || isAdmin()) && request.resource.data.recordedByUserId == request.auth.uid;
+      allow update, delete: if isSignedIn() && (isDisciplinarian() || isAdmin()) && resource != null && isExistingOwner(resource.data.recordedByUserId);
+    }
+
+    /**
+     * @description Secures event types, allowing read-only access to all users.
+     * @path /eventTypes/{eventTypeId}
+     * @allow get, list: if true;
+     * @allow create, update, delete: if false;
+     * @principle Allows public read-only access to event types.
+     */
+    match /eventTypes/{eventTypeId} {
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isExistingOwner(userId) {
+        return (isOwner(userId) && resource != null);
+    }
+
+    function isAdmin() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+    }
+
+    function isSecretary() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Secretary';
+    }
+
+    function isDisciplinarian() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Disciplinarian';
+    }
+  }
+}
