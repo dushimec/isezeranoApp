@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { getFirestore, doc, getDoc } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,13 +17,28 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { IsezeranoLogo } from "@/components/icons";
 import { useToast } from "@/hooks/use-toast";
+import { useFirebase } from "@/firebase";
 
 const OTPSchema = z.object({
-  otp: z.string().min(6, { message: "Your one-time password must be 6 characters." }),
+  otp: z
+    .string()
+    .min(6, { message: "Your one-time password must be 6 characters." }),
 });
+
+declare global {
+  interface Window {
+    confirmationResult: any;
+  }
+}
 
 export default function OtpPage() {
   const router = useRouter();
@@ -30,6 +46,7 @@ export default function OtpPage() {
   const phone = searchParams.get("phone");
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
+  const { firestore } = useFirebase();
 
   const form = useForm<z.infer<typeof OTPSchema>>({
     resolver: zodResolver(OTPSchema),
@@ -40,30 +57,72 @@ export default function OtpPage() {
 
   React.useEffect(() => {
     if (!phone) {
-      router.push('/login');
+      router.push("/login");
     }
   }, [phone, router]);
 
   async function onSubmit(data: z.infer<typeof OTPSchema>) {
     setIsLoading(true);
-    // Mock API call to verify OTP
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsLoading(false);
-    
-    // In a real app, you'd verify the OTP against a backend service
-    if (data.otp === '123456') {
+    if (!window.confirmationResult) {
       toast({
-        title: "Success!",
-        description: "You have been successfully logged in.",
+        variant: "destructive",
+        title: "Error",
+        description: "No OTP confirmation found. Please try logging in again.",
       });
-      router.push('/dashboard');
-    } else {
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const result = await window.confirmationResult.confirm(data.otp);
+      const user = result.user;
+
+      if (user && firestore) {
+        const userDocRef = doc(firestore, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          toast({
+            title: "Success!",
+            description: "You have been successfully logged in.",
+          });
+          // Redirect based on role
+          switch (userData.role) {
+            case "Admin":
+              router.push("/dashboard");
+              break;
+            case "Secretary":
+              router.push("/dashboard");
+              break;
+            case "Disciplinarian":
+              router.push("/dashboard/attendance");
+              break;
+            case "Singer":
+              router.push("/dashboard");
+              break;
+            default:
+              router.push("/dashboard");
+          }
+        } else {
+           toast({
+            variant: "destructive",
+            title: "Login Failed",
+            description: "User profile not found.",
+          });
+          router.push("/login");
+        }
+      }
+    } catch (error) {
+      console.error(error);
       toast({
         variant: "destructive",
         title: "Invalid OTP",
         description: "The OTP you entered is incorrect. Please try again.",
       });
       form.reset();
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -89,8 +148,8 @@ export default function OtpPage() {
                   <FormItem>
                     <FormLabel>One-Time Password</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="123456" 
+                      <Input
+                        placeholder="123456"
                         {...field}
                         maxLength={6}
                         className="text-center text-lg tracking-[0.5em]"
@@ -108,7 +167,16 @@ export default function OtpPage() {
           <div className="mt-4 text-center text-sm">
             <p>
               Didn't receive the code?{" "}
-              <Button variant="link" className="p-0 h-auto" onClick={() => toast({ title: "OTP Resent", description: "A new OTP has been sent."})}>
+              <Button
+                variant="link"
+                className="p-0 h-auto"
+                onClick={() =>
+                  toast({
+                    title: "OTP Resent",
+                    description: "A new OTP has been sent.",
+                  })
+                }
+              >
                 Resend
               </Button>
             </p>

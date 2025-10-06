@@ -1,5 +1,8 @@
-import * as React from 'react';
-import Link from 'next/link';
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import {
   BarChart,
   Bell,
@@ -11,8 +14,8 @@ import {
   Menu,
   User,
   Users,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,30 +23,67 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import Image from 'next/image';
-import { IsezeranoLogo } from '@/components/icons';
+} from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import Image from "next/image";
+import { IsezeranoLogo } from "@/components/icons";
+import { useAuth } from "@/hooks/useAuth";
+import { getAuth, signOut } from "firebase/auth";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const navItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: Home },
-    { href: '/dashboard/announcements', label: 'Announcements', icon: Megaphone },
-    { href: '/dashboard/schedule', label: 'Schedule', icon: Calendar },
-    { href: '/dashboard/attendance', label: 'Attendance', icon: ClipboardCheck },
-    { href: '/dashboard/reports', label: 'Reports', icon: BarChart },
+  const { user, userProfile, loading } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const handleLogout = async () => {
+    const auth = getAuth();
+    await signOut(auth);
+    router.push("/login");
+  };
+
+  const allNavItems = [
+    { href: "/dashboard", label: "Dashboard", icon: Home, roles: ['Singer', 'Secretary', 'Disciplinarian', 'Admin'] },
+    { href: "/dashboard/announcements", label: "Announcements", icon: Megaphone, roles: ['Secretary', 'Admin'] },
+    { href: "/dashboard/schedule", label: "Schedule", icon: Calendar, roles: ['Secretary', 'Admin'] },
+    { href: "/dashboard/attendance", label: "Attendance", icon: ClipboardCheck, roles: ['Disciplinarian', 'Admin'] },
+    { href: "/dashboard/reports", label: "Reports", icon: BarChart, roles: ['Secretary', 'Disciplinarian', 'Admin'] },
+    { href: "/dashboard/users", label: "User Management", icon: Users, roles: ['Admin'] },
   ];
+
+  const navItems = allNavItems.filter(item => userProfile?.role && item.roles.includes(userProfile.role));
+
+
+  if (loading) {
+    return (
+        <div className="flex items-center justify-center min-h-screen">
+            <div className="loader">Loading...</div>
+        </div>
+    );
+  }
+
+  if (!user) {
+    router.push("/login");
+    return null;
+  }
+
+  const getActiveClasses = (href: string) => {
+    return pathname === href ? "bg-accent text-accent-foreground" : "text-muted-foreground";
+  };
+
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-muted/40 md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-2 font-semibold"
+            >
               <IsezeranoLogo className="h-8 w-8" />
               <span className="font-headline text-lg">Isezerano CMS</span>
             </Link>
@@ -54,7 +94,7 @@ export default function DashboardLayout({
                 <Link
                   key={item.label}
                   href={item.href}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary ${getActiveClasses(item.href)}`}
                 >
                   <item.icon className="h-4 w-4" />
                   {item.label}
@@ -90,7 +130,7 @@ export default function DashboardLayout({
                   <Link
                     key={item.label}
                     href={item.href}
-                    className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                    className={`mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 hover:text-foreground ${getActiveClasses(item.href)}`}
                   >
                     <item.icon className="h-5 w-5" />
                     {item.label}
@@ -104,7 +144,7 @@ export default function DashboardLayout({
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
                 <Image
-                  src="https://picsum.photos/seed/avatar1/40/40"
+                  src={userProfile?.profileImageUrl || "https://picsum.photos/seed/avatar1/40/40"}
                   width={40}
                   height={40}
                   alt="User avatar"
@@ -115,7 +155,10 @@ export default function DashboardLayout({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>
+                {userProfile?.firstName} {userProfile?.lastName}
+                <p className="text-xs text-muted-foreground font-normal">{userProfile?.role}</p>
+                </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link href="/dashboard/profile">
@@ -128,11 +171,9 @@ export default function DashboardLayout({
                 <span>Notifications</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/login">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Logout</span>
-                </Link>
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Logout</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
