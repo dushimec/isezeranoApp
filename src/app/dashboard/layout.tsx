@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -39,6 +40,12 @@ export default function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
 
+  React.useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [loading, user, router]);
+
   const handleLogout = async () => {
     const auth = getAuth();
     await signOut(auth);
@@ -57,17 +64,12 @@ export default function DashboardLayout({
   const navItems = allNavItems.filter(item => userProfile?.role && item.roles.includes(userProfile.role));
 
 
-  if (loading) {
+  if (loading || !user) {
     return (
         <div className="flex items-center justify-center min-h-screen">
             <div className="loader">Loading...</div>
         </div>
     );
-  }
-
-  if (!user) {
-    router.push("/login");
-    return null;
   }
 
   const getActiveClasses = (href: string) => {
