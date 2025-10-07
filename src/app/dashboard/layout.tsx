@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -175,9 +174,11 @@ export default function DashboardLayout({
                   <span>Profile</span>
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell className="mr-2 h-4 w-4" />
-                <span>Notifications</span>
+              <DropdownMenuItem asChild>
+                 <Link href="/dashboard/notifications">
+                    <Bell className="mr-2 h-4 w-4" />
+                    <span>Notifications</span>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>

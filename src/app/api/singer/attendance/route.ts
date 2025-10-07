@@ -1,6 +1,8 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import clientPromise from '@/lib/db';
 import { getUserIdFromToken } from '@/lib/auth';
+import { ObjectId } from 'mongodb';
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,12 +12,46 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const attendance = await prisma.attendance.findMany({
-        where: { userId },
-        orderBy: { createdAt: 'desc' },
-    });
+    const client = await clientPromise;
+    const db = client.db();
 
-    return NextResponse.json(attendance);
+    const attendanceRecords = await db.collection('attendance').aggregate([
+        { $match: { userId: new ObjectId(userId) } },
+        { $sort: { createdAt: -1 } },
+        { 
+            $lookup: {
+                from: 'rehearsals',
+                localField: 'eventId',
+                foreignField: '_id',
+                as: 'rehearsal'
+            }
+        },
+        { 
+            $lookup: {
+                from: 'services',
+                localField: 'eventId',
+                foreignField: '_id',
+                as: 'service'
+            }
+        },
+        { $unwind: { path: '$rehearsal', preserveNullAndEmptyArrays: true } },
+        { $unwind: { path: '$service', preserveNullAndEmptyArrays: true } },
+    ]).toArray();
+
+    const formattedRecords = attendanceRecords.map(record => {
+        const event = record.rehearsal || record.service;
+        return {
+            id: record._id.toHexString(),
+            status: record.status,
+            event: {
+                title: event?.title || 'Deleted Event',
+                date: event?.date || record.createdAt
+            }
+        }
+    })
+
+
+    return NextResponse.json(formattedRecords);
   } catch (error: any) {
     console.error(error);
     if(error.message.includes('token')) {
