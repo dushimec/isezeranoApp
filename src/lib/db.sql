@@ -1,123 +1,110 @@
--- Isezerano Choir Management System SQL Schema
--- This script contains CREATE TABLE statements for all database models.
+-- Drop existing tables in reverse order of creation to avoid foreign key constraints
+DROP TABLE IF EXISTS "Attendance" CASCADE;
+DROP TABLE IF EXISTS "Notification" CASCADE;
+DROP TABLE IF EXISTS "Announcement" CASCADE;
+DROP TABLE IF EXISTS "Service" CASCADE;
+DROP TABLE IF EXISTS "Rehearsal" CASCADE;
+DROP TABLE IF EXISTS "User" CASCADE;
 
--- User Roles Enum Type
-CREATE TYPE user_role AS ENUM ('ADMIN', 'SECRETARY', 'DISCIPLINARIAN', 'SINGER');
+-- Drop existing enums
+DROP TYPE IF EXISTS "Role";
+DROP TYPE IF EXISTS "Priority";
+DROP TYPE IF EXISTS "SenderRole";
+DROP TYPE IF EXISTS "AttendanceEventType";
+DROP TYPE IF EXISTS "AttendanceStatus";
 
--- 1. User Model
--- Stores all users in the system, regardless of their role.
-CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    first_name VARCHAR(255) NOT NULL,
-    last_name VARCHAR(255) NOT NULL,
-    username VARCHAR(100) UNIQUE,
-    email VARCHAR(255) UNIQUE,
-    profile_image_url TEXT,
-    role user_role NOT NULL,
-    password_hash TEXT NOT NULL,
-    is_active BOOLEAN NOT NULL DEFAULT true,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+
+-- Create ENUM types
+CREATE TYPE "Role" AS ENUM ('ADMIN', 'SECRETARY', 'DISCIPLINARIAN', 'SINGER');
+CREATE TYPE "Priority" AS ENUM ('LOW', 'MEDIUM', 'HIGH');
+CREATE TYPE "SenderRole" AS ENUM ('ADMIN', 'SECRETARY');
+CREATE TYPE "AttendanceEventType" AS ENUM ('REHEARSAL', 'SERVICE');
+CREATE TYPE "AttendanceStatus" AS ENUM ('PRESENT', 'ABSENT', 'LATE');
+
+-- Create User Table
+CREATE TABLE "User" (
+    "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "firstName" VARCHAR(255) NOT NULL,
+    "lastName" VARCHAR(255) NOT NULL,
+    "username" VARCHAR(255) UNIQUE,
+    "email" VARCHAR(255) UNIQUE,
+    "profileImage" VARCHAR(255),
+    "role" "Role" NOT NULL,
+    "password" VARCHAR(255) NOT NULL,
+    "isActive" BOOLEAN DEFAULT true,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Add constraint for username/email based on role if necessary at application level.
--- For example, Admin must have an email.
-
--- Announcement Priority Enum Type
-CREATE TYPE announcement_priority AS ENUM ('LOW', 'MEDIUM', 'HIGH');
-
--- 2. Announcement Model
--- Stores all announcements posted by the Secretary or Admin.
-CREATE TABLE announcements (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title VARCHAR(255) NOT NULL,
-    message TEXT NOT NULL,
-    attachment_url TEXT,
-    priority announcement_priority DEFAULT 'MEDIUM',
-    created_by_id UUID NOT NULL REFERENCES users(id) ON DELETE SET NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+-- Create Announcement Table
+CREATE TABLE "Announcement" (
+    "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "title" VARCHAR(255) NOT NULL,
+    "message" TEXT NOT NULL,
+    "attachment" VARCHAR(255),
+    "priority" "Priority" DEFAULT 'MEDIUM',
+    "createdById" UUID NOT NULL REFERENCES "User"("id") ON DELETE CASCADE,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Sender Role Enum Type
-CREATE TYPE sender_role AS ENUM ('ADMIN', 'SECRETARY');
-
--- 3. Notification Model
--- Holds all in-app notifications sent to users.
-CREATE TABLE notifications (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title VARCHAR(255) NOT NULL,
-    message TEXT NOT NULL,
-    sender_role sender_role NOT NULL,
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    is_read BOOLEAN NOT NULL DEFAULT false,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+-- Create Notification Table
+CREATE TABLE "Notification" (
+    "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "title" VARCHAR(255) NOT NULL,
+    "message" TEXT NOT NULL,
+    "senderRole" "SenderRole" NOT NULL,
+    "userId" UUID NOT NULL REFERENCES "User"("id") ON DELETE CASCADE,
+    "isRead" BOOLEAN DEFAULT false,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 4. Rehearsal Model
--- Represents choir rehearsals managed by the Secretary.
-CREATE TABLE rehearsals (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title VARCHAR(255) NOT NULL,
+-- Create Rehearsal Table
+CREATE TABLE "Rehearsal" (
+    "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "title" VARCHAR(255) NOT NULL,
     "date" DATE NOT NULL,
     "time" TIME NOT NULL,
-    location VARCHAR(255) NOT NULL,
-    notes TEXT,
-    created_by_id UUID NOT NULL REFERENCES users(id) ON DELETE SET NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    "location" VARCHAR(255) NOT NULL,
+    "notes" TEXT,
+    "createdById" UUID NOT NULL REFERENCES "User"("id") ON DELETE CASCADE,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 5. Service Model
--- Represents Sunday or event services where the choir performs.
-CREATE TABLE services (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title VARCHAR(255) NOT NULL,
+-- Create Service Table
+CREATE TABLE "Service" (
+    "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "title" VARCHAR(255) NOT NULL,
     "date" DATE NOT NULL,
     "time" TIME NOT NULL,
-    church_location VARCHAR(255) NOT NULL,
-    attire VARCHAR(255),
-    notes TEXT,
-    created_by_id UUID NOT NULL REFERENCES users(id) ON DELETE SET NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    "churchLocation" VARCHAR(255) NOT NULL,
+    "attire" VARCHAR(255),
+    "notes" TEXT,
+    "createdById" UUID NOT NULL REFERENCES "User"("id") ON DELETE CASCADE,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Attendance Event Type Enum
-CREATE TYPE event_type AS ENUM ('REHEARSAL', 'SERVICE');
-
--- Attendance Status Enum
-CREATE TYPE attendance_status AS ENUM ('PRESENT', 'ABSENT', 'LATE');
-
--- 6. Attendance Model
--- Tracks participation of singers in both Rehearsals and Services.
-CREATE TABLE attendance (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    event_type event_type NOT NULL,
-    event_id UUID NOT NULL,
-    status attendance_status NOT NULL,
-    marked_by_id UUID NOT NULL REFERENCES users(id) ON DELETE SET NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+-- Create Attendance Table
+CREATE TABLE "Attendance" (
+    "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "userId" UUID NOT NULL REFERENCES "User"("id") ON DELETE CASCADE,
+    "eventType" "AttendanceEventType" NOT NULL,
+    "eventId" UUID NOT NULL,
+    "status" "AttendanceStatus" NOT NULL,
+    "markedById" UUID NOT NULL REFERENCES "User"("id") ON DELETE CASCADE,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Indexes for performance
-CREATE INDEX ON users (role);
-CREATE INDEX ON announcements (created_by_id);
-CREATE INDEX ON notifications (user_id);
-CREATE INDEX ON rehearsals (created_by_id);
-CREATE INDEX ON services (created_by_id);
-CREATE INDEX ON attendance (user_id);
-CREATE INDEX ON attendance (event_id);
-CREATE INDEX ON attendance (marked_by_id);
-
--- Note: A composite index on (eventType, eventId) might be useful for attendance lookups.
-CREATE INDEX ON attendance (event_type, event_id);
-
-COMMENT ON TABLE users IS 'Stores all users in the system, regardless of their role.';
-COMMENT ON TABLE announcements IS 'Stores all announcements posted by the Secretary or Admin.';
-COMMENT ON TABLE notifications IS 'Holds all in-app notifications sent to users.';
-COMMENT ON TABLE rehearsals IS 'Represents choir rehearsals managed by the Secretary.';
-COMMENT ON TABLE services IS 'Represents Sunday or event services where the choir performs.';
-COMMENT ON TABLE attendance IS 'Tracks participation of singers in both Rehearsals and Services.';
-
+-- Add Indexes
+CREATE UNIQUE INDEX "user_username_key" ON "User"("username");
+CREATE UNIQUE INDEX "user_email_key" ON "User"("email");
+CREATE INDEX "user_role_idx" ON "User"("role");
+CREATE INDEX "announcement_createdById_idx" ON "Announcement"("createdById");
+CREATE INDEX "notification_userId_idx" ON "Notification"("userId");
+CREATE INDEX "rehearsal_createdById_idx" ON "Rehearsal"("createdById");
+CREATE INDEX "service_createdById_idx" ON "Service"("createdById");
+CREATE INDEX "attendance_userId_idx" ON "Attendance"("userId");
+CREATE INDEX "attendance_eventId_idx" ON "Attendance"("eventId");
+CREATE INDEX "attendance_markedById_idx" ON "Attendance"("markedById");
