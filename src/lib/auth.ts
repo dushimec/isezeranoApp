@@ -1,5 +1,6 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextRequest } from 'next/server';
 import { jwtVerify, SignJWT } from 'jose';
+import { User, Role } from '@prisma/client';
 
 if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET is not defined in environment variables');
@@ -10,7 +11,7 @@ const issuer = 'urn:isezerano:issuer';
 const audience = 'urn:isezerano:audience';
 const expiresAt = '2h';
 
-export async function createToken(userId: string, role: string) {
+export async function createToken(userId: string, role: Role) {
   return await new SignJWT({ 'urn:isezerano:claim': true, role })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
@@ -21,52 +22,37 @@ export async function createToken(userId: string, role: string) {
     .sign(secret);
 }
 
+type TokenPayload = {
+    sub: string;
+    role: Role;
+} & import('jose').JWTPayload;
+
+
 export async function verifyToken(token: string) {
   try {
     const { payload } = await jwtVerify(token, secret, {
       issuer,
       audience,
     });
-    return payload;
+    return payload as TokenPayload;
   } catch (error) {
+    console.error("Token verification failed:", error);
     return null;
   }
 }
 
-export async function getUserIdFromToken(req: NextApiRequest): Promise<string | null> {
-  const authHeader = req.headers.authorization;
+export async function getUserIdFromToken(req: NextRequest): Promise<string | null> {
+  const authHeader = req.headers.get('authorization');
   if (!authHeader) return null;
 
   const token = authHeader.split(' ')[1];
   if (!token) return null;
 
-  const payload = await verifyToken(token);
-  return payload?.sub || null;
+  try {
+    const payload = await verifyToken(token);
+    return payload?.sub || null;
+  } catch (error) {
+    console.error("Error extracting user ID from token:", error);
+    return null;
+  }
 }
-
-
-// Higher-order function for API route authentication
-export const withAuth = (handler: (req: NextApiRequest, res: NextApiResponse) => void | Promise<void>) => {
-  return async (req: NextApiRequest, res: NextApiResponse) => {
-    const token = req.headers.authorization?.split(' ')[1];
-
-    if (!token) {
-      return res.status(401).json({ message: 'Authentication required' });
-    }
-
-    const decoded = await verifyToken(token);
-    
-    if (!decoded || !decoded.sub) {
-      return res.status(401).json({ message: 'Invalid token' });
-    }
-
-    // Attach user information to the request object
-    // @ts-ignore
-    req.user = {
-      id: decoded.sub,
-      role: decoded.role,
-    };
-
-    return handler(req, res);
-  };
-};

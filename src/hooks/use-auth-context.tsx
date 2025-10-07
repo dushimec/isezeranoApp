@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { User } from '@prisma/client';
 import { verifyToken } from '@/lib/auth';
 
-export interface AuthContextType {
+interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;

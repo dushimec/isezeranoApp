@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import bcrypt from 'bcrypt';
-import { USER_ROLES } from '@/lib/user-roles';
+import { Role } from '@prisma/client';
 
 export async function POST(req: NextRequest) {
   const { firstName, lastName, username, email, password } = await req.json();
 
-  if (!firstName || !lastName || !username || !email || !password) {
-    return NextResponse.json({ error: 'Missing required fields for registration' }, { status: 400 });
+  if (!firstName || !lastName || !email || !password) {
+    return NextResponse.json({ error: 'Missing required fields for admin registration' }, { status: 400 });
   }
 
   try {
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       data: {
         firstName,
         lastName,
-        username,
+        username: username || email, // Admin can use email as username if not provided
         email,
         password: hashedPassword,
         role: 'ADMIN',
@@ -38,7 +38,14 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('Error during admin registration:', error);
     if (error.code === 'P2002') { // Prisma unique constraint violation
-      return NextResponse.json({ error: 'A user with this email or username already exists.' }, { status: 409 });
+      const target = error.meta?.target as string[] | undefined;
+      if(target?.includes('email')){
+          return NextResponse.json({ error: 'A user with this email already exists.' }, { status: 409 });
+      }
+      if(target?.includes('username')){
+          return NextResponse.json({ error: 'A user with this username already exists.' }, { status: 409 });
+      }
+      return NextResponse.json({ error: 'A user with these details already exists.' }, { status: 409 });
     }
     return NextResponse.json({ error: 'An internal error occurred.', details: error.message }, { status: 500 });
   }

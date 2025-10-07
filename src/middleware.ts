@@ -1,32 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from './lib/auth';
+import { verifyToken } from '@/lib/auth'; // Assuming verifyToken is in jose-auth.ts
 import { Role } from '@prisma/client';
 
-const API_PREFIXES = {
-    ADMIN: '/api/admin',
-    SECRETARY: '/api/secretary',
-    DISCIPLINARIAN: '/api/disciplinarian',
-    SINGER: '/api/singer'
+const API_PREFIXES: Record<Role, string> = {
+  ADMIN: '/api/admin',
+  SECRETARY: '/api/secretary',
+  DISCIPLINARIAN: '/api/disciplinarian',
+  SINGER: '/api/singer'
 };
 
-const ROLE_ACCESS: { [key in Role]: string[] } = {
-    ADMIN: [API_PREFIXES.ADMIN, API_PREFIXES.SECRETARY, API_PREFIXES.DISCIPLINARIAN, API_PREFIXES.SINGER],
-    SECRETARY: [API_PREFIXES.SECRETARY],
-    DISCIPLINARIAN: [API_PREFIXES.DISCIPLINARIAN],
-    SINGER: [API_PREFIXES.SINGER]
+const ROLE_HIERARCHY: Record<Role, Role[]> = {
+    ADMIN: [Role.ADMIN, Role.SECRETARY, Role.DISCIPLINARIAN, Role.SINGER],
+    SECRETARY: [Role.SECRETARY],
+    DISCIPLINARIAN: [Role.DISCIPLINARIAN],
+    SINGER: [Role.SINGER]
 };
+
+const PROTECTED_API_ROUTES = Object.values(API_PREFIXES);
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   
-  const applicablePrefix = Object.values(API_PREFIXES).find(prefix => pathname.startsWith(prefix));
+  // Find if the request is for a protected API route
+  const applicablePrefix = PROTECTED_API_ROUTES.find(prefix => pathname.startsWith(prefix));
 
+  // If it's not a protected API route, just continue
   if (!applicablePrefix) {
     return NextResponse.next();
   }
 
+  // Check for the token
   const token = req.headers.get('authorization')?.split(' ')[1];
-
   if (!token) {
     return NextResponse.json({ error: 'Unauthorized: No token provided' }, { status: 401 });
   }
@@ -34,22 +38,32 @@ export async function middleware(req: NextRequest) {
   try {
     const payload = await verifyToken(token);
     
-    if (!payload || !payload.role) {
+    if (!payload || typeof payload.role !== 'string') {
       return NextResponse.json({ error: 'Unauthorized: Invalid token payload' }, { status: 401 });
     }
-
-    const role = payload.role as Role;
     
-    const allowedPrefixes = ROLE_ACCESS[role] || [];
+    const userRole = payload.role as Role;
+    const allowedRoles = ROLE_HIERARCHY[userRole];
 
-    if (!allowedPrefixes.some(prefix => pathname.startsWith(prefix))) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const isAuthorized = Object.entries(API_PREFIXES).some(([role, prefix]) => {
+        return pathname.startsWith(prefix) && allowedRoles.includes(role as Role);
+    });
+
+    // Special case: Admin can access everything
+    if (userRole === Role.ADMIN) {
+         return NextResponse.next();
     }
-
-    return NextResponse.next();
+    
+    // Check if the user's role has permission for the requested API prefix
+    if (pathname.startsWith(API_PREFIXES[userRole])) {
+      return NextResponse.next();
+    }
+    
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   } catch (error) {
-    return NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 });
+    console.error("Token verification error:", error);
+    return NextResponse.json({ error: 'Unauthorized: Invalid or expired token' }, { status: 401 });
   }
 }
 

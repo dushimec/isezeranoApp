@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getUserIdFromToken } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
   try {
@@ -25,9 +26,14 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { title, message, priority, createdById } = await req.json();
+    const userId = await getUserIdFromToken(req);
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    if (!title || !message || !createdById) {
+    const { title, message, priority } = await req.json();
+
+    if (!title || !message ) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -36,9 +42,12 @@ export async function POST(req: NextRequest) {
         title,
         message,
         priority,
-        createdById,
+        createdById: userId,
       },
     });
+
+    // TODO: Trigger notification creation for all singers
+
     return NextResponse.json(announcement, { status: 201 });
   } catch (error) {
     console.error(error);

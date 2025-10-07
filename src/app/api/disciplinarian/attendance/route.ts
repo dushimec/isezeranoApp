@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { EventType } from '@prisma/client';
 
 export async function GET(req: NextRequest) {
   try {
-    const attendance = await prisma.attendance.findMany({
+    const attendanceRecords = await prisma.attendance.findMany({
       include: {
         user: {
           select: {
@@ -19,15 +20,21 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const formattedAttendance = attendance.map(a => {
-        const event = a.rehearsal || a.service;
+    const formattedAttendance = attendanceRecords.map(a => {
+        let event;
+        if(a.eventType === EventType.REHEARSAL) {
+            event = a.rehearsal
+        } else {
+            event = a.service;
+        }
+
         return {
             id: a.id,
             status: a.status,
-            user_name: `${a.user.firstName} ${a.user.lastName}`,
-            event_type: a.eventType,
-            event_date: event?.date,
-            event_title: event?.title,
+            userName: `${a.user.firstName} ${a.user.lastName}`,
+            eventType: a.eventType,
+            eventDate: event?.date,
+            eventTitle: event?.title,
         }
     })
 
@@ -36,4 +43,34 @@ export async function GET(req: NextRequest) {
     console.error(error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
+}
+
+export async function POST(req: NextRequest) {
+    try {
+        const { eventId, eventType, attendanceData, markedById } = await req.json();
+
+        if (!eventId || !eventType || !Array.isArray(attendanceData) || !markedById) {
+            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        }
+
+        const transactions = attendanceData.map(({ userId, status }) => {
+           return prisma.attendance.create({
+                data: {
+                    userId,
+                    eventId,
+                    eventType,
+                    status,
+                    markedById
+                }
+            })
+        });
+
+        await prisma.$transaction(transactions);
+
+        return NextResponse.json({ message: 'Attendance recorded successfully' }, { status: 201 });
+
+    } catch (error) {
+        console.error('Failed to record attendance:', error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
 }

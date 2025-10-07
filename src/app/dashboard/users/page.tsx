@@ -13,70 +13,92 @@ import { UserRegistrationForm } from './user-registration-form';
 import { UserTable } from './user-table';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import { USER_ROLES } from '@/lib/user-roles';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { User } from '@/lib/types';
+import { Role, User } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
 
 export default function UsersPage() {
-  const { user, userProfile, loading } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
-  const firestore = useFirestore();
   const { toast } = useToast();
+  const [users, setUsers] = React.useState<User[]>([]);
+  const [usersLoading, setUsersLoading] = React.useState(true);
+  const [usersError, setUsersError] = React.useState<string | null>(null);
 
-  const usersCollectionRef = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'users') : null),
-    [firestore]
-  );
-  
-  const {
-    data: users,
-    isLoading: usersLoading,
-    error: usersError,
-  } = useCollection<User>(usersCollectionRef);
+  const fetchUsers = React.useCallback(async () => {
+    setUsersLoading(true);
+    try {
+      const response = await fetch('/api/admin/users');
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+      const data = await response.json();
+      setUsers(data);
+      setUsersError(null);
+    } catch (error: any) {
+      setUsersError(error.message);
+    } finally {
+      setUsersLoading(false);
+    }
+  }, []);
 
   React.useEffect(() => {
-    if (!loading && (!user || userProfile?.role !== USER_ROLES.ADMIN)) {
+    if (!loading && (!user || user.role !== Role.ADMIN)) {
       router.push('/unauthorized');
+    } else if (user) {
+      fetchUsers();
     }
-  }, [user, userProfile, loading, router]);
+  }, [user, loading, router, fetchUsers]);
 
-  const handleEditUser = async (userToUpdate: User, newRole: User['role']) => {
-    if (!firestore) return;
-    const userDocRef = doc(firestore, 'users', userToUpdate.id);
+  const handleUserCreated = () => {
+    fetchUsers(); // Refetch users after one is created
+  };
+  
+  const handleEditUser = async (userId: string, data: Partial<User>) => {
     try {
-      await updateDoc(userDocRef, { role: newRole });
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update user');
+      }
       toast({
         title: 'User Updated',
-        description: `Role for ${userToUpdate.firstName} ${userToUpdate.lastName} updated to ${newRole}.`,
+        description: 'User details have been successfully updated.',
       });
+      fetchUsers();
     } catch (error: any) {
-      toast({
+       toast({
         variant: 'destructive',
         title: 'Update Failed',
-        description: error.message || 'An unexpected error occurred.',
+        description: error.message,
       });
     }
   };
 
   const handleDeleteUser = async (userToDelete: User) => {
-    if (!firestore) return;
-    // Note: This only deletes the Firestore record.
-    // For a full user deletion, you'd also need to delete the user from Firebase Auth,
-    // which requires admin privileges and is best handled via a backend function.
-    const userDocRef = doc(firestore, 'users', userToDelete.id);
-    try {
-      await deleteDoc(userDocRef);
+     try {
+      const response = await fetch(`/api/admin/users/${userToDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete user');
+      }
       toast({
         title: 'User Deleted',
-        description: `${userToDelete.firstName} ${userToDelete.lastName} has been removed from the system.`,
+        description: `${userToDelete.firstName} ${userToDelete.lastName} has been removed.`,
       });
+      fetchUsers();
     } catch (error: any) {
-      toast({
+       toast({
         variant: 'destructive',
         title: 'Deletion Failed',
-        description: error.message || 'An unexpected error occurred.',
+        description: error.message,
       });
     }
   };
@@ -85,7 +107,7 @@ export default function UsersPage() {
     return <div className="flex items-center justify-center min-h-screen"><div className="loader">Loading...</div></div>;
   }
   
-  if (!user || userProfile?.role !== USER_ROLES.ADMIN) {
+  if (!user || user.role !== Role.ADMIN) {
     return null;
   }
 
@@ -109,7 +131,7 @@ export default function UsersPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <UserRegistrationForm />
+              <UserRegistrationForm onUserCreated={handleUserCreated} />
             </CardContent>
           </Card>
         </div>
@@ -122,11 +144,11 @@ export default function UsersPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {usersError && <p className="text-destructive">{usersError.message}</p>}
+              {usersError && <p className="text-destructive">{usersError}</p>}
               {users && (
                 <UserTable
                   users={users}
-                  currentUser={userProfile}
+                  currentUser={user}
                   onEdit={handleEditUser}
                   onDelete={handleDeleteUser}
                 />

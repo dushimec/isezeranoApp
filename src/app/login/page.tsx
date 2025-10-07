@@ -6,8 +6,6 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { collection, getDocs, query, where, limit } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +16,12 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import {
   Card,
@@ -28,110 +32,98 @@ import {
 } from "@/components/ui/card";
 import { IsezeranoLogo } from "@/components/icons";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth, useFirestore } from "@/firebase";
-import { USER_ROLES } from "@/lib/user-roles";
 import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
 
-const FormSchema = z.object({
-  email: z.string().email("Invalid email address"),
+const emailSchema = z.object({
+  identifier: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
 });
+
+const usernameSchema = z.object({
+  identifier: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
+});
+
 
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { login, user } = useAuth();
   const [isLoading, setIsLoading] = React.useState(false);
   const [adminExists, setAdminExists] = React.useState<boolean | null>(null);
-  const auth = useAuth();
-  const firestore = useFirestore();
+  const [loginType, setLoginType] = React.useState<"email" | "username">("email");
 
-  React.useEffect(() => {
-    const checkAdmin = async () => {
-      if (!firestore) {
-        setIsLoading(false);
-        return;
-      };
-      setIsLoading(true);
-      try {
-        const usersRef = collection(firestore, "users");
-        const q = query(usersRef, where("role", "==", USER_ROLES.ADMIN), limit(1));
-        const querySnapshot = await getDocs(q);
-        if (querySnapshot.empty) {
-          setAdminExists(false);
-        } else {
-          setAdminExists(true);
-        }
-      } catch (error) {
-        console.error("Error checking for admin:", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Could not verify system status. Please try again."
-        })
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    checkAdmin();
-  }, [firestore, toast]);
-
-  const form = useForm<z.infer<typeof FormSchema>>({
-    resolver: zodResolver(FormSchema),
+   const form = useForm({
+    resolver: zodResolver(loginType === "email" ? emailSchema : usernameSchema),
     defaultValues: {
-      email: "",
+      identifier: "",
       password: "",
     },
   });
-
-  async function onSubmit(data: z.infer<typeof FormSchema>) {
-    setIsLoading(true);
-    if (!auth) {
-      toast({
-        variant: "destructive",
-        title: "Authentication Error",
-        description: "Firebase Auth is not initialized.",
-      });
-      setIsLoading(false);
-      return;
+  
+  React.useEffect(() => {
+    if(user) {
+        router.replace('/dashboard');
     }
-    
-    try {
-      await signInWithEmailAndPassword(auth, data.email, data.password);
-      toast({
-        title: "Login Successful",
-        description: "Welcome back!",
-      });
-      router.push('/dashboard');
-    } catch (error: any) {
-      console.error("Error signing in:", error);
-      let errorMessage = "An unknown error occurred.";
-      if (error.code) {
-        switch (error.code) {
-          case 'auth/user-not-found':
-            errorMessage = "No user found with this email.";
-            break;
-          case 'auth/wrong-password':
-            errorMessage = "Incorrect password. Please try again.";
-            break;
-          case 'auth/invalid-credential':
-             errorMessage = "Invalid credentials. Please check your email and password.";
-            break;
-          default:
-            errorMessage = error.message;
-            break;
+  }, [user, router]);
+
+  React.useEffect(() => {
+    // Reset form when loginType changes
+    form.reset();
+  }, [loginType, form]);
+
+
+  React.useEffect(() => {
+    async function checkAdmin() {
+        try {
+            const response = await fetch('/api/auth/check-admin');
+            const data = await response.json();
+            setAdminExists(data.exists);
+        } catch (error) {
+            toast({ variant: "destructive", title: "Error", description: "Could not verify system status." });
+        } finally {
+            setIsLoading(false);
         }
-      }
+    }
+    checkAdmin();
+  }, [toast]);
+
+
+  async function onSubmit(values: z.infer<typeof emailSchema> | z.infer<typeof usernameSchema>) {
+    setIsLoading(true);
+    try {
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...values, loginType }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Login failed');
+        }
+        
+        login(data.token, data.user);
+
+        toast({
+            title: "Login Successful",
+            description: `Welcome back, ${data.user.firstName}!`,
+        });
+        router.push('/dashboard');
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: errorMessage,
+        description: error.message,
       });
     } finally {
       setIsLoading(false);
     }
   }
 
-  if (isLoading || adminExists === null) {
+  if (adminExists === null) {
      return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="loader">Verifying system status...</div>
@@ -172,43 +164,90 @@ export default function LoginPage() {
           </div>
           <CardTitle className="text-3xl font-headline">Welcome Back</CardTitle>
           <CardDescription>
-            Enter your email and password to sign in
+            Sign in to continue to Isezerano CMS
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input placeholder="admin@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Signing in..." : "Sign In"}
-              </Button>
-            </form>
-          </Form>
+          <Tabs value={loginType} onValueChange={(value) => setLoginType(value as "email" | "username")} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="email">Admin</TabsTrigger>
+              <TabsTrigger value="username">Member</TabsTrigger>
+            </TabsList>
+            <TabsContent value="email">
+                 <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
+                        <FormField
+                            control={form.control}
+                            name="identifier"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Email</FormLabel>
+                                <FormControl>
+                                <Input 
+                                    placeholder='admin@example.com'
+                                    {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="password"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Password</FormLabel>
+                                <FormControl>
+                                <Input type="password" placeholder="••••••••" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <Button type="submit" className="w-full" disabled={isLoading}>
+                            {isLoading ? "Signing in..." : "Sign In"}
+                        </Button>
+                    </form>
+                </Form>
+            </TabsContent>
+             <TabsContent value="username">
+                 <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
+                        <FormField
+                            control={form.control}
+                            name="identifier"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Username</FormLabel>
+                                <FormControl>
+                                <Input 
+                                    placeholder='your.username'
+                                    {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="password"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Password</FormLabel>
+                                <FormControl>
+                                <Input type="password" placeholder="••••••••" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <Button type="submit" className="w-full" disabled={isLoading}>
+                            {isLoading ? "Signing in..." : "Sign In"}
+                        </Button>
+                    </form>
+                </Form>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>

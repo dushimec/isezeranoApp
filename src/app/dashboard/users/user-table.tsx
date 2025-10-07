@@ -11,7 +11,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { User } from "@/lib/types";
 import { Edit, MoreHorizontal, Trash } from "lucide-react";
 import {
     DropdownMenu,
@@ -29,30 +28,22 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
-import { USER_ROLES } from "@/lib/user-roles";
+import { Role, User } from "@prisma/client";
 
 interface UserTableProps {
   users: User[];
   currentUser?: User | null;
-  onEdit: (user: User, newRole: User['role']) => void;
+  onEdit: (userId: string, data: Partial<User>) => void;
   onDelete: (user: User) => void;
 }
 
-const editableRoles = Object.values(USER_ROLES).filter(r => r !== USER_ROLES.ADMIN);
+const editableRoles = Object.values(Role).filter(r => r !== Role.ADMIN);
 
 
 export function UserTable({ users, currentUser, onEdit, onDelete }: UserTableProps) {
-  const [editingRole, setEditingRole] = React.useState<{ [userId: string]: User['role'] }>({});
-
-  const handleRoleChange = (userId: string, role: User['role']) => {
-    setEditingRole(prev => ({ ...prev, [userId]: role }));
-  };
-
-  const handleRoleSave = (user: User) => {
-    const newRole = editingRole[user.id];
-    if (newRole && newRole !== user.role) {
-      onEdit(user, newRole);
-    }
+  
+  const handleRoleChange = (userId: string, newRole: Role) => {
+    onEdit(userId, { role: newRole });
   };
 
   return (
@@ -73,16 +64,16 @@ export function UserTable({ users, currentUser, onEdit, onDelete }: UserTablePro
             <TableCell>
                 <div className="flex items-center gap-3">
                     <Image
-                        src={user.profileImageUrl || `https://picsum.photos/seed/${user.id}/40/40`}
+                        src={user.profileImage || `https://picsum.photos/seed/${user.id}/40/40`}
                         width={40}
                         height={40}
                         alt={`${user.firstName} ${user.lastName}`}
-                        className="rounded-full"
+                        className="rounded-full object-cover"
                         data-ai-hint="person portrait"
                     />
                     <div>
                         <p className="font-medium">{user.firstName} {user.lastName}</p>
-                        <p className="text-sm text-muted-foreground">{user.email}</p>
+                        <p className="text-sm text-muted-foreground">{user.email || user.username}</p>
                     </div>
                 </div>
             </TableCell>
@@ -95,7 +86,7 @@ export function UserTable({ users, currentUser, onEdit, onDelete }: UserTablePro
             <TableCell>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button aria-haspopup="true" size="icon" variant="ghost" disabled={user.id === currentUser?.id || user.role === USER_ROLES.ADMIN}>
+                  <Button aria-haspopup="true" size="icon" variant="ghost" disabled={user.id === currentUser?.id || user.role === Role.ADMIN}>
                     <MoreHorizontal className="h-4 w-4" />
                     <span className="sr-only">Toggle menu</span>
                   </Button>
@@ -109,15 +100,11 @@ export function UserTable({ users, currentUser, onEdit, onDelete }: UserTablePro
                     </DropdownMenuSubTrigger>
                     <DropdownMenuPortal>
                         <DropdownMenuSubContent>
-                             <DropdownMenuRadioGroup value={editingRole[user.id] || user.role} onValueChange={(value) => handleRoleChange(user.id, value as User['role'])}>
+                             <DropdownMenuRadioGroup value={user.role} onValueChange={(value) => handleRoleChange(user.id, value as Role)}>
                                 {editableRoles.map(role => (
                                     <DropdownMenuRadioItem key={role} value={role}>{role}</DropdownMenuRadioItem>
                                 ))}
                             </DropdownMenuRadioGroup>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleRoleSave(user)}>
-                                Save Changes
-                            </DropdownMenuItem>
                         </DropdownMenuSubContent>
                     </DropdownMenuPortal>
                   </DropdownMenuSub>

@@ -1,3 +1,6 @@
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -7,13 +10,124 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, MapPin, Watch, Shirt, MoreVertical } from 'lucide-react';
-import { events } from '@/lib/data';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import { Rehearsal, Service, Role } from '@prisma/client';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+
+type TEvent = (Rehearsal | Service) & { type: 'rehearsal' | 'service' };
 
 export default function SchedulePage() {
-  const sortedEvents = [...events].sort((a, b) => a.date.getTime() - b.date.getTime());
+  const { user, token } = useAuth();
+  const { toast } = useToast();
+  const [events, setEvents] = useState<TEvent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+
+  const fetchEvents = useCallback(async () => {
+    if (!token) return;
+    setIsLoading(true);
+    try {
+      const [rehearsalsRes, servicesRes] = await Promise.all([
+        fetch('/api/secretary/rehearsals', { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch('/api/secretary/services', { headers: { 'Authorization': `Bearer ${token}` } }),
+      ]);
+      const rehearsals = await rehearsalsRes.json();
+      const services = await servicesRes.json();
+
+      const allEvents: TEvent[] = [
+        ...rehearsals.map((r: Rehearsal) => ({ ...r, type: 'rehearsal' })),
+        ...services.map((s: Service) => ({ ...s, type: 'service' })),
+      ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      
+      setEvents(allEvents);
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch schedule.' });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [token, toast]);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
+  
+  const handleCreateEvent = async (e: React.FormEvent<HTMLFormElement>, type: 'rehearsal' | 'service') => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+    
+    const endpoint = type === 'rehearsal' ? '/api/secretary/rehearsals' : '/api/secretary/services';
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) throw new Error(`Failed to create ${type}`);
+
+      toast({ title: 'Success', description: `Event created successfully.` });
+      fetchEvents();
+      setIsFormOpen(false);
+    } catch (error: any) {
+       toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
+  };
+  
+  const EventForm = ({ type }: { type: 'rehearsal' | 'service' }) => (
+    <form onSubmit={(e) => handleCreateEvent(e, type)} className="space-y-4">
+      <Input name="date" type="hidden" value={selectedDate?.toISOString()} />
+      <div>
+        <Label htmlFor="title">Title</Label>
+        <Input id="title" name="title" required />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="date-display">Date</Label>
+          <Input id="date-display" value={selectedDate ? format(selectedDate, 'PPP') : ''} disabled />
+        </div>
+        <div>
+          <Label htmlFor="time">Time</Label>
+          <Input id="time" name="time" type="time" required />
+        </div>
+      </div>
+      <div>
+        <Label htmlFor="location">{type === 'rehearsal' ? 'Location' : 'Church Location'}</Label>
+        <Input id="location" name={type === 'rehearsal' ? 'location' : 'churchLocation'} required />
+      </div>
+      {type === 'service' && (
+        <div>
+          <Label htmlFor="attire">Attire</Label>
+          <Input id="attire" name="attire" />
+        </div>
+      )}
+      <div>
+        <Label htmlFor="notes">Notes</Label>
+        <Textarea id="notes" name="notes" />
+      </div>
+      <div className="flex justify-end">
+        <Button type="submit">Create Event</Button>
+      </div>
+    </form>
+  );
 
   return (
     <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
@@ -25,37 +139,65 @@ export default function SchedulePage() {
               Manage rehearsal and service schedules.
             </p>
           </div>
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" /> Create Event
-          </Button>
+          {user?.role === Role.SECRETARY && (
+          <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+            <DialogTrigger asChild>
+                <Button>
+                  <PlusCircle className="mr-2 h-4 w-4" /> Create Event
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Event</DialogTitle>
+                <DialogDescription>Select the event type and fill in the details.</DialogDescription>
+              </DialogHeader>
+              <Tabs defaultValue="rehearsal" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="rehearsal">Rehearsal</TabsTrigger>
+                  <TabsTrigger value="service">Service</TabsTrigger>
+                </TabsList>
+                <TabsContent value="rehearsal">
+                  <EventForm type="rehearsal" />
+                </TabsContent>
+                <TabsContent value="service">
+                  <EventForm type="service" />
+                </TabsContent>
+              </Tabs>
+            </DialogContent>
+          </Dialog>
+          )}
         </div>
         <Card>
           <CardHeader>
             <CardTitle>Upcoming Events</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {sortedEvents.map((event, index) => (
+             {isLoading && <p>Loading schedule...</p>}
+            {!isLoading && events.length === 0 && <p>No upcoming events scheduled.</p>}
+            {events.map((event, index) => (
               <div key={event.id}>
                 <div className="flex items-start gap-4">
                   <div className="text-center w-16 shrink-0">
-                    <p className="text-sm font-bold text-primary uppercase">{format(event.date, 'MMM')}</p>
-                    <p className="text-3xl font-bold">{format(event.date, 'd')}</p>
+                    <p className="text-sm font-bold text-primary uppercase">{format(new Date(event.date), 'MMM')}</p>
+                    <p className="text-3xl font-bold">{format(new Date(event.date), 'd')}</p>
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold">{event.title}</h3>
                     <div className="space-y-1 text-sm text-muted-foreground mt-1">
-                      <p className="flex items-center gap-2"><Watch className="h-4 w-4"/> {format(event.date, 'p')}</p>
-                      <p className="flex items-center gap-2"><MapPin className="h-4 w-4"/> {event.location}</p>
-                      <p className="flex items-center gap-2"><Shirt className="h-4 w-4"/> {event.attire}</p>
+                      <p className="flex items-center gap-2"><Watch className="h-4 w-4"/> {event.time}</p>
+                      <p className="flex items-center gap-2"><MapPin className="h-4 w-4"/> {event.type === 'rehearsal' ? (event as Rehearsal).location : (event as Service).churchLocation}</p>
+                      {event.type === 'service' && (event as Service).attire && <p className="flex items-center gap-2"><Shirt className="h-4 w-4"/> {(event as Service).attire}</p>}
                     </div>
                   </div>
-                  <div>
-                    <Button variant="ghost" size="icon">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  {user?.role === Role.SECRETARY && (
+                    <div>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                {index < sortedEvents.length - 1 && <Separator className="my-6" />}
+                {index < events.length - 1 && <Separator className="my-6" />}
               </div>
             ))}
           </CardContent>
@@ -66,8 +208,10 @@ export default function SchedulePage() {
           <CardContent className="p-0">
             <Calendar
               mode="single"
-              selected={new Date()}
+              selected={selectedDate}
+              onSelect={setSelectedDate}
               className="rounded-md"
+              disabled={user?.role !== Role.SECRETARY}
             />
           </CardContent>
         </Card>
@@ -77,16 +221,16 @@ export default function SchedulePage() {
             </CardHeader>
             <CardContent className="grid gap-4">
                 <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Total Events this Month</span>
-                    <span className="font-bold text-2xl text-primary">12</span>
+                    <span className="text-muted-foreground">Total Events</span>
+                    <span className="font-bold text-2xl text-primary">{events.length}</span>
                 </div>
                 <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Rehearsals</span>
-                    <span className="font-bold">8</span>
+                    <span className="font-bold">{events.filter(e => e.type === 'rehearsal').length}</span>
                 </div>
                 <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Services</span>
-                    <span className="font-bold">4</span>
+                    <span className="font-bold">{events.filter(e => e.type === 'service').length}</span>
                 </div>
             </CardContent>
         </Card>

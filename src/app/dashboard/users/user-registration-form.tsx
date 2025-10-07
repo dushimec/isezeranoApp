@@ -22,22 +22,29 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { USER_ROLES } from "@/lib/user-roles";
 import { useToast } from "@/hooks/use-toast";
+import { Role } from "@prisma/client";
+
+interface UserRegistrationFormProps {
+  onUserCreated: () => void;
+}
 
 // Admin cannot create another Admin
-const creatableRoles = Object.values(USER_ROLES).filter(role => role !== USER_ROLES.ADMIN);
+const creatableRoles = Object.values(Role).filter(role => role !== Role.ADMIN);
 
 const formSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
   lastName: z.string().min(2, "Last name must be at least 2 characters"),
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  email: z.string().email("Invalid email address"),
+  username: z.string().min(3, "Username must be at least 3 characters").optional().or(z.literal('')),
+  email: z.string().email("Invalid email address").optional().or(z.literal('')),
   password: z.string().min(6, "Password must be at least 6 characters"),
   role: z.enum(creatableRoles as [string, ...string[]]),
+}).refine(data => data.username || data.email, {
+  message: "Either Username or Email is required.",
+  path: ["username"], // you can use any field for the error message
 });
 
-export function UserRegistrationForm() {
+export function UserRegistrationForm({ onUserCreated }: UserRegistrationFormProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -49,7 +56,7 @@ export function UserRegistrationForm() {
       username: "",
       email: "",
       password: "",
-      role: USER_ROLES.SINGER,
+      role: Role.SINGER,
     },
   });
 
@@ -65,7 +72,7 @@ export function UserRegistrationForm() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.details || errorData.error || 'Failed to create user.');
+        throw new Error(errorData.error || 'Failed to create user.');
       }
 
       toast({
@@ -74,6 +81,7 @@ export function UserRegistrationForm() {
       });
       
       form.reset();
+      onUserCreated(); // Callback to parent component
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -132,7 +140,7 @@ export function UserRegistrationForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Email (Optional)</FormLabel>
               <FormControl>
                 <Input placeholder="user@example.com" {...field} />
               </FormControl>

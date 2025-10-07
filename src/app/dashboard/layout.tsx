@@ -13,6 +13,7 @@ import {
   LogOut,
   Megaphone,
   Menu,
+  Music,
   User,
   Users,
 } from "lucide-react";
@@ -29,14 +30,14 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Image from "next/image";
 import { IsezeranoLogo } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
-import { getAuth, signOut } from "firebase/auth";
+import { Role } from "@prisma/client";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, userProfile, loading } = useAuth();
+  const { user, logout, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -47,24 +48,24 @@ export default function DashboardLayout({
   }, [loading, user, router]);
 
   const handleLogout = async () => {
-    const auth = getAuth();
-    await signOut(auth);
+    logout();
     router.push("/login");
   };
 
   const allNavItems = [
-    { href: "/dashboard", label: "Dashboard", icon: Home, roles: ['Admin', 'Secretary', 'Disciplinarian', 'Singer'] },
-    { href: "/dashboard/announcements", label: "Announcements", icon: Megaphone, roles: ['Admin', 'Secretary'] },
-    { href: "/dashboard/schedule", label: "Schedule", icon: Calendar, roles: ['Admin', 'Secretary'] },
-    { href: "/dashboard/attendance", label: "Attendance", icon: ClipboardCheck, roles: ['Admin', 'Disciplinarian'] },
-    { href: "/dashboard/reports", label: "Reports", icon: BarChart, roles: ['Admin', 'Secretary', 'Disciplinarian'] },
-    { href: "/dashboard/users", label: "User Management", icon: Users, roles: ['Admin'] },
+    { href: "/dashboard", label: "Dashboard", icon: Home, roles: [Role.ADMIN, Role.SECRETARY, Role.DISCIPLINARIAN, Role.SINGER] },
+    { href: "/dashboard/announcements", label: "Announcements", icon: Megaphone, roles: [Role.ADMIN, Role.SECRETARY, Role.SINGER] },
+    { href: "/dashboard/schedule", label: "Schedule", icon: Calendar, roles: [Role.ADMIN, Role.SECRETARY, Role.SINGER] },
+    { href: "/dashboard/attendance", label: "Attendance", icon: ClipboardCheck, roles: [Role.ADMIN, Role.DISCIPLINARIAN] },
+    { href: "/dashboard/my-attendance", label: "My Attendance", icon: ClipboardCheck, roles: [Role.SINGER] },
+    { href: "/dashboard/reports", label: "Reports", icon: BarChart, roles: [Role.ADMIN, Role.SECRETARY, Role.DISCIPLINARIAN] },
+    { href: "/dashboard/users", label: "User Management", icon: Users, roles: [Role.ADMIN] },
   ];
 
-  const navItems = allNavItems.filter(item => userProfile?.role && item.roles.includes(userProfile.role));
+  const navItems = allNavItems.filter(item => user?.role && item.roles.includes(user.role));
 
 
-  if (loading || !user || !userProfile) {
+  if (loading || !user) {
     return (
         <div className="flex items-center justify-center min-h-screen">
             <div className="loader">Loading...</div>
@@ -73,6 +74,10 @@ export default function DashboardLayout({
   }
 
   const getActiveClasses = (href: string) => {
+    // Handle nested routes for highlighting
+    if (href !== "/dashboard" && pathname.startsWith(href)) {
+      return "bg-accent text-accent-foreground";
+    }
     return pathname === href ? "bg-accent text-accent-foreground" : "text-muted-foreground";
   };
 
@@ -146,11 +151,11 @@ export default function DashboardLayout({
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
                 <Image
-                  src={userProfile?.profileImageUrl || "https://picsum.photos/seed/avatar1/40/40"}
+                  src={user?.profileImage || `https://picsum.photos/seed/${user?.id}/40/40`}
                   width={40}
                   height={40}
                   alt="User avatar"
-                  className="rounded-full"
+                  className="rounded-full object-cover"
                   data-ai-hint="person portrait"
                 />
                 <span className="sr-only">Toggle user menu</span>
@@ -158,8 +163,8 @@ export default function DashboardLayout({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>
-                {userProfile?.firstName} {userProfile?.lastName}
-                <p className="text-xs text-muted-foreground font-normal">{userProfile?.role}</p>
+                {user?.firstName} {user?.lastName}
+                <p className="text-xs text-muted-foreground font-normal">{user?.role}</p>
                 </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>

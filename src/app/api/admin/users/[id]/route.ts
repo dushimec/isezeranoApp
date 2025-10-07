@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { Role } from '@prisma/client';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -41,7 +42,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         lastName,
         username,
         email,
-        role,
+        role: role as Role,
         isActive,
       },
     });
@@ -51,7 +52,16 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   } catch (error: any) {
     console.error(error);
      if (error.code === 'P2002') {
-        return NextResponse.json({ error: 'A user with this email or username already exists.' }, { status: 409 });
+        const target = error.meta?.target as string[];
+        let message = 'A user with this ';
+        if (target.includes('username')) {
+            message += 'username';
+        }
+        if (target.includes('email')) {
+            message += target.includes('username') ? ' or email' : 'email';
+        }
+        message += ' already exists.';
+        return NextResponse.json({ error: message }, { status: 409 });
     }
     if (error.code === 'P2025') { // Record to update not found
         return NextResponse.json({ error: 'User not found' }, { status: 404 });

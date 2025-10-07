@@ -1,9 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { Role } from '@prisma/client';
 
 export async function GET(req: NextRequest) {
   try {
+    const userCounts = await prisma.user.groupBy({
+      by: ['role'],
+      _count: {
+        role: true,
+      },
+    });
+
     const totalUsers = await prisma.user.count();
+
+    const formattedUserCounts = userCounts.reduce((acc, count) => {
+        acc[count.role] = count._count.role;
+        return acc;
+    }, {} as Record<Role, number>);
+
 
     const upcomingRehearsals = prisma.rehearsal.findMany({
         where: { date: { gte: new Date() } },
@@ -30,6 +44,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       totalUsers,
+      userCounts: formattedUserCounts,
       upcomingEvents,
       recentAnnouncements,
     });

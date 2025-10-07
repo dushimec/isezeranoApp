@@ -2,18 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import bcrypt from 'bcrypt';
 import { createToken } from '@/lib/auth';
+import { Role } from '@prisma/client';
 
 export async function POST(req: NextRequest) {
-  const { email, password } = await req.json();
+  const { identifier, password, loginType } = await req.json();
 
-  if (!email || !password) {
-    return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
+  if (!identifier || !password || !loginType) {
+    return NextResponse.json({ error: 'Identifier, password, and loginType are required' }, { status: 400 });
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    let user;
+    if (loginType === 'email') {
+        user = await prisma.user.findUnique({
+            where: { email: identifier, role: Role.ADMIN },
+        });
+    } else {
+        user = await prisma.user.findUnique({
+            where: { username: identifier },
+        });
+    }
+
 
     if (!user) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });

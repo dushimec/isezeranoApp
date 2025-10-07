@@ -1,0 +1,50 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/db';
+import { getUserIdFromToken } from '@/lib/auth';
+
+export async function POST(req: NextRequest) {
+  try {
+    const userId = await getUserIdFromToken(req);
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    const { title, date, time, location, notes } = await req.json();
+
+    if (!title || !date || !time || !location) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    const rehearsal = await prisma.rehearsal.create({
+      data: {
+        title,
+        date: new Date(date),
+        time,
+        location,
+        notes,
+        createdById: userId,
+      },
+    });
+    
+    // TODO: Trigger notifications for singers
+
+    return NextResponse.json(rehearsal, { status: 201 });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function GET(req: NextRequest) {
+    try {
+        const rehearsals = await prisma.rehearsal.findMany({
+            orderBy: {
+                date: 'desc'
+            }
+        });
+        return NextResponse.json(rehearsals);
+    } catch (error) {
+        console.error(error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
+}

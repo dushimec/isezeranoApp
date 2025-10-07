@@ -6,13 +6,6 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  limit,
-} from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -33,14 +26,13 @@ import {
 } from "@/components/ui/card";
 import { IsezeranoLogo } from "@/components/icons";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore } from "@/firebase";
-import { USER_ROLES } from "@/lib/user-roles";
 import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
 
 const FormSchema = z.object({
   firstName: z.string().min(2, "First name is required"),
   lastName: z.string().min(2, "Last name is required"),
-  username: z.string().min(3, "Username is required"),
+  username: z.string().optional(),
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
@@ -48,33 +40,9 @@ const FormSchema = z.object({
 export default function RegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = React.useState(false);
-  const firestore = useFirestore();
-
-  React.useEffect(() => {
-    const checkAdmin = async () => {
-      if (!firestore) return;
-      try {
-        const usersRef = collection(firestore, "users");
-        const q = query(
-          usersRef,
-          where("role", "==", USER_ROLES.ADMIN),
-          limit(1)
-        );
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
-          toast({
-            title: "Admin Exists",
-            description: "An admin account already exists. Please log in.",
-          });
-          router.replace("/login");
-        }
-      } catch (error) {
-        console.error("Error checking for admin:", error);
-      }
-    };
-    checkAdmin();
-  }, [firestore, router, toast]);
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [adminExists, setAdminExists] = React.useState<boolean | null>(null);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -86,6 +54,35 @@ export default function RegisterPage() {
       password: "",
     },
   });
+
+  React.useEffect(() => {
+    if(user) {
+        router.replace('/dashboard');
+    }
+  }, [user, router]);
+  
+  React.useEffect(() => {
+    async function checkAdmin() {
+        try {
+            const response = await fetch('/api/auth/check-admin');
+            const data = await response.json();
+            setAdminExists(data.exists);
+            if (data.exists) {
+                toast({
+                    title: "Admin Exists",
+                    description: "An admin account already exists. Please log in.",
+                });
+                router.replace("/login");
+            }
+        } catch (error) {
+            toast({ variant: "destructive", title: "Error", description: "Could not verify system status." });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    checkAdmin();
+  }, [router, toast]);
+
 
   async function onSubmit(values: z.infer<typeof FormSchema>) {
     setIsLoading(true);
@@ -100,7 +97,7 @@ export default function RegisterPage() {
       const responseData = await response.json();
 
       if (!response.ok) {
-        throw new Error(responseData.details || responseData.error || 'Failed to create admin user.');
+        throw new Error(responseData.error || 'Failed to create admin user.');
       }
       
       toast({
@@ -110,7 +107,6 @@ export default function RegisterPage() {
 
       router.push(`/login`);
     } catch (error: any) {
-      console.error("Error during admin registration:", error);
       toast({
         variant: "destructive",
         title: "Registration Failed",
@@ -119,6 +115,14 @@ export default function RegisterPage() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  if (isLoading || adminExists === null) {
+     return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="loader">Verifying system status...</div>
+      </div>
+    );
   }
 
   return (
@@ -168,19 +172,6 @@ export default function RegisterPage() {
               </div>
               <FormField
                 control={form.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Username</FormLabel>
-                    <FormControl>
-                      <Input placeholder="janedoe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
@@ -214,6 +205,12 @@ export default function RegisterPage() {
               </Button>
             </form>
           </Form>
+           <p className="text-center text-sm text-muted-foreground mt-6">
+            Already have an account?{" "}
+            <Link href="/login" className="underline underline-offset-4 hover:text-primary">
+              Sign In
+            </Link>
+          </p>
         </CardContent>
       </Card>
     </div>
