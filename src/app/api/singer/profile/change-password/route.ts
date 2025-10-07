@@ -13,13 +13,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { password } = await req.json();
-    if (!password || password.length < 8) {
-      return NextResponse.json({ error: 'Password must be at least 8 characters long' }, { status: 400 });
-    }
+    const { password, currentPassword } = await req.json();
 
     const client = await clientPromise;
     const db = client.db();
+    
+    const user = await db.collection<UserDocument>('users').findOne({ _id: new ObjectId(userId) });
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+    
+    // If it's not a forced password change, we require the current password
+    if (!user.forcePasswordChange) {
+        if(!currentPassword) {
+            return NextResponse.json({ error: 'Current password is required' }, { status: 400 });
+        }
+        const isPasswordValid = await bcrypt.compare(currentPassword, user.password as string);
+        if (!isPasswordValid) {
+            return NextResponse.json({ error: 'Invalid current password' }, { status: 401 });
+        }
+    }
+
+    if (!password || password.length < 8) {
+      return NextResponse.json({ error: 'Password must be at least 8 characters long' }, { status: 400 });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -28,7 +45,7 @@ export async function POST(req: NextRequest) {
       { 
         $set: { 
           password: hashedPassword,
-          forcePasswordChange: false, // Update the flag
+          forcePasswordChange: false, // Always set to false after a password change
           updatedAt: new Date()
         }
       },
@@ -36,7 +53,7 @@ export async function POST(req: NextRequest) {
     );
 
     if (!result) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json({ error: 'User not found during update' }, { status: 404 });
     }
 
     return NextResponse.json({ message: 'Password updated successfully' });

@@ -28,12 +28,22 @@ const profileSchema = z.object({
   email: z.string().email().optional(),
 });
 
+const passwordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().min(8, 'New password must be at least 8 characters long'),
+  confirmPassword: z.string(),
+}).refine(data => data.newPassword === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
+});
+
 export default function ProfilePage() {
   const { user, loading, updateUser } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isPasswordSubmitting, setIsPasswordSubmitting] = React.useState(false);
 
-  const form = useForm<z.infer<typeof profileSchema>>({
+  const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     values: {
       firstName: user?.firstName || '',
@@ -42,8 +52,17 @@ export default function ProfilePage() {
       email: user?.email || '',
     },
   });
+  
+  const passwordForm = useForm<z.infer<typeof passwordSchema>>({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: {
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    },
+  });
 
-  const onSubmit = async (values: z.infer<typeof profileSchema>) => {
+  const onProfileSubmit = async (values: z.infer<typeof profileSchema>) => {
     setIsSubmitting(true);
     try {
       await updateUser(values);
@@ -61,6 +80,43 @@ export default function ProfilePage() {
       setIsSubmitting(false);
     }
   };
+
+  const onPasswordSubmit = async (values: z.infer<typeof passwordSchema>) => {
+    setIsPasswordSubmitting(true);
+    try {
+        const response = await fetch('/api/singer/profile/change-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+            body: JSON.stringify({
+                currentPassword: values.currentPassword,
+                password: values.newPassword,
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to change password.');
+        }
+
+        toast({
+            title: 'Password Updated',
+            description: 'Your password has been changed successfully.',
+        });
+        passwordForm.reset();
+
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Update Failed',
+            description: error.message,
+        });
+    } finally {
+        setIsPasswordSubmitting(false);
+    }
+  };
   
 
   if (loading || !user) {
@@ -75,8 +131,8 @@ export default function ProfilePage() {
           Manage your personal information and settings.
         </p>
       </div>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+      <Form {...profileForm}>
+        <form onSubmit={profileForm.handleSubmit(onProfileSubmit)}>
           <Card>
             <CardHeader>
               <CardTitle>Personal Information</CardTitle>
@@ -107,7 +163,7 @@ export default function ProfilePage() {
 
               <div className="grid gap-6 md:grid-cols-2">
                  <FormField
-                  control={form.control}
+                  control={profileForm.control}
                   name="firstName"
                   render={({ field }) => (
                     <FormItem>
@@ -120,7 +176,7 @@ export default function ProfilePage() {
                   )}
                 />
                  <FormField
-                  control={form.control}
+                  control={profileForm.control}
                   name="lastName"
                   render={({ field }) => (
                     <FormItem>
@@ -133,7 +189,7 @@ export default function ProfilePage() {
                   )}
                 />
                 <FormField
-                  control={form.control}
+                  control={profileForm.control}
                   name="username"
                   render={({ field }) => (
                     <FormItem>
@@ -146,7 +202,7 @@ export default function ProfilePage() {
                   )}
                 />
                  <FormField
-                  control={form.control}
+                  control={profileForm.control}
                   name="email"
                   render={({ field }) => (
                     <FormItem>
@@ -164,14 +220,80 @@ export default function ProfilePage() {
                 </div>
               </div>
             </CardContent>
+             <CardContent>
+              <div className="flex justify-end">
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </CardContent>
           </Card>
-           <div className="flex justify-end mt-6">
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </div>
         </form>
       </Form>
+      
+      <Form {...passwordForm}>
+        <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}>
+          <Card>
+            <CardHeader>
+              <CardTitle>Security</CardTitle>
+              <CardDescription>
+                Change your password here.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={passwordForm.control}
+                name="currentPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Current Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid gap-6 md:grid-cols-2">
+                 <FormField
+                  control={passwordForm.control}
+                  name="newPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>New Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={passwordForm.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm New Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+            <CardContent>
+              <div className="flex justify-end">
+                <Button type="submit" disabled={isPasswordSubmitting}>
+                  {isPasswordSubmitting ? 'Saving...' : 'Update Password'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </form>
+      </Form>
+
     </div>
   );
 }
