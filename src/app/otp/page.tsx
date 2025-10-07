@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { getFirestore, doc, getDoc } from "firebase/firestore";
+import { SignJWT } from "jose";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -83,6 +84,26 @@ export default function OtpPage() {
 
         if (userDoc.exists()) {
           const userData = userDoc.data();
+          
+          // Generate JWT
+          // IMPORTANT: In a production environment, use a secure secret stored in an environment variable.
+          const secret = new TextEncoder().encode(
+            "super-secret-key-for-dev-only"
+          );
+          const alg = "HS256";
+          const jwt = await new SignJWT({
+            userId: user.uid,
+            role: userData.role,
+            phoneNumber: user.phoneNumber,
+          })
+            .setProtectedHeader({ alg })
+            .setIssuedAt()
+            .setExpirationTime("2h")
+            .sign(secret);
+
+          localStorage.setItem("token", jwt);
+
+
           toast({
             title: "Success!",
             description: "You have been successfully logged in.",
@@ -90,16 +111,16 @@ export default function OtpPage() {
           // Redirect based on role
           switch (userData.role) {
             case "Admin":
-              router.push("/dashboard");
+              router.push("/admin/dashboard");
               break;
             case "Secretary":
-              router.push("/dashboard");
+              router.push("/secretary/dashboard");
               break;
             case "Disciplinarian":
-              router.push("/dashboard/attendance");
+              router.push("/disciplinarian/dashboard");
               break;
             case "Singer":
-              router.push("/dashboard");
+              router.push("/singer/dashboard");
               break;
             default:
               router.push("/dashboard");

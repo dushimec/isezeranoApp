@@ -1,4 +1,4 @@
-import type { SVGProps } from "react";
+import React, { SVGProps } from "react";
 
 export function IsezeranoLogo(props: SVGProps<SVGSVGElement>) {
   return (
