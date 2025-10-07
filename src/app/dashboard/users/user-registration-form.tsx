@@ -33,7 +33,7 @@ const formSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
   lastName: z.string().min(2, "Last name must be at least 2 characters"),
   phoneNumber: z.string().regex(phoneRegex, "Invalid phone number"),
-  role: z.enum([USER_ROLES.SINGER, USER_ROLES.SECRETARY, USER_ROLES.DISCIPLINARIAN, USER_ROLES.ADMIN]),
+  role: z.enum([USER_ROLES.SINGER, USER_ROLES.SECRETARY, USER_ROLES.DISCIPLINARIAN, USER_ROLES.SECTION_LEADER, USER_ROLES.ADMIN]),
 });
 
 export function UserRegistrationForm() {
@@ -160,4 +160,3 @@ export function UserRegistrationForm() {
     </Form>
   );
 }
-
