@@ -24,6 +24,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { USER_ROLES } from "@/lib/user-roles";
 import { useToast } from "@/hooks/use-toast";
+import { useFirestore, addDocumentNonBlocking } from "@/firebase";
+import { collection, serverTimestamp } from "firebase/firestore";
 
 const phoneRegex = new RegExp(
   /^([+]?[\s0-9]+)?(\d{3}|[(]\d{3}[)])?[\s-]?(\d{3})[\s-]?(\d{4})$/
@@ -38,6 +40,8 @@ const formSchema = z.object({
 export function UserRegistrationForm() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
+  const firestore = useFirestore();
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -48,39 +52,39 @@ export function UserRegistrationForm() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsLoading(true);
-    try {
-      // NOTE: This endpoint does not actually create a user in Firebase Auth.
-      // It's a placeholder to demonstrate the flow. A secure implementation
-      // would use a server-side environment with the Firebase Admin SDK to create users.
-      const response = await fetch('/api/admin/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            fullName: values.fullName,
-            phoneNumber: values.phoneNumber,
-            role: values.role
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to create user.");
-      }
-      toast({
-        title: "User Created",
-        description: `User ${values.fullName} has been registered.`,
-      });
-      form.reset();
-    } catch (error: any) {
-       toast({
-        variant: "destructive",
-        title: "Registration Failed",
-        description: error.message || "An unexpected error occurred.",
-      });
-    } finally {
-        setIsLoading(false);
+    if (!firestore) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Firestore is not available.",
+        });
+        return;
     }
+    setIsLoading(true);
+
+    const usersCollectionRef = collection(firestore, 'users');
+    
+    const userProfile = {
+      fullName: values.fullName,
+      phoneNumber: values.phoneNumber,
+      role: values.role,
+      isActive: true,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      profileImageUrl: `https://picsum.photos/seed/${Math.random()}/400/400`,
+    };
+
+    // Use the non-blocking function which handles errors internally
+    addDocumentNonBlocking(usersCollectionRef, userProfile);
+
+    // Optimistically show success toast
+    toast({
+        title: "User Registration Submitted",
+        description: `Profile for ${values.fullName} is being created.`,
+    });
+    
+    form.reset();
+    setIsLoading(false);
   }
 
   return (

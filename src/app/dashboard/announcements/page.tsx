@@ -1,3 +1,6 @@
+
+'use client';
+
 import {
   Card,
   CardContent,
@@ -22,11 +25,70 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, PlusCircle } from 'lucide-react';
-import { announcements } from '@/lib/data';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { useCollection, useFirestore, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import { useMemoFirebase } from '@/firebase/provider';
+
+// Assuming an Announcement type
+interface Announcement {
+  id: string;
+  title: string;
+  author: string;
+  createdAt: {
+    seconds: number;
+    nanoseconds: number;
+  } | Date; // Firestore timestamp or Date object
+}
 
 export default function AnnouncementsPage() {
+  const { userProfile } = useAuth();
+  const firestore = useFirestore();
+  const { toast } = useToast();
+
+  const announcementsCollectionRef = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'announcements') : null),
+    [firestore]
+  );
+  
+  const {
+    data: announcements,
+    isLoading,
+    error,
+  } = useCollection<Announcement>(announcementsCollectionRef);
+
+  const handleCreateAnnouncement = () => {
+    if (!firestore || !userProfile) return;
+    
+    // Example announcement data
+    const newAnnouncement = {
+        title: 'New Announcement',
+        message: 'This is a test announcement.',
+        createdBy: userProfile.id,
+        createdAt: new Date(),
+        priority: 'Normal',
+    };
+    
+    addDocumentNonBlocking(collection(firestore, 'announcements'), newAnnouncement);
+    
+    toast({
+      title: 'Creating Announcement',
+      description: 'Submitting the new announcement...',
+    });
+  };
+
+  const handleDelete = (id: string) => {
+    if (!firestore) return;
+    deleteDocumentNonBlocking(doc(firestore, 'announcements', id));
+    toast({
+        title: 'Announcement Deleted',
+        description: 'The announcement has been removed.',
+    });
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center">
@@ -36,7 +98,7 @@ export default function AnnouncementsPage() {
             Create and manage announcements for all singers.
           </p>
         </div>
-        <Button>
+        <Button onClick={handleCreateAnnouncement}>
           <PlusCircle className="mr-2 h-4 w-4" /> Create Announcement
         </Button>
       </div>
@@ -62,15 +124,17 @@ export default function AnnouncementsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {announcements.map((ann) => (
+              {isLoading && <TableRow><TableCell colSpan={5}>Loading...</TableCell></TableRow>}
+              {error && <TableRow><TableCell colSpan={5} className="text-destructive">{error.message}</TableCell></TableRow>}
+              {announcements?.map((ann) => (
                 <TableRow key={ann.id}>
                   <TableCell className="font-medium">{ann.title}</TableCell>
                   <TableCell>
                     <Badge variant="outline">Published</Badge>
                   </TableCell>
-                  <TableCell>{ann.author}</TableCell>
+                  <TableCell>{ann.author || 'N/A'}</TableCell>
                   <TableCell>
-                    {format(new Date(ann.createdAt), 'MMMM d, yyyy')}
+                    {format(new Date(ann.createdAt.seconds ? ann.createdAt.seconds * 1000 : ann.createdAt), 'MMMM d, yyyy')}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -87,7 +151,7 @@ export default function AnnouncementsPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem>Delete</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDelete(ann.id)}>Delete</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
