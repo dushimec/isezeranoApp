@@ -25,7 +25,6 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
-  DialogClose,
 } from '@/components/ui/dialog';
 import {
     AlertDialog,
@@ -56,6 +55,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from '@/lib/utils';
+import { useForm, FormProvider } from 'react-hook-form';
 
 
 type TEvent = (Rehearsal | Service) & { type: 'rehearsal' | 'service' };
@@ -63,69 +63,76 @@ type TEvent = (Rehearsal | Service) & { type: 'rehearsal' | 'service' };
 interface EventFormProps {
     type: 'rehearsal' | 'service';
     event?: TEvent;
-    onSave: (e: React.FormEvent<HTMLFormElement>, type: 'rehearsal' | 'service', date?: Date) => void;
-    onClose: () => void;
 }
 
-const EventForm = ({ type, event, onSave, onClose }: EventFormProps) => {
+const EventForm = ({ type, event }: EventFormProps) => {
+    const methods = useForm({
+        defaultValues: {
+            title: event?.title || '',
+            time: event?.time || '',
+            location: type === 'rehearsal' ? (event as Rehearsal)?.location : '',
+            churchLocation: type === 'service' ? (event as Service)?.churchLocation : '',
+            attire: (event as Service)?.attire || '',
+            notes: event?.notes || '',
+        }
+    });
     const [date, setDate] = useState<Date | undefined>(event ? new Date(event.date) : new Date());
 
     return (
-        <form onSubmit={(e) => onSave(e, type, date)} className="space-y-4">
-            <div>
-                <Label htmlFor="title">Title</Label>
-                <Input id="title" name="title" required defaultValue={event?.title} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+        <FormProvider {...methods}>
+            <form id={`event-form-${type}`} onSubmit={(e) => e.preventDefault()} className="space-y-4">
+                <input type="hidden" {...methods.register('date')} value={date?.toISOString()} />
                 <div>
-                <Label>Date</Label>
-                 <Popover>
-                    <PopoverTrigger asChild>
-                    <Button
-                        variant={"outline"}
-                        className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !date && "text-muted-foreground"
-                        )}
-                    >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {date ? format(date, "PPP") : <span>Pick a date</span>}
-                    </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                    <Calendar
-                        mode="single"
-                        selected={date}
-                        onSelect={setDate}
-                        initialFocus
-                    />
-                    </PopoverContent>
-                </Popover>
+                    <Label htmlFor="title">Title</Label>
+                    <Input id="title" {...methods.register('title')} required />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                    <Label>Date</Label>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                        <Button
+                            variant={"outline"}
+                            className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !date && "text-muted-foreground"
+                            )}
+                        >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {date ? format(date, "PPP") : <span>Pick a date</span>}
+                        </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                        <Calendar
+                            mode="single"
+                            selected={date}
+                            onSelect={setDate}
+                            initialFocus
+                        />
+                        </PopoverContent>
+                    </Popover>
+                    </div>
+                    <div>
+                    <Label htmlFor="time">Time</Label>
+                    <Input id="time" type="time" {...methods.register('time')} required />
+                    </div>
                 </div>
                 <div>
-                <Label htmlFor="time">Time</Label>
-                <Input id="time" name="time" type="time" required defaultValue={event?.time} />
+                    <Label htmlFor="location">{type === 'rehearsal' ? 'Location' : 'Church Location'}</Label>
+                    <Input id="location" {...methods.register(type === 'rehearsal' ? 'location' : 'churchLocation')} required />
                 </div>
-            </div>
-            <div>
-                <Label htmlFor="location">{type === 'rehearsal' ? 'Location' : 'Church Location'}</Label>
-                <Input id="location" name={type === 'rehearsal' ? 'location' : 'churchLocation'} required defaultValue={type === 'rehearsal' ? (event as Rehearsal)?.location : (event as Service)?.churchLocation} />
-            </div>
-            {type === 'service' && (
+                {type === 'service' && (
+                    <div>
+                    <Label htmlFor="attire">Attire</Label>
+                    <Input id="attire" {...methods.register('attire')} />
+                    </div>
+                )}
                 <div>
-                <Label htmlFor="attire">Attire</Label>
-                <Input id="attire" name="attire" defaultValue={(event as Service)?.attire} />
+                    <Label htmlFor="notes">Notes</Label>
+                    <Textarea id="notes" {...methods.register('notes')} />
                 </div>
-            )}
-            <div>
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea id="notes" name="notes" defaultValue={event?.notes} />
-            </div>
-            <DialogFooter>
-                <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-                <Button type="submit">Save Event</Button>
-            </DialogFooter>
-        </form>
+            </form>
+        </FormProvider>
     );
   }
 
@@ -142,6 +149,7 @@ export default function SchedulePage() {
   
   const [selectedEvent, setSelectedEvent] = useState<TEvent | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [activeTab, setActiveTab] = useState<'rehearsal' | 'service'>('rehearsal');
 
   const fetchEvents = useCallback(async () => {
     if (!token) return;
@@ -171,19 +179,13 @@ export default function SchedulePage() {
     fetchEvents();
   }, [fetchEvents]);
   
-  const handleEventSubmit = async (e: React.FormEvent<HTMLFormElement>, type: 'rehearsal' | 'service', date?: Date) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    let data = Object.fromEntries(formData.entries());
-    
-    if (date) {
-        data = {...data, date: date.toISOString()};
-    }
-
+  const handleEventSubmit = async (formData: any) => {
     const isEditing = !!selectedEvent;
+    const endpointType = isEditing ? selectedEvent.type : activeTab;
+
     const endpoint = isEditing 
-        ? `/api/secretary/${type}s/${selectedEvent.id}`
-        : `/api/secretary/${type}s`;
+        ? `/api/secretary/${endpointType}s/${selectedEvent.id}`
+        : `/api/secretary/${endpointType}s`;
     
     const method = isEditing ? 'PATCH' : 'POST';
 
@@ -191,10 +193,10 @@ export default function SchedulePage() {
       const response = await fetch(endpoint, {
         method,
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(data),
+        body: JSON.stringify(formData),
       });
 
-      if (!response.ok) throw new Error(`Failed to ${isEditing ? 'update' : 'create'} ${type}`);
+      if (!response.ok) throw new Error(`Failed to ${isEditing ? 'update' : 'create'} ${endpointType}`);
 
       toast({ title: 'Success', description: `Event ${isEditing ? 'updated' : 'created'} successfully.` });
       fetchEvents();
@@ -243,27 +245,36 @@ export default function SchedulePage() {
                   <PlusCircle className="mr-2 h-4 w-4" /> Create Event
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-h-[90vh]">
-              <DialogHeader>
-                <DialogTitle>Create New Event</DialogTitle>
-                <DialogDescription>Select the event type and fill in the details.</DialogDescription>
-              </DialogHeader>
-                <Tabs defaultValue="rehearsal" className="w-full">
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Create New Event</DialogTitle>
+                    <DialogDescription>Select the event type and fill in the details.</DialogDescription>
+                </DialogHeader>
+                <Tabs defaultValue="rehearsal" className="w-full" onValueChange={(value) => setActiveTab(value as 'rehearsal' | 'service')}>
                     <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="rehearsal">Rehearsal</TabsTrigger>
-                    <TabsTrigger value="service">Service</TabsTrigger>
+                        <TabsTrigger value="rehearsal">Rehearsal</TabsTrigger>
+                        <TabsTrigger value="service">Service</TabsTrigger>
                     </TabsList>
                     <TabsContent value="rehearsal">
-                      <ScrollArea className="max-h-[60vh] pr-4">
-                        <EventForm type="rehearsal" onSave={handleEventSubmit} onClose={() => setIsCreateOpen(false)} />
-                      </ScrollArea>
+                        <ScrollArea className="h-[60vh] pr-4">
+                           <EventForm type="rehearsal" />
+                        </ScrollArea>
                     </TabsContent>
                     <TabsContent value="service">
-                       <ScrollArea className="max-h-[60vh] pr-4">
-                        <EventForm type="service" onSave={handleEventSubmit} onClose={() => setIsCreateOpen(false)} />
-                      </ScrollArea>
+                       <ScrollArea className="h-[60vh] pr-4">
+                           <EventForm type="service" />
+                       </ScrollArea>
                     </TabsContent>
                 </Tabs>
+                <DialogFooter>
+                    <Button type="button" variant="ghost" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
+                    <Button type="submit" form={`event-form-${activeTab}`} onClick={() => {
+                        const form = document.getElementById(`event-form-${activeTab}`) as HTMLFormElement;
+                        const formData = new FormData(form);
+                        const data = Object.fromEntries(formData.entries());
+                        handleEventSubmit(data);
+                    }}>Save Event</Button>
+                </DialogFooter>
             </DialogContent>
           </Dialog>
           )}
@@ -352,21 +363,28 @@ export default function SchedulePage() {
 
        {/* Edit Dialog */}
        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-            <DialogContent className="max-h-[90vh]">
+            <DialogContent>
               <DialogHeader>
                 <DialogTitle>Edit {selectedEvent?.type}</DialogTitle>
                 <DialogDescription>Update the details for this event.</DialogDescription>
               </DialogHeader>
-                <ScrollArea className="max-h-[60vh] pr-4">
+                <ScrollArea className="h-[60vh] pr-4">
                     {selectedEvent && (
                         <EventForm
                             type={selectedEvent.type}
                             event={selectedEvent}
-                            onSave={handleEventSubmit}
-                            onClose={() => { setIsEditOpen(false); setSelectedEvent(null); }}
                         />
                     )}
                 </ScrollArea>
+                <DialogFooter>
+                    <Button type="button" variant="ghost" onClick={() => { setIsEditOpen(false); setSelectedEvent(null); }}>Cancel</Button>
+                    <Button type="submit" form={`event-form-${selectedEvent?.type}`} onClick={() => {
+                        const form = document.getElementById(`event-form-${selectedEvent?.type}`) as HTMLFormElement;
+                        const formData = new FormData(form);
+                        const data = Object.fromEntries(formData.entries());
+                        handleEventSubmit(data);
+                    }}>Save Changes</Button>
+                </DialogFooter>
             </DialogContent>
        </Dialog>
 
@@ -390,3 +408,6 @@ export default function SchedulePage() {
     </div>
   );
 }
+
+
+    
