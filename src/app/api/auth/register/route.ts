@@ -17,12 +17,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // 1. Verify the ID token to ensure the user is authenticated with Firebase Auth
     await getAuth().verifyIdToken(idToken);
 
     const db = firestore();
     
-    // 2. If registering an Admin, check if one already exists
     if (role === USER_ROLES.ADMIN) {
       const adminQuery = await db.collection('users').where('role', '==', USER_ROLES.ADMIN).limit(1).get();
       if (!adminQuery.empty) {
@@ -30,7 +28,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3. Create user profile in Firestore
     const userRef = db.collection('users').doc(uid);
     const now = new Date();
     const userProfile = {
@@ -46,7 +43,6 @@ export async function POST(req: NextRequest) {
 
     await userRef.set(userProfile);
     
-    // 4. Create and return a JWT for session management
     const token = await new SignJWT({ userId: uid, role: userProfile.role, phone: userProfile.phoneNumber })
       .setProtectedHeader({ alg: 'HS256' })
       .setExpirationTime('24h')
@@ -56,9 +52,20 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('Error during user registration:', error);
+
+    // Check for Firestore permission error specifically
+    if (error.code === 'permission-denied') {
+        return NextResponse.json({ 
+            error: 'Firestore permission denied. Ensure your security rules allow this operation.',
+            details: error.message
+        }, { status: 403 });
+    }
+
     if (error.code === 'auth/id-token-expired' || error.code === 'auth/argument-error') {
       return NextResponse.json({ error: 'Invalid or expired authentication token.' }, { status: 401 });
     }
+    
     return NextResponse.json({ error: 'An internal error occurred.' }, { status: 500 });
   }
 }
+
