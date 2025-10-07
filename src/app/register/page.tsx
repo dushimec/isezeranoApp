@@ -6,12 +6,8 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import {
-  getAuth,
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
-} from "firebase/auth";
-import { collection, getDocs, query, where, limit } from "firebase/firestore";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { collection, getDocs, query, where, limit, setDoc, doc, serverTimestamp } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -35,21 +31,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useFirebase, useFirestore } from "@/firebase";
 import { USER_ROLES } from "@/lib/user-roles";
 
-const phoneRegex = new RegExp(
-  /^([+]?[\s0-9]+)?(\d{3}|[(]\d{3}[)])?[\s-]?(\d{3})[\s-]?(\d{4})$/
-);
-
 const FormSchema = z.object({
   fullName: z.string().min(3, "Full name is required"),
-  phone: z.string().regex(phoneRegex, "Invalid phone number"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
-
-declare global {
-  interface Window {
-    recaptchaVerifier: RecaptchaVerifier;
-    confirmationResult: any;
-  }
-}
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -83,66 +69,53 @@ export default function RegisterPage() {
     resolver: zodResolver(FormSchema),
     defaultValues: {
       fullName: "",
-      phone: "",
+      email: "",
+      password: "",
     },
   });
 
-  const setupRecaptcha = () => {
-    if (!auth) return;
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(
-        auth,
-        "recaptcha-container",
-        {
-          size: "invisible",
-        }
-      );
-    }
-  };
-
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     setIsLoading(true);
-    setupRecaptcha();
-    if (!auth) {
-       toast({ variant: "destructive", title: "Authentication Error", description: "Firebase Auth is not initialized." });
+    if (!auth || !firestore) {
+       toast({ variant: "destructive", title: "Firebase Error", description: "Firebase is not initialized." });
        setIsLoading(false);
        return;
     }
 
     try {
-      // 1. Send OTP
-      const appVerifier = window.recaptchaVerifier;
-      const confirmationResult = await signInWithPhoneNumber(auth, data.phone, appVerifier);
-      window.confirmationResult = confirmationResult;
+      // 1. Create user in Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+      const user = userCredential.user;
 
-      // 2. Store registration details temporarily to be picked up on OTP page
-      localStorage.setItem('registrationDetails', JSON.stringify({
+      // 2. Create user profile in Firestore
+      const userProfile = {
+        id: user.uid,
         fullName: data.fullName,
-        phoneNumber: data.phone,
+        email: data.email,
         role: USER_ROLES.ADMIN,
-      }));
+        isActive: true,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        profileImageUrl: `https://picsum.photos/seed/${user.uid}/400/400`,
+      };
+      
+      await setDoc(doc(firestore, "users", user.uid), userProfile);
 
       toast({
-        title: "OTP Sent",
-        description: "An OTP has been sent to your phone number for verification.",
+        title: "Admin Account Created",
+        description: "You have been successfully registered. Please log in.",
       });
 
-      // 3. Redirect to OTP page
-      router.push(`/otp?phone=${encodeURIComponent(data.phone)}&register=true`);
+      // 3. Redirect to login page
+      router.push(`/login`);
 
     } catch (error: any) {
       console.error("Error during admin registration:", error);
       toast({
         variant: "destructive",
         title: "Registration Failed",
-        description: error.message || "Could not send OTP. Please try again.",
+        description: error.message || "Could not create admin account.",
       });
-      if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.render().then((widgetId) => {
-            // @ts-ignore
-            grecaptcha.reset(widgetId);
-        });
-      }
     } finally {
       setIsLoading(false);
     }
@@ -178,23 +151,35 @@ export default function RegisterPage() {
               />
               <FormField
                 control={form.control}
-                name="phone"
+                name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="+1 234 567 8900" {...field} />
+                      <Input placeholder="admin@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="••••••••" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Registering..." : "Register and Send OTP"}
+                {isLoading ? "Registering..." : "Register"}
               </Button>
             </form>
           </Form>
-          <div id="recaptcha-container" className="mt-4"></div>
         </CardContent>
       </Card>
     </div>

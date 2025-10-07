@@ -24,16 +24,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { USER_ROLES } from "@/lib/user-roles";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore, addDocumentNonBlocking } from "@/firebase";
-import { collection, serverTimestamp } from "firebase/firestore";
+import { useFirestore } from "@/firebase";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 
-const phoneRegex = new RegExp(
-  /^([+]?[\s0-9]+)?(\d{3}|[(]\d{3}[)])?[\s-]?(\d{3})[\s-]?(\d{4})$/
-);
 
 const formSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
-  phoneNumber: z.string().regex(phoneRegex, "Invalid phone number"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
   role: z.nativeEnum(USER_ROLES),
 });
 
@@ -46,50 +44,38 @@ export function UserRegistrationForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       fullName: "",
-      phoneNumber: "",
+      email: "",
+      password: "",
       role: USER_ROLES.SINGER,
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!firestore) {
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Firestore is not available.",
-        });
-        return;
-    }
     setIsLoading(true);
 
-    const usersCollectionRef = collection(firestore, 'users');
-    
-    const userProfile = {
-      fullName: values.fullName,
-      phoneNumber: values.phoneNumber,
-      role: values.role,
-      isActive: true,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      profileImageUrl: `https://picsum.photos/seed/${Math.random()}/400/400`,
-    };
-
     try {
-        addDocumentNonBlocking(usersCollectionRef, userProfile);
+        const response = await fetch('/api/admin/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(values),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.details || errorData.error || 'Failed to create user.');
+        }
 
         toast({
-            title: "User Registration Submitted",
-            description: `Profile for ${values.fullName} is being created.`,
+            title: "User Created",
+            description: `An account for ${values.fullName} has been created.`,
         });
         
         form.reset();
-    } catch (error) {
-        // This catch block is primarily for unexpected client-side errors,
-        // as the non-blocking function handles the Firestore-specific errors.
+    } catch (error: any) {
         toast({
             variant: "destructive",
-            title: "Client Error",
-            description: "An unexpected error occurred while submitting the form.",
+            title: "Registration Failed",
+            description: error.message,
         });
     } finally {
         setIsLoading(false);
@@ -114,12 +100,25 @@ export function UserRegistrationForm() {
             />
         <FormField
           control={form.control}
-          name="phoneNumber"
+          name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Phone Number</FormLabel>
+              <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder="+1234567890" {...field} />
+                <Input placeholder="user@example.com" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+         <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Temporary Password</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="••••••••" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

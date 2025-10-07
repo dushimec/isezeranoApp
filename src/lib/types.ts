@@ -2,7 +2,8 @@
 export interface User {
   id: string;
   fullName: string;
-  phoneNumber: string;
+  email: string;
+  phoneNumber?: string; // Optional for users that might still have it
   role: 'Singer' | 'Secretary' | 'Disciplinarian' | 'Admin' | 'Section Leader';
   isActive: boolean;
   createdAt: {

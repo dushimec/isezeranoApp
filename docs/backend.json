@@ -15,9 +15,10 @@
           "type": "string",
           "description": "The full name of the user."
         },
-        "phoneNumber": {
+        "email": {
           "type": "string",
-          "description": "User's phone number, used for OTP authentication."
+          "format": "email",
+          "description": "User's email address, used for authentication."
         },
         "role": {
           "type": "string",
@@ -48,7 +49,7 @@
       "required": [
         "id",
         "fullName",
-        "phoneNumber",
+        "email",
         "role",
         "isActive",
         "createdAt",
@@ -301,7 +302,7 @@
   },
   "auth": {
     "providers": [
-      "phone"
+      "email"
     ]
   },
   "firestore": {

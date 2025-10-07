@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -5,11 +6,7 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import {
-  getAuth,
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
-} from "firebase/auth";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { collection, getDocs, query, where, limit } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
@@ -33,21 +30,12 @@ import { IsezeranoLogo } from "@/components/icons";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebase, useFirestore } from "@/firebase";
 import { USER_ROLES } from "@/lib/user-roles";
-
-const phoneRegex = new RegExp(
-  /^([+]?[\s0-9]+)?(\d{3}|[(]\d{3}[)])?[\s-]?(\d{3})[\s-]?(\d{4})$/
-);
+import Link from "next/link";
 
 const FormSchema = z.object({
-  phone: z.string().regex(phoneRegex, "Invalid phone number"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
 });
-
-declare global {
-  interface Window {
-    recaptchaVerifier: RecaptchaVerifier;
-    confirmationResult: any;
-  }
-}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -84,29 +72,13 @@ export default function LoginPage() {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      phone: "",
+      email: "",
+      password: "",
     },
   });
 
-  const setupRecaptcha = () => {
-    if (!auth) return;
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(
-        auth,
-        "recaptcha-container",
-        {
-          size: "invisible",
-          callback: (response: any) => {
-            // reCAPTCHA solved, allow signInWithPhoneNumber.
-          },
-        }
-      );
-    }
-  };
-
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     setIsLoading(true);
-    setupRecaptcha();
     if (!auth) {
       toast({
         variant: "destructive",
@@ -118,31 +90,19 @@ export default function LoginPage() {
     }
     
     try {
-      const appVerifier = window.recaptchaVerifier;
-      const confirmationResult = await signInWithPhoneNumber(
-        auth,
-        data.phone,
-        appVerifier
-      );
-      window.confirmationResult = confirmationResult;
+      await signInWithEmailAndPassword(auth, data.email, data.password);
       toast({
-        title: "OTP Sent",
-        description: "An OTP has been sent to your phone number.",
+        title: "Login Successful",
+        description: "Welcome back!",
       });
-      router.push(`/otp?phone=${encodeURIComponent(data.phone)}`);
+      router.push('/dashboard');
     } catch (error: any) {
-      console.error("Error sending OTP:", error);
+      console.error("Error signing in:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to send OTP. Please try again.",
+        title: "Login Failed",
+        description: error.message || "Invalid email or password.",
       });
-      if (window.recaptchaVerifier) {
-         window.recaptchaVerifier.render().then((widgetId) => {
-            // @ts-ignore
-            grecaptcha.reset(widgetId);
-         });
-      }
     } finally {
       setIsLoading(false);
     }
@@ -165,7 +125,7 @@ export default function LoginPage() {
           </div>
           <CardTitle className="text-3xl font-headline">Welcome Back</CardTitle>
           <CardDescription>
-            Enter your phone number to sign in to Isezerano CMS
+            Enter your email and password to sign in
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -173,23 +133,35 @@ export default function LoginPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
-                name="phone"
+                name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="+1 234 567 8900" {...field} />
+                      <Input placeholder="admin@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="••••••••" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Sending OTP..." : "Send OTP"}
+                {isLoading ? "Signing in..." : "Sign In"}
               </Button>
             </form>
           </Form>
-          <div id="recaptcha-container" className="mt-4"></div>
         </CardContent>
       </Card>
     </div>

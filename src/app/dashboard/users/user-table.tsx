@@ -66,7 +66,7 @@ export function UserTable({ users, currentUser, onEdit, onDelete }: UserTablePro
                     />
                     <div>
                         <p className="font-medium">{user.fullName}</p>
-                        <p className="text-sm text-muted-foreground">{user.phoneNumber}</p>
+                        <p className="text-sm text-muted-foreground">{user.email}</p>
                     </div>
                 </div>
             </TableCell>
