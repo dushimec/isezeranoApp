@@ -26,6 +26,7 @@ const profileSchema = z.object({
   lastName: z.string().min(2, "Last name is required"),
   username: z.string().optional(),
   email: z.string().email().optional(),
+  profileImage: z.string().optional(),
 });
 
 const passwordSchema = z.object({
@@ -42,6 +43,8 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isPasswordSubmitting, setIsPasswordSubmitting] = React.useState(false);
+  const [imagePreview, setImagePreview] = React.useState<string | null>(user?.profileImage || null);
+
 
   const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -50,6 +53,7 @@ export default function ProfilePage() {
       lastName: user?.lastName || '',
       username: user?.username || '',
       email: user?.email || '',
+      profileImage: '',
     },
   });
   
@@ -61,6 +65,20 @@ export default function ProfilePage() {
       confirmPassword: '',
     },
   });
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUri = reader.result as string;
+        profileForm.setValue('profileImage', dataUri);
+        setImagePreview(dataUri);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
 
   const onProfileSubmit = async (values: z.infer<typeof profileSchema>) => {
     setIsSubmitting(true);
@@ -143,7 +161,7 @@ export default function ProfilePage() {
             <CardContent className="space-y-8">
               <div className="flex items-center gap-6">
                 <Image
-                  src={user.profileImage || `https://picsum.photos/seed/${user.id}/100/100`}
+                  src={imagePreview || user.profileImage || `https://picsum.photos/seed/${user.id}/100/100`}
                   width={100}
                   height={100}
                   alt="User avatar"
@@ -152,7 +170,7 @@ export default function ProfilePage() {
                 />
                 <div className="grid gap-2">
                   <Label htmlFor="picture">Profile Picture</Label>
-                  <Input id="picture" type="file" className="w-full max-w-sm" />
+                  <Input id="picture" type="file" className="w-full max-w-sm" onChange={handleImageChange} accept="image/*" />
                   <p className="text-sm text-muted-foreground">
                     PNG, JPG, GIF up to 10MB.
                   </p>

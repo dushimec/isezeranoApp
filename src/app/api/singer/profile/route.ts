@@ -4,6 +4,7 @@ import clientPromise from '@/lib/db';
 import { getUserIdFromToken } from '@/lib/auth';
 import { ObjectId } from 'mongodb';
 import { UserDocument } from '@/lib/types';
+import cloudinary from '@/lib/cloudinary';
 
 
 export async function GET(req: NextRequest) {
@@ -44,7 +45,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { firstName, lastName, username, email } = await req.json();
+    const { firstName, lastName, username, email, profileImage } = await req.json();
     
     const client = await clientPromise;
     const db = client.db();
@@ -54,8 +55,20 @@ export async function PATCH(req: NextRequest) {
     if(lastName) updateData.lastName = lastName;
     if(username) updateData.username = username;
     if(email) updateData.email = email;
+    
+    if (profileImage) {
+        const user = await db.collection<UserDocument>('users').findOne({ _id: new ObjectId(userId) });
+        if (user) {
+            const uploadResult = await cloudinary.uploader.upload(profileImage, {
+                folder: 'isezerano_cms_avatars',
+                public_id: user.username || userId,
+            });
+            updateData.profileImage = uploadResult.secure_url;
+        }
+    }
 
-    const result = await db.collection<UserDocument>('users').findOneAndUpdate(
+
+    const result = await db.collection('users').findOneAndUpdate(
       { _id: new ObjectId(userId) },
       { $set: updateData },
       { returnDocument: 'after', projection: { password: 0 } }
