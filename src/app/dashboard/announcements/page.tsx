@@ -61,7 +61,7 @@ export default function AnnouncementsPage() {
     if (!token) return;
     setIsLoading(true);
     try {
-      const response = await fetch('/api/admin/announcements', {
+      const response = await fetch('/api/announcements', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to fetch announcements.');

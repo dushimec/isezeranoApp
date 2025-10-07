@@ -31,7 +31,7 @@ export default function SingerAnnouncementsPage() {
       const fetchAnnouncements = async () => {
         setLoading(true);
         try {
-          const response = await fetch('/api/admin/announcements', {
+          const response = await fetch('/api/announcements', {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (!response.ok) {
