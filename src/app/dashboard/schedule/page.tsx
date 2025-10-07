@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, MapPin, Watch, Shirt, MoreVertical } from 'lucide-react';
+import { PlusCircle, MapPin, Watch, Shirt, MoreVertical, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Separator } from '@/components/ui/separator';
@@ -25,10 +25,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 
 
 type TEvent = (Rehearsal | Service) & { type: 'rehearsal' | 'service' };
@@ -69,14 +76,13 @@ export default function SchedulePage() {
     fetchEvents();
   }, [fetchEvents]);
   
-  const handleCreateEvent = async (e: React.FormEvent<HTMLFormElement>, type: 'rehearsal' | 'service') => {
+  const handleCreateEvent = async (e: React.FormEvent<HTMLFormElement>, type: 'rehearsal' | 'service', date?: Date) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     let data = Object.fromEntries(formData.entries());
     
-    // Ensure the selected date is included if the form doesn't have it
-    if (!data.date && selectedDate) {
-        data = {...data, date: selectedDate.toISOString()};
+    if (date) {
+        data = {...data, date: date.toISOString()};
     }
     
     const endpoint = type === 'rehearsal' ? '/api/secretary/rehearsals' : '/api/secretary/services';
@@ -98,42 +104,67 @@ export default function SchedulePage() {
     }
   };
   
-  const EventForm = ({ type }: { type: 'rehearsal' | 'service' }) => (
-    <form onSubmit={(e) => handleCreateEvent(e, type)} className="space-y-4">
-      <Input name="date" type="hidden" value={selectedDate?.toISOString()} />
-      <div>
-        <Label htmlFor="title">Title</Label>
-        <Input id="title" name="title" required />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
+  const EventForm = ({ type }: { type: 'rehearsal' | 'service' }) => {
+    const [date, setDate] = useState<Date | undefined>(selectedDate);
+
+    return (
+        <form onSubmit={(e) => handleCreateEvent(e, type, date)} className="space-y-4">
         <div>
-          <Label htmlFor="date-display">Date</Label>
-          <Input id="date-display" value={selectedDate ? format(selectedDate, 'PPP') : ''} disabled />
+            <Label htmlFor="title">Title</Label>
+            <Input id="title" name="title" required />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+            <div>
+            <Label>Date</Label>
+             <Popover>
+                <PopoverTrigger asChild>
+                <Button
+                    variant={"outline"}
+                    className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !date && "text-muted-foreground"
+                    )}
+                >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, "PPP") : <span>Pick a date</span>}
+                </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    initialFocus
+                />
+                </PopoverContent>
+            </Popover>
+            </div>
+            <div>
+            <Label htmlFor="time">Time</Label>
+            <Input id="time" name="time" type="time" required />
+            </div>
         </div>
         <div>
-          <Label htmlFor="time">Time</Label>
-          <Input id="time" name="time" type="time" required />
+            <Label htmlFor="location">{type === 'rehearsal' ? 'Location' : 'Church Location'}</Label>
+            <Input id="location" name={type === 'rehearsal' ? 'location' : 'churchLocation'} required />
         </div>
-      </div>
-      <div>
-        <Label htmlFor="location">{type === 'rehearsal' ? 'Location' : 'Church Location'}</Label>
-        <Input id="location" name={type === 'rehearsal' ? 'location' : 'churchLocation'} required />
-      </div>
-      {type === 'service' && (
+        {type === 'service' && (
+            <div>
+            <Label htmlFor="attire">Attire</Label>
+            <Input id="attire" name="attire" />
+            </div>
+        )}
         <div>
-          <Label htmlFor="attire">Attire</Label>
-          <Input id="attire" name="attire" />
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea id="notes" name="notes" />
         </div>
-      )}
-      <div>
-        <Label htmlFor="notes">Notes</Label>
-        <Textarea id="notes" name="notes" />
-      </div>
-      <div className="flex justify-end">
-        <Button type="submit">Create Event</Button>
-      </div>
-    </form>
-  );
+        <div className="flex justify-end">
+            <Button type="submit">Create Event</Button>
+        </div>
+        </form>
+    );
+  }
+
 
   return (
     <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
@@ -152,23 +183,25 @@ export default function SchedulePage() {
                   <PlusCircle className="mr-2 h-4 w-4" /> Create Event
                 </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-h-[90vh]">
               <DialogHeader>
                 <DialogTitle>Create New Event</DialogTitle>
                 <DialogDescription>Select the event type and fill in the details.</DialogDescription>
               </DialogHeader>
-              <Tabs defaultValue="rehearsal" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="rehearsal">Rehearsal</TabsTrigger>
-                  <TabsTrigger value="service">Service</TabsTrigger>
-                </TabsList>
-                <TabsContent value="rehearsal">
-                  <EventForm type="rehearsal" />
-                </TabsContent>
-                <TabsContent value="service">
-                  <EventForm type="service" />
-                </TabsContent>
-              </Tabs>
+              <ScrollArea className="pr-4">
+                <Tabs defaultValue="rehearsal" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="rehearsal">Rehearsal</TabsTrigger>
+                    <TabsTrigger value="service">Service</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="rehearsal">
+                      <EventForm type="rehearsal" />
+                    </TabsContent>
+                    <TabsContent value="service">
+                      <EventForm type="service" />
+                    </TabsContent>
+                </Tabs>
+              </ScrollArea>
             </DialogContent>
           </Dialog>
           )}
@@ -217,7 +250,6 @@ export default function SchedulePage() {
               selected={selectedDate}
               onSelect={setSelectedDate}
               className="rounded-md"
-              disabled={user?.role !== 'SECRETARY'}
             />
           </CardContent>
         </Card>
@@ -244,3 +276,5 @@ export default function SchedulePage() {
     </div>
   );
 }
+
+    
