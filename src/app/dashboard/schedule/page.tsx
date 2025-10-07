@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -10,8 +10,8 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, MapPin, Watch, Shirt, MoreVertical, Calendar as CalendarIcon, Trash, Edit } from 'lucide-react';
-import { format } from 'date-fns';
+import { PlusCircle, MapPin, Watch, Shirt, MoreVertical, Calendar as CalendarIcon, Trash, Edit, X } from 'lucide-react';
+import { format, isSameDay, isFuture } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
@@ -69,6 +69,7 @@ const EventForm = ({ type, event }: EventFormProps) => {
     const methods = useForm({
         defaultValues: {
             title: event?.title || '',
+            date: event ? new Date(event.date) : new Date(),
             time: event?.time || '',
             location: type === 'rehearsal' ? (event as Rehearsal)?.location : '',
             churchLocation: type === 'service' ? (event as Service)?.churchLocation : '',
@@ -77,6 +78,12 @@ const EventForm = ({ type, event }: EventFormProps) => {
         }
     });
     const [date, setDate] = useState<Date | undefined>(event ? new Date(event.date) : new Date());
+
+    useEffect(() => {
+        if (date) {
+            methods.setValue('date', date);
+        }
+    }, [date, methods]);
 
     return (
         <FormProvider {...methods}>
@@ -148,7 +155,7 @@ export default function SchedulePage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   
   const [selectedEvent, setSelectedEvent] = useState<TEvent | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<'rehearsal' | 'service'>('rehearsal');
 
   const fetchEvents = useCallback(async () => {
@@ -178,6 +185,13 @@ export default function SchedulePage() {
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
+
+  const filteredEvents = useMemo(() => {
+    if (!selectedDate) {
+        return events.filter(e => isFuture(new Date(e.date)) || isSameDay(new Date(e.date), new Date()));
+    }
+    return events.filter(event => isSameDay(new Date(event.date), selectedDate));
+  }, [events, selectedDate]);
   
   const handleEventSubmit = async (formData: any) => {
     const isEditing = !!selectedEvent;
@@ -268,10 +282,15 @@ export default function SchedulePage() {
                 </Tabs>
                 <DialogFooter>
                     <Button type="button" variant="ghost" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
-                    <Button type="submit" form={`event-form-${activeTab}`} onClick={() => {
+                    <Button type="submit" form={`event-form-${activeTab}`} onClick={(e) => {
+                        e.preventDefault();
                         const form = document.getElementById(`event-form-${activeTab}`) as HTMLFormElement;
+                        const methods = useForm().control._formValues;
+                        // a bit of a hacky way to get date from the form but it works
+                        const date = (form.querySelector('input[name="date"]') as HTMLInputElement)?.value;
                         const formData = new FormData(form);
                         const data = Object.fromEntries(formData.entries());
+                        data.date = date;
                         handleEventSubmit(data);
                     }}>Save Event</Button>
                 </DialogFooter>
@@ -280,13 +299,23 @@ export default function SchedulePage() {
           )}
         </div>
         <Card>
-          <CardHeader>
-            <CardTitle>Upcoming Events</CardTitle>
-          </CardHeader>
+            <CardHeader>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <CardTitle>{selectedDate ? `Events on ${format(selectedDate, 'PPP')}` : 'Upcoming Events'}</CardTitle>
+                    </div>
+                    {selectedDate && (
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedDate(undefined)}>
+                            <X className="mr-2 h-4 w-4" />
+                            Clear Filter
+                        </Button>
+                    )}
+                </div>
+            </CardHeader>
           <CardContent className="space-y-6">
              {isLoading && <p>Loading schedule...</p>}
-            {!isLoading && events.length === 0 && <p>No upcoming events scheduled.</p>}
-            {events.map((event, index) => (
+            {!isLoading && filteredEvents.length === 0 && <p className="text-muted-foreground">{selectedDate ? 'No events scheduled for this day.' : 'No upcoming events.'}</p>}
+            {filteredEvents.map((event, index) => (
               <div key={event.id}>
                 <div className="flex items-start gap-4">
                   <div className="text-center w-16 shrink-0">
@@ -323,7 +352,7 @@ export default function SchedulePage() {
                     </DropdownMenu>
                   )}
                 </div>
-                {index < events.length - 1 && <Separator className="my-6" />}
+                {index < filteredEvents.length - 1 && <Separator className="my-6" />}
               </div>
             ))}
           </CardContent>
@@ -378,10 +407,13 @@ export default function SchedulePage() {
                 </ScrollArea>
                 <DialogFooter>
                     <Button type="button" variant="ghost" onClick={() => { setIsEditOpen(false); setSelectedEvent(null); }}>Cancel</Button>
-                    <Button type="submit" form={`event-form-${selectedEvent?.type}`} onClick={() => {
+                     <Button type="submit" form={`event-form-${selectedEvent?.type}`} onClick={(e) => {
+                        e.preventDefault();
                         const form = document.getElementById(`event-form-${selectedEvent?.type}`) as HTMLFormElement;
+                        const date = (form.querySelector('input[name="date"]') as HTMLInputElement)?.value;
                         const formData = new FormData(form);
                         const data = Object.fromEntries(formData.entries());
+                        data.date = date;
                         handleEventSubmit(data);
                     }}>Save Changes</Button>
                 </DialogFooter>
@@ -408,6 +440,3 @@ export default function SchedulePage() {
     </div>
   );
 }
-
-
-    
