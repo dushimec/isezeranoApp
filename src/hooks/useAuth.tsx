@@ -38,15 +38,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (data.user) {
           setToken(storedToken);
           setUser(data.user);
-          localStorage.setItem('user', JSON.stringify(data.user));
+          // Also set a cookie for middleware to read
+          document.cookie = `user=${JSON.stringify(data.user)}; path=/;`;
         } else {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
+          document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
         }
       })
       .catch(() => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+         document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
       })
       .finally(() => {
         setLoading(false);
@@ -59,6 +62,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = useCallback((token: string, userData: User) => {
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userData));
+    // Also set a cookie for middleware to read
+    document.cookie = `user=${JSON.stringify(userData)}; path=/;`;
     setToken(token);
     setUser(userData);
   }, []);
@@ -66,6 +71,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    // Clear the cookie
+    document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
     setToken(null);
     setUser(null);
     router.push('/login');
@@ -91,6 +98,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const updatedUser: User = await response.json();
     setUser(updatedUser);
     localStorage.setItem('user', JSON.stringify(updatedUser));
+    // Also update the cookie for middleware
+    document.cookie = `user=${JSON.stringify(updatedUser)}; path=/;`;
 
   }, [user, token]);
 

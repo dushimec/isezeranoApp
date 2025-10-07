@@ -16,6 +16,7 @@ export type User = {
   role: Role;
   password?: string; // Will be excluded in most queries
   isActive: boolean;
+  forcePasswordChange: boolean;
   createdAt: Date;
   updatedAt: Date;
 };

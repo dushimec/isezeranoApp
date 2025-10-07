@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
         password: hashedPassword,
         role: role as Role,
         isActive: true,
+        forcePasswordChange: true,
         profileImage: finalProfileImage,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -61,6 +62,7 @@ export async function POST(req: NextRequest) {
         profileImage: finalProfileImage,
         createdAt: new Date(),
         isActive: true,
+        forcePasswordChange: true,
     }
 
     return NextResponse.json(newUser, { status: 201 });
