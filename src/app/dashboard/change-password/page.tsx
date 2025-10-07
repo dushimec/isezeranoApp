@@ -52,7 +52,7 @@ export default function ChangePasswordPage() {
   async function onSubmit(values: z.infer<typeof passwordSchema>) {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/singer/profile/change-password', {
+      const response = await fetch('/api/profile/change-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
