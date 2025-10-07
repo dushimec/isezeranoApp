@@ -26,7 +26,6 @@ const profileSchema = z.object({
   lastName: z.string().min(2, "Last name is required"),
   username: z.string().optional(),
   email: z.string().email().optional(),
-  profileImage: z.string().optional(),
 });
 
 const passwordSchema = z.object({
@@ -43,7 +42,10 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isPasswordSubmitting, setIsPasswordSubmitting] = React.useState(false);
+  const [isUploadingImage, setIsUploadingImage] = React.useState(false);
+
   const [imagePreview, setImagePreview] = React.useState<string | null>(user?.profileImage || null);
+  const [selectedImageDataUri, setSelectedImageDataUri] = React.useState<string | null>(null);
 
 
   const profileForm = useForm<z.infer<typeof profileSchema>>({
@@ -53,7 +55,6 @@ export default function ProfilePage() {
       lastName: user?.lastName || '',
       username: user?.username || '',
       email: user?.email || '',
-      profileImage: '',
     },
   });
   
@@ -72,10 +73,31 @@ export default function ProfilePage() {
       const reader = new FileReader();
       reader.onloadend = () => {
         const dataUri = reader.result as string;
-        profileForm.setValue('profileImage', dataUri);
         setImagePreview(dataUri);
+        setSelectedImageDataUri(dataUri);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleImageUpload = async () => {
+    if (!selectedImageDataUri) return;
+    setIsUploadingImage(true);
+    try {
+      await updateUser({ profileImage: selectedImageDataUri });
+      toast({
+        title: 'Profile Picture Updated',
+        description: 'Your new picture has been saved.',
+      });
+      setSelectedImageDataUri(null); // Reset after upload
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Upload Failed',
+        description: error.message,
+      });
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
@@ -83,7 +105,20 @@ export default function ProfilePage() {
   const onProfileSubmit = async (values: z.infer<typeof profileSchema>) => {
     setIsSubmitting(true);
     try {
-      await updateUser(values);
+      // Create a payload with only the fields that have changed
+      const changedValues: Partial<z.infer<typeof profileSchema>> = {};
+      if(values.firstName !== user?.firstName) changedValues.firstName = values.firstName;
+      if(values.lastName !== user?.lastName) changedValues.lastName = values.lastName;
+      if(values.username !== user?.username) changedValues.username = values.username;
+      if(values.email !== user?.email) changedValues.email = values.email;
+
+      if(Object.keys(changedValues).length === 0) {
+        toast({ title: 'No Changes', description: 'You haven\'t made any changes to your profile.' });
+        setIsSubmitting(false);
+        return;
+      }
+
+      await updateUser(changedValues);
       toast({
         title: 'Profile Updated',
         description: 'Your personal information has been saved.',
@@ -149,36 +184,44 @@ export default function ProfilePage() {
           Manage your personal information and settings.
         </p>
       </div>
-      <Form {...profileForm}>
-        <form onSubmit={profileForm.handleSubmit(onProfileSubmit)}>
-          <Card>
-            <CardHeader>
-              <CardTitle>Personal Information</CardTitle>
-              <CardDescription>
-                Update your photo and personal details here.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-8">
-              <div className="flex items-center gap-6">
-                <Image
-                  src={imagePreview || user.profileImage || `https://picsum.photos/seed/${user.id}/100/100`}
-                  width={100}
-                  height={100}
-                  alt="User avatar"
-                  className="rounded-full object-cover"
-                  data-ai-hint="person portrait"
-                />
-                <div className="grid gap-2">
-                  <Label htmlFor="picture">Profile Picture</Label>
-                  <Input id="picture" type="file" className="w-full max-w-sm" onChange={handleImageChange} accept="image/*" />
-                  <p className="text-sm text-muted-foreground">
-                    PNG, JPG, GIF up to 10MB.
-                  </p>
-                </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Personal Information</CardTitle>
+          <CardDescription>
+            Update your photo and personal details here.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-8">
+          <div className="flex items-center gap-6">
+            <Image
+              src={imagePreview || user.profileImage || `https://picsum.photos/seed/${user.id}/100/100`}
+              width={100}
+              height={100}
+              alt="User avatar"
+              className="rounded-full object-cover"
+              data-ai-hint="person portrait"
+            />
+            <div className="grid gap-2 items-center">
+              <Label htmlFor="picture">Profile Picture</Label>
+              <div className="flex gap-2">
+                <Input id="picture" type="file" className="w-full max-w-sm" onChange={handleImageChange} accept="image/*" />
+                {selectedImageDataUri && (
+                  <Button onClick={handleImageUpload} disabled={isUploadingImage}>
+                    {isUploadingImage ? 'Uploading...' : 'Upload Picture'}
+                  </Button>
+                )}
               </div>
-              
-              <Separator />
-
+              <p className="text-sm text-muted-foreground">
+                PNG, JPG, GIF up to 10MB.
+              </p>
+            </div>
+          </div>
+          
+          <Separator />
+          
+          <Form {...profileForm}>
+            <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2">
                  <FormField
                   control={profileForm.control}
@@ -237,17 +280,15 @@ export default function ProfilePage() {
                   <Input id="role" defaultValue={user.role} disabled />
                 </div>
               </div>
-            </CardContent>
-             <CardContent>
               <div className="flex justify-end">
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? 'Saving...' : 'Save Changes'}
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-        </form>
-      </Form>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
       
       <Form {...passwordForm}>
         <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}>
