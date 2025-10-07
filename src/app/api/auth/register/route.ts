@@ -55,10 +55,15 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'This email is already in use.'}, { status: 409 });
     }
 
-    if (error.code === 'permission-denied') {
+    // This is the new, detailed error handling for Firestore permission issues.
+    if (error.code === 'permission-denied' || (error.details && error.details.includes('permission-denied'))) {
+        // Construct a request object that mirrors the security rule context
         const securityRuleRequest = {
+            // In this server-side context, the write is unauthenticated from a client's perspective
+            // even though it uses the Admin SDK. For rule debugging, we show it as null.
+            auth: null, 
             method: 'create',
-            path: `/databases/(default)/documents/users/${email}`,
+            path: `/databases/(default)/documents/users/${email}`, // Simplified path for clarity
             resource: {
                 data: {
                     fullName,
@@ -68,10 +73,14 @@ export async function POST(req: NextRequest) {
                 }
             }
         };
+
         const errorMessage = `Missing or insufficient permissions: The following request was denied by Firestore Security Rules:\n${JSON.stringify(securityRuleRequest, null, 2)}`;
+        
         return NextResponse.json({ 
-            error: 'Firestore permission denied.',
-            details: errorMessage
+            error: 'Firestore permission denied. You cannot create this document.',
+            details: errorMessage,
+            // also returning the structured request for programmatic use if needed
+            requestContext: securityRuleRequest, 
         }, { status: 403 });
     }
     
