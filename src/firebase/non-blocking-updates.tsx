@@ -22,7 +22,7 @@ export function addDocumentNonBlocking(colRef: CollectionReference, data: any) {
     .catch(error => {
       // This is the critical part: Create and emit the detailed error.
       const permissionError = new FirestorePermissionError({
-        path: colRef.path,
+        path: col.path,
         operation: 'create',
         requestResourceData: data,
       });
