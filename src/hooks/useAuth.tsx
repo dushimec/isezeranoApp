@@ -4,7 +4,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { User } from '@prisma/client';
-import { verifyToken } from '@/lib/auth';
 
 export interface AuthContextType {
   user: User | null;
@@ -24,23 +23,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-
-    if (token && userData) {
-      const user = JSON.parse(userData);
-      
-      verifyToken(token).then(payload => {
-        if(payload){
-          setToken(token);
-          setUser(user);
+    const storedToken = localStorage.getItem('token');
+    
+    if (storedToken) {
+      fetch('/api/auth/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token: storedToken }),
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.user) {
+          setToken(storedToken);
+          setUser(data.user);
         } else {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
         }
-      }).finally(() => setLoading(false));
-    } else {
+      })
+      .catch(() => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      })
+      .finally(() => {
         setLoading(false);
+      });
+    } else {
+      setLoading(false);
     }
   }, []);
 

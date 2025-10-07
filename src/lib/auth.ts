@@ -1,8 +1,9 @@
 import { NextRequest } from 'next/server';
 import { jwtVerify, SignJWT } from 'jose';
-import { User, Role } from '@prisma/client';
+import { Role } from '@prisma/client';
 
 if (!process.env.JWT_SECRET) {
+  // This check is important for server-side code.
   throw new Error('JWT_SECRET is not defined in environment variables');
 }
 
