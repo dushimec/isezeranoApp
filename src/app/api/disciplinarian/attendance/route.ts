@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { EventType } from '@prisma/client';
@@ -33,8 +34,8 @@ export async function GET(req: NextRequest) {
             status: a.status,
             userName: `${a.user.firstName} ${a.user.lastName}`,
             eventType: a.eventType,
-            eventDate: event?.date,
-            eventTitle: event?.title,
+            eventDate: event?.date ?? a.createdAt,
+            eventTitle: event?.title ?? 'Deleted Event',
         }
     })
 
