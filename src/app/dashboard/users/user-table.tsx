@@ -12,18 +12,33 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { User } from "@/lib/types";
-import { MoreHorizontal } from "lucide-react";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { Edit, MoreHorizontal, Trash } from "lucide-react";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuPortal, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
+import { USER_ROLES } from "@/lib/user-roles";
 
 interface UserTableProps {
   users: User[];
-  onEdit: (user: User) => void;
+  currentUser?: User | null;
+  onEdit: (user: User, newRole: User['role']) => void;
   onDelete: (user: User) => void;
 }
 
-export function UserTable({ users, onEdit, onDelete }: UserTableProps) {
+export function UserTable({ users, currentUser, onEdit, onDelete }: UserTableProps) {
+  const [editingRole, setEditingRole] = React.useState<{ [userId: string]: User['role'] }>({});
+
+  const handleRoleChange = (userId: string, role: User['role']) => {
+    setEditingRole(prev => ({ ...prev, [userId]: role }));
+  };
+
+  const handleRoleSave = (user: User) => {
+    const newRole = editingRole[user.id];
+    if (newRole && newRole !== user.role) {
+      onEdit(user, newRole);
+    }
+  };
+
   return (
     <Table>
       <TableHeader>
@@ -64,18 +79,38 @@ export function UserTable({ users, onEdit, onDelete }: UserTableProps) {
             <TableCell>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button aria-haspopup="true" size="icon" variant="ghost">
+                  <Button aria-haspopup="true" size="icon" variant="ghost" disabled={user.id === currentUser?.id}>
                     <MoreHorizontal className="h-4 w-4" />
                     <span className="sr-only">Toggle menu</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => onEdit(user)}>Edit</DropdownMenuItem>
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <Edit className="mr-2 h-4 w-4" />
+                      Change Role
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                        <DropdownMenuSubContent>
+                             <DropdownMenuRadioGroup value={editingRole[user.id] || user.role} onValueChange={(value) => handleRoleChange(user.id, value as User['role'])}>
+                                {Object.values(USER_ROLES).map(role => (
+                                    <DropdownMenuRadioItem key={role} value={role}>{role}</DropdownMenuRadioItem>
+                                ))}
+                            </DropdownMenuRadioGroup>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleRoleSave(user)}>
+                                Save Changes
+                            </DropdownMenuItem>
+                        </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                  </DropdownMenuSub>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-destructive"
                     onClick={() => onDelete(user)}
                   >
+                    <Trash className="mr-2 h-4 w-4" />
                     Delete
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -87,4 +122,3 @@ export function UserTable({ users, onEdit, onDelete }: UserTableProps) {
     </Table>
   );
 }
-

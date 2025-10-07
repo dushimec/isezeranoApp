@@ -3,39 +3,42 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/auth/auth-provider';
+import { useAuth } from '@/hooks/useAuth';
 import { USER_ROLES } from '@/lib/user-roles';
 
-export default function DashboardPage() {
-  const { user, loading } = useAuth();
+export default function DashboardRedirect() {
+  const { user, userProfile, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && user) {
-      switch (user.role) {
-        case USER_ROLES.DISCIPLINARIAN:
-          router.push('/disciplinarian/dashboard');
-          break;
-        case USER_ROLES.SECTION_LEADER:
-          router.push('/section-leader/dashboard');
-          break;
-        case USER_ROLES.CHOIR_MEMBER:
-          router.push('/choir-member/dashboard');
-          break;
-        default:
-          // Redirect to a generic dashboard or login if role is unknown
-          router.push('/');
-          break;
+    if (!loading) {
+      if (user && userProfile) {
+        switch (userProfile.role) {
+          case USER_ROLES.ADMIN:
+            router.replace('/dashboard'); // Admin stays on the main dashboard
+            break;
+          case USER_ROLES.SECRETARY:
+            router.replace('/dashboard'); 
+            break;
+          case USER_ROLES.DISCIPLINARIAN:
+            router.replace('/dashboard');
+            break;
+          case USER_ROLES.SINGER:
+             router.replace('/dashboard');
+            break;
+          default:
+            router.replace('/login');
+            break;
+        }
+      } else {
+        router.replace('/login');
       }
-    } else if (!loading && !user) {
-        // redirect to login if not authenticated
-        router.push('/login');
     }
-  }, [user, loading, router]);
+  }, [user, userProfile, loading, router]);
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center">
-        <p>Loading...</p>
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="loader">Loading...</div>
     </div>
   );
 }

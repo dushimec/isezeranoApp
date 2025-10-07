@@ -1,8 +1,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { getAuth } from 'firebase-admin/auth';
+import { initFirebaseAdmin } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
+  await initFirebaseAdmin();
   const { phoneNumber } = await req.json();
 
   if (!phoneNumber) {
@@ -10,17 +12,16 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const user = await pool.query('SELECT * FROM users WHERE phoneNumber = $1', [phoneNumber]);
-
-    if (user.rows.length === 0) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    // Check if user exists in Firebase Auth
+    await getAuth().getUserByPhoneNumber(phoneNumber);
+    // If user exists, we can proceed with sending OTP on the client.
+    // This endpoint is just for validation before attempting client-side signInWithPhoneNumber
+    return NextResponse.json({ message: 'User found, proceed with OTP.' });
+  } catch (error: any) {
+    if (error.code === 'auth/user-not-found') {
+      return NextResponse.json({ error: 'User with this phone number is not registered.' }, { status: 404 });
     }
-
-    // For now, we'll just return a success message.
-    // In a real application, you would generate and send an OTP here.
-    return NextResponse.json({ message: 'OTP has been sent' });
-  } catch (error) {
-    console.error(error);
+    console.error('Error checking user:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

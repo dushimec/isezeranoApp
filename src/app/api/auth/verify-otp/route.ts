@@ -1,39 +1,41 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { getAuth } from 'firebase-admin/auth';
+import { firestore } from 'firebase-admin';
 import { SignJWT } from 'jose';
+import { initFirebaseAdmin } from '@/lib/firebase-admin';
 
-const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key');
+const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key-that-is-long');
 
 export async function POST(req: NextRequest) {
-  const { phoneNumber, otp } = await req.json();
+  await initFirebaseAdmin();
+  const { idToken } = await req.json();
 
-  if (!phoneNumber || !otp) {
-    return NextResponse.json({ error: 'Phone number and OTP are required' }, { status: 400 });
-  }
-
-  // Hardcoded OTP for testing
-  if (otp !== '123456') {
-    return NextResponse.json({ error: 'Invalid OTP' }, { status: 400 });
+  if (!idToken) {
+    return NextResponse.json({ error: 'ID token is required' }, { status: 400 });
   }
 
   try {
-    const result = await pool.query('SELECT id, role FROM users WHERE phoneNumber = $1', [phoneNumber]);
+    const decodedToken = await getAuth().verifyIdToken(idToken);
+    const uid = decodedToken.uid;
 
-    if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    const userDoc = await firestore().collection('users').doc(uid).get();
+
+    if (!userDoc.exists) {
+      return NextResponse.json({ error: 'User profile not found in Firestore' }, { status: 404 });
     }
+    
+    const user = userDoc.data();
 
-    const user = result.rows[0];
-
-    const token = await new SignJWT({ userId: user.id, role: user.role })
+    const token = await new SignJWT({ userId: uid, role: user?.role, phone: user?.phoneNumber })
       .setProtectedHeader({ alg: 'HS256' })
       .setExpirationTime('24h')
       .sign(secret);
 
-    return NextResponse.json({ token });
+    return NextResponse.json({ token, user });
+
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error verifying token or fetching user:', error);
+    return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
   }
 }

@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -5,8 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
-import { SignJWT } from "jose";
+import { getAuth } from "firebase/auth";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/card";
 import { IsezeranoLogo } from "@/components/icons";
 import { useToast } from "@/hooks/use-toast";
-import { useFirebase } from "@/firebase";
+import { USER_ROLES } from "@/lib/user-roles";
 
 const OTPSchema = z.object({
   otp: z
@@ -47,7 +47,6 @@ export default function OtpPage() {
   const phone = searchParams.get("phone");
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
-  const { firestore } = useFirebase();
 
   const form = useForm<z.infer<typeof OTPSchema>>({
     resolver: zodResolver(OTPSchema),
@@ -78,74 +77,88 @@ export default function OtpPage() {
       const result = await window.confirmationResult.confirm(data.otp);
       const user = result.user;
 
-      if (user && firestore) {
-        const userDocRef = doc(firestore, "users", user.uid);
-        const userDoc = await getDoc(userDocRef);
+      if (user) {
+        const idToken = await user.getIdToken();
+        
+        const backendResponse = await fetch('/api/auth/verify-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken }),
+        });
 
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          
-          // Generate JWT
-          // IMPORTANT: In a production environment, use a secure secret stored in an environment variable.
-          const secret = new TextEncoder().encode(
-            "super-secret-key-for-dev-only"
-          );
-          const alg = "HS256";
-          const jwt = await new SignJWT({
-            userId: user.uid,
-            role: userData.role,
-            phoneNumber: user.phoneNumber,
-          })
-            .setProtectedHeader({ alg })
-            .setIssuedAt()
-            .setExpirationTime("2h")
-            .sign(secret);
+        if (!backendResponse.ok) {
+            const errorData = await backendResponse.json();
+            throw new Error(errorData.error || 'Backend verification failed.');
+        }
 
-          localStorage.setItem("token", jwt);
-
-
-          toast({
+        const { token, user: userProfile } = await backendResponse.json();
+        
+        localStorage.setItem("token", token);
+        
+        toast({
             title: "Success!",
             description: "You have been successfully logged in.",
-          });
-          // Redirect based on role
-          switch (userData.role) {
-            case "Admin":
-              router.push("/admin/dashboard");
+        });
+
+        // Redirect based on role from our backend
+        switch (userProfile.role) {
+            case USER_ROLES.ADMIN:
+              router.push("/dashboard");
               break;
-            case "Secretary":
-              router.push("/secretary/dashboard");
+            case USER_ROLES.SECRETARY:
+              router.push("/dashboard");
               break;
-            case "Disciplinarian":
-              router.push("/disciplinarian/dashboard");
+            case USER_ROLES.DISCIPLINARIAN:
+              router.push("/dashboard");
               break;
-            case "Singer":
-              router.push("/singer/dashboard");
+            case USER_ROLES.SINGER:
+              router.push("/dashboard");
               break;
             default:
               router.push("/dashboard");
           }
-        } else {
-           toast({
-            variant: "destructive",
-            title: "Login Failed",
-            description: "User profile not found.",
-          });
-          router.push("/login");
-        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      let description = "The OTP you entered is incorrect. Please try again.";
+      if (error.message.includes('auth/')) {
+          description = error.message.split(' (auth/')[0];
+      } else if (error.message) {
+          description = error.message;
+      }
       toast({
         variant: "destructive",
-        title: "Invalid OTP",
-        description: "The OTP you entered is incorrect. Please try again.",
+        title: "Login Failed",
+        description: description,
       });
       form.reset();
     } finally {
       setIsLoading(false);
     }
   }
+  
+  const handleResend = async () => {
+    if (!phone) return;
+    try {
+        const auth = getAuth();
+        // This assumes you have the recaptcha verifier already set up from login page
+        // A more robust implementation might re-initialize it here if needed.
+        const appVerifier = window.recaptchaVerifier;
+        const confirmationResult = await auth.signInWithPhoneNumber(phone, appVerifier);
+        window.confirmationResult = confirmationResult;
+        toast({
+            title: "OTP Resent",
+            description: "A new OTP has been sent to your phone.",
+        });
+    } catch (error: any) {
+         toast({
+            variant: "destructive",
+            title: "Failed to Resend OTP",
+            description: error.message || "An unexpected error occurred.",
+        });
+    }
+  }
+
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center">
@@ -191,12 +204,7 @@ export default function OtpPage() {
               <Button
                 variant="link"
                 className="p-0 h-auto"
-                onClick={() =>
-                  toast({
-                    title: "OTP Resent",
-                    description: "A new OTP has been sent.",
-                  })
-                }
+                onClick={handleResend}
               >
                 Resend
               </Button>

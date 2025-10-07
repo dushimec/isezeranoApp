@@ -14,19 +14,23 @@ import { UserTable } from './user-table';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { USER_ROLES } from '@/lib/user-roles';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useCollection, useFirestore } from '@/firebase';
+import { collection, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { User } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
+import { useMemoFirebase } from '@/firebase/provider';
 
 export default function UsersPage() {
   const { user, userProfile, loading } = useAuth();
   const router = useRouter();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
   const usersCollectionRef = useMemoFirebase(
     () => (firestore ? collection(firestore, 'users') : null),
     [firestore]
   );
+  
   const {
     data: users,
     isLoading: usersLoading,
@@ -39,14 +43,40 @@ export default function UsersPage() {
     }
   }, [user, userProfile, loading, router]);
 
-  const handleEditUser = (user: User) => {
-    // TODO: Implement user editing logic
-    console.log('Editing user:', user);
+  const handleEditUser = async (userToUpdate: User, newRole: User['role']) => {
+    if (!firestore) return;
+    const userDocRef = doc(firestore, 'users', userToUpdate.id);
+    try {
+      await updateDoc(userDocRef, { role: newRole });
+      toast({
+        title: 'User Updated',
+        description: `Role for ${userToUpdate.fullName} updated to ${newRole}.`,
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Update Failed',
+        description: error.message || 'An unexpected error occurred.',
+      });
+    }
   };
 
-  const handleDeleteUser = (user: User) => {
-    // TODO: Implement user deletion logic
-    console.log('Deleting user:', user);
+  const handleDeleteUser = async (userToDelete: User) => {
+    if (!firestore) return;
+    const userDocRef = doc(firestore, 'users', userToDelete.id);
+    try {
+      await deleteDoc(userDocRef);
+      toast({
+        title: 'User Deleted',
+        description: `${userToDelete.fullName} has been removed from the system.`,
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Deletion Failed',
+        description: error.message || 'An unexpected error occurred.',
+      });
+    }
   };
 
   if (loading || usersLoading) {
@@ -73,7 +103,7 @@ export default function UsersPage() {
             <CardHeader>
               <CardTitle>Register New User</CardTitle>
               <CardDescription>
-                Create a new user account and assign a role.
+                This form is for creating Firestore user profiles. Firebase Auth user creation is handled separately for security.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -94,6 +124,7 @@ export default function UsersPage() {
               {users && (
                 <UserTable
                   users={users}
+                  currentUser={userProfile}
                   onEdit={handleEditUser}
                   onDelete={handleDeleteUser}
                 />

@@ -3,10 +3,16 @@ export interface User {
   id: string;
   fullName: string;
   phoneNumber: string;
-  role: 'Singer' | 'Secretary' | 'Disciplinarian' | 'Admin';
+  role: 'Singer' | 'Secretary' | 'Disciplinarian' | 'Admin' | 'Section Leader';
   isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: {
+    seconds: number;
+    nanoseconds: number;
+  };
+  updatedAt: {
+    seconds: number;
+    nanoseconds: number;
+  };
   profileImageUrl?: string;
 }
 
