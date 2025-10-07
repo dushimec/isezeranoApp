@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -34,7 +35,7 @@ export default function NotificationsPage() {
     if (!token) return;
     try {
       setLoading(true);
-      const response = await fetch('/api/singer/notifications', {
+      const response = await fetch('/api/notifications', {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error('Failed to fetch notifications');
@@ -53,7 +54,7 @@ export default function NotificationsPage() {
 
   const handleMarkAsRead = async (id: string) => {
     try {
-      const response = await fetch(`/api/singer/notifications/${id}/read`, {
+      const response = await fetch(`/api/notifications/${id}/read`, {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${token}` },
       });

@@ -18,6 +18,7 @@ const ALL_PROTECTED_PREFIXES = [
     '/api/rehearsals',
     '/api/services',
     '/api/announcements',
+    '/api/notifications',
 ];
 
 export async function middleware(req: NextRequest) {
@@ -51,7 +52,13 @@ export async function middleware(req: NextRequest) {
     }
 
     // Any authenticated user can access these common endpoints
-    const commonEndpoints = ['/api/profile', '/api/rehearsals', '/api/services', '/api/announcements'];
+    const commonEndpoints = [
+        '/api/profile', 
+        '/api/rehearsals', 
+        '/api/services', 
+        '/api/announcements',
+        '/api/notifications'
+    ];
     if (commonEndpoints.some(p => pathname.startsWith(p))) {
         return NextResponse.next();
     }

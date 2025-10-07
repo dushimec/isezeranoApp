@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/db';
 import { getUserIdFromToken } from '@/lib/auth';
 import { ObjectId } from 'mongodb';
-import { ClaimSeverity, ClaimStatus } from '@/lib/types';
+import { ClaimSeverity, ClaimStatus, UserDocument } from '@/lib/types';
 import cloudinary from '@/lib/cloudinary';
 
 export async function POST(req: NextRequest) {
@@ -48,11 +48,27 @@ export async function POST(req: NextRequest) {
     };
 
     const result = await db.collection('claims').insertOne(newClaim);
+    const claimId = result.insertedId;
     
-    // TODO: Notify Disciplinarians
-    // This could be done via a separate notifications collection or another mechanism
+    // Notify all disciplinarians
+    const disciplinarians = await db.collection<UserDocument>('users').find({ role: 'DISCIPLINARIAN' }).project({ _id: 1 }).toArray();
+    const singer = await db.collection<UserDocument>('users').findOne({ _id: new ObjectId(userId) });
 
-    return NextResponse.json({ ...newClaim, id: result.insertedId.toHexString() }, { status: 201 });
+    if(disciplinarians.length > 0 && singer) {
+        const notifications = disciplinarians.map(disciplinarian => ({
+            userId: disciplinarian._id,
+            claimId: claimId,
+            title: 'New Claim Submitted',
+            message: `A new claim "${title}" was submitted.`,
+            senderRole: singer.role,
+            isRead: false,
+            createdAt: new Date(),
+        }));
+        await db.collection('notifications').insertMany(notifications);
+    }
+
+
+    return NextResponse.json({ ...newClaim, id: claimId.toHexString() }, { status: 201 });
   } catch (error) {
     console.error('Error creating claim:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
