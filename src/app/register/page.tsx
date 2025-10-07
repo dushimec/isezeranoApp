@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -39,6 +40,7 @@ const phoneRegex = new RegExp(
 );
 
 const FormSchema = z.object({
+  fullName: z.string().min(3, "Full name is required"),
   phone: z.string().regex(phoneRegex, "Invalid phone number"),
 });
 
@@ -49,33 +51,29 @@ declare global {
   }
 }
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
-  const [adminExists, setAdminExists] = React.useState<boolean | null>(null);
   const { auth } = useFirebase();
   const firestore = useFirestore();
 
-  React.useEffect(() => {
+   React.useEffect(() => {
     const checkAdmin = async () => {
       if (!firestore) return;
       try {
         const usersRef = collection(firestore, "users");
         const q = query(usersRef, where("role", "==", USER_ROLES.ADMIN), limit(1));
         const querySnapshot = await getDocs(q);
-        if (querySnapshot.empty) {
-          router.replace('/register');
-        } else {
-          setAdminExists(true);
+        if (!querySnapshot.empty) {
+          toast({
+            title: "Admin Exists",
+            description: "An admin account already exists. Please log in.",
+          });
+          router.replace('/login');
         }
       } catch (error) {
         console.error("Error checking for admin:", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Could not verify system status. Please try again."
-        })
       }
     };
     checkAdmin();
@@ -84,6 +82,7 @@ export default function LoginPage() {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
+      fullName: "",
       phone: "",
     },
   });
@@ -96,9 +95,6 @@ export default function LoginPage() {
         "recaptcha-container",
         {
           size: "invisible",
-          callback: (response: any) => {
-            // reCAPTCHA solved, allow signInWithPhoneNumber.
-          },
         }
       );
     }
@@ -108,52 +104,48 @@ export default function LoginPage() {
     setIsLoading(true);
     setupRecaptcha();
     if (!auth) {
-      toast({
-        variant: "destructive",
-        title: "Authentication Error",
-        description: "Firebase Auth is not initialized.",
-      });
-      setIsLoading(false);
-      return;
+       toast({ variant: "destructive", title: "Authentication Error", description: "Firebase Auth is not initialized." });
+       setIsLoading(false);
+       return;
     }
-    
+
     try {
+      // 1. Send OTP
       const appVerifier = window.recaptchaVerifier;
-      const confirmationResult = await signInWithPhoneNumber(
-        auth,
-        data.phone,
-        appVerifier
-      );
+      const confirmationResult = await signInWithPhoneNumber(auth, data.phone, appVerifier);
       window.confirmationResult = confirmationResult;
+
+      // 2. Store registration details temporarily to be picked up on OTP page
+      localStorage.setItem('registrationDetails', JSON.stringify({
+        fullName: data.fullName,
+        phoneNumber: data.phone,
+        role: USER_ROLES.ADMIN,
+      }));
+
       toast({
         title: "OTP Sent",
-        description: "An OTP has been sent to your phone number.",
+        description: "An OTP has been sent to your phone number for verification.",
       });
-      router.push(`/otp?phone=${encodeURIComponent(data.phone)}`);
+
+      // 3. Redirect to OTP page
+      router.push(`/otp?phone=${encodeURIComponent(data.phone)}&register=true`);
+
     } catch (error: any) {
-      console.error("Error sending OTP:", error);
+      console.error("Error during admin registration:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to send OTP. Please try again.",
+        title: "Registration Failed",
+        description: error.message || "Could not send OTP. Please try again.",
       });
       if (window.recaptchaVerifier) {
-         window.recaptchaVerifier.render().then((widgetId) => {
+        window.recaptchaVerifier.render().then((widgetId) => {
             // @ts-ignore
             grecaptcha.reset(widgetId);
-         });
+        });
       }
     } finally {
       setIsLoading(false);
     }
-  }
-
-  if (adminExists === null) {
-     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="loader">Verifying system status...</div>
-      </div>
-    );
   }
 
   return (
@@ -163,14 +155,27 @@ export default function LoginPage() {
           <div className="flex justify-center mb-4">
             <IsezeranoLogo className="w-16 h-16" />
           </div>
-          <CardTitle className="text-3xl font-headline">Welcome Back</CardTitle>
+          <CardTitle className="text-3xl font-headline">Admin Registration</CardTitle>
           <CardDescription>
-            Enter your phone number to sign in to Isezerano CMS
+            Create the first administrator account for Isezerano CMS.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="fullName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your full name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="phone"
@@ -185,7 +190,7 @@ export default function LoginPage() {
                 )}
               />
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Sending OTP..." : "Send OTP"}
+                {isLoading ? "Registering..." : "Register and Send OTP"}
               </Button>
             </form>
           </Form>

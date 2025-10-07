@@ -45,6 +45,7 @@ export default function OtpPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const phone = searchParams.get("phone");
+  const isRegistering = searchParams.get("register") === 'true';
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -67,9 +68,9 @@ export default function OtpPage() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "No OTP confirmation found. Please try logging in again.",
+        description: "No OTP confirmation found. Please try again.",
       });
-      router.push("/login");
+      router.push(isRegistering ? "/register" : "/login");
       return;
     }
 
@@ -79,16 +80,28 @@ export default function OtpPage() {
 
       if (user) {
         const idToken = await user.getIdToken();
-        
-        const backendResponse = await fetch('/api/auth/verify-otp', {
+        let apiEndpoint = '/api/auth/verify-otp';
+        let body: any = { idToken };
+
+        if (isRegistering) {
+          apiEndpoint = '/api/auth/register';
+          const regDetails = JSON.parse(localStorage.getItem('registrationDetails') || '{}');
+          body = { ...body, ...regDetails, uid: user.uid };
+        }
+
+        const backendResponse = await fetch(apiEndpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idToken }),
+            body: JSON.stringify(body),
         });
 
         if (!backendResponse.ok) {
             const errorData = await backendResponse.json();
             throw new Error(errorData.error || 'Backend verification failed.');
+        }
+
+        if (isRegistering) {
+          localStorage.removeItem('registrationDetails');
         }
 
         const { token, user: userProfile } = await backendResponse.json();
@@ -97,26 +110,10 @@ export default function OtpPage() {
         
         toast({
             title: "Success!",
-            description: "You have been successfully logged in.",
+            description: `You have been successfully ${isRegistering ? 'registered and' : ''} logged in.`,
         });
 
-        // Redirect based on role from our backend
-        switch (userProfile.role) {
-            case USER_ROLES.ADMIN:
-              router.push("/dashboard");
-              break;
-            case USER_ROLES.SECRETARY:
-              router.push("/dashboard");
-              break;
-            case USER_ROLES.DISCIPLINARIAN:
-              router.push("/dashboard");
-              break;
-            case USER_ROLES.SINGER:
-              router.push("/dashboard");
-              break;
-            default:
-              router.push("/dashboard");
-          }
+        router.push("/dashboard");
       }
     } catch (error: any) {
       console.error(error);
@@ -128,7 +125,7 @@ export default function OtpPage() {
       }
       toast({
         variant: "destructive",
-        title: "Login Failed",
+        title: "Verification Failed",
         description: description,
       });
       form.reset();
@@ -141,8 +138,6 @@ export default function OtpPage() {
     if (!phone) return;
     try {
         const auth = getAuth();
-        // This assumes you have the recaptcha verifier already set up from login page
-        // A more robust implementation might re-initialize it here if needed.
         const appVerifier = window.recaptchaVerifier;
         const confirmationResult = await auth.signInWithPhoneNumber(phone, appVerifier);
         window.confirmationResult = confirmationResult;
@@ -215,3 +210,4 @@ export default function OtpPage() {
     </div>
   );
 }
+
