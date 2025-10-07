@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 import { createToken } from '@/lib/auth';
 import clientPromise from '@/lib/db';
 import { Role } from '@/lib/types';
+import cloudinary from '@/lib/cloudinary';
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,7 +30,17 @@ export async function POST(req: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const effectiveUsername = username || email.split('@')[0];
-    const finalProfileImage = profileImage || `https://picsum.photos/seed/${effectiveUsername}/100/100`;
+    
+    let finalProfileImage;
+    if (profileImage) {
+        const uploadResult = await cloudinary.uploader.upload(profileImage, {
+            folder: 'isezerano_cms_avatars',
+            public_id: effectiveUsername
+        });
+        finalProfileImage = uploadResult.secure_url;
+    } else {
+        finalProfileImage = `https://picsum.photos/seed/${effectiveUsername}/100/100`;
+    }
 
     const result = await db.collection('users').insertOne({
       firstName,

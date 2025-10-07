@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
 import clientPromise from '@/lib/db';
 import { Role } from '@/lib/types';
+import cloudinary from '@/lib/cloudinary';
 
 // Create a new user (Admin only)
 export async function POST(req: NextRequest) {
@@ -20,13 +21,22 @@ export async function POST(req: NextRequest) {
       $or: [{ email }, { username }],
     });
 
-    if (existingUser) {
+    if (existingUser && email) {
       return NextResponse.json({ message: 'User with this email or username already exists' }, { status: 409 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    const finalProfileImage = profileImage || `https://picsum.photos/seed/${username}/100/100`;
+    let finalProfileImage;
+    if (profileImage) {
+        const uploadResult = await cloudinary.uploader.upload(profileImage, {
+            folder: 'isezerano_cms_avatars',
+            public_id: username,
+        });
+        finalProfileImage = uploadResult.secure_url;
+    } else {
+        finalProfileImage = `https://picsum.photos/seed/${username}/100/100`;
+    }
 
     const result = await db.collection('users').insertOne({
         firstName,
