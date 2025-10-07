@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import bcrypt from 'bcrypt';
@@ -37,12 +38,12 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('Error during admin registration:', error);
-    if (error.code === 'P2002') { // Prisma unique constraint violation
-      const target = error.meta?.target as string[] | undefined;
-      if(target?.includes('email')){
+    if (error.code === 'P2002' && error.meta?.target) { // Prisma unique constraint violation
+      const target = error.meta.target as string[];
+      if(target.includes('email')){
           return NextResponse.json({ error: 'A user with this email already exists.' }, { status: 409 });
       }
-      if(target?.includes('username')){
+      if(target.includes('username')){
           return NextResponse.json({ error: 'A user with this username already exists.' }, { status: 409 });
       }
       return NextResponse.json({ error: 'A user with these details already exists.' }, { status: 409 });
