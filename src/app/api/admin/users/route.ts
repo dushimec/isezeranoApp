@@ -2,12 +2,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
 import clientPromise from '@/lib/db';
-import { Role } from '@/lib/auth';
+import { Role } from '@/lib/types';
 
 // Create a new user (Admin only)
 export async function POST(req: NextRequest) {
   try {
-    const { firstName, lastName, email, password, role, username } = await req.json();
+    const { firstName, lastName, email, password, role, username, profileImage } = await req.json();
 
     if (!firstName || !lastName || !password || !role || !username) {
       return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
@@ -25,6 +25,8 @@ export async function POST(req: NextRequest) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    
+    const finalProfileImage = profileImage || `https://picsum.photos/seed/${username}/100/100`;
 
     const result = await db.collection('users').insertOne({
         firstName,
@@ -34,7 +36,7 @@ export async function POST(req: NextRequest) {
         password: hashedPassword,
         role: role as Role,
         isActive: true,
-        profileImage: `https://picsum.photos/seed/${username}/100/100`,
+        profileImage: finalProfileImage,
         createdAt: new Date(),
         updatedAt: new Date(),
     });
@@ -46,6 +48,7 @@ export async function POST(req: NextRequest) {
         email,
         username,
         role,
+        profileImage: finalProfileImage,
         createdAt: new Date(),
         isActive: true,
     }

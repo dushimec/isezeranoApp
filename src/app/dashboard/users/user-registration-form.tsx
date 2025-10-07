@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Role } from "@/lib/types";
 import { useAuth } from "@/hooks/useAuth";
+import Image from "next/image";
 
 interface UserRegistrationFormProps {
   onUserCreated: () => void;
@@ -39,12 +40,14 @@ const formSchema = z.object({
   email: z.string().email("Invalid email address").optional().or(z.literal('')),
   password: z.string().min(6, "Password must be at least 6 characters"),
   role: z.enum(creatableRoles as [string, ...string[]]),
+  profileImage: z.string().optional(),
 });
 
 export function UserRegistrationForm({ onUserCreated }: UserRegistrationFormProps) {
   const { toast } = useToast();
   const { token } = useAuth();
   const [isLoading, setIsLoading] = React.useState(false);
+  const [imagePreview, setImagePreview] = React.useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -55,8 +58,22 @@ export function UserRegistrationForm({ onUserCreated }: UserRegistrationFormProp
       email: "",
       password: "",
       role: 'SINGER',
+      profileImage: "",
     },
   });
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUri = reader.result as string;
+        form.setValue('profileImage', dataUri);
+        setImagePreview(dataUri);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
@@ -82,6 +99,7 @@ export function UserRegistrationForm({ onUserCreated }: UserRegistrationFormProp
       });
       
       form.reset();
+      setImagePreview(null);
       onUserCreated(); // Callback to parent component
     } catch (error: any) {
       toast({
@@ -97,6 +115,20 @@ export function UserRegistrationForm({ onUserCreated }: UserRegistrationFormProp
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+         <div className="flex items-center gap-4">
+          <Image
+            src={imagePreview || `https://picsum.photos/seed/new-user/100/100`}
+            width={80}
+            height={80}
+            alt="Profile preview"
+            className="rounded-full object-cover"
+          />
+          <div className="grid w-full max-w-sm items-center gap-1.5">
+            <Label htmlFor="picture">Profile Picture</Label>
+            <Input id="picture" type="file" onChange={handleImageChange} accept="image/*" />
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
         <FormField
           control={form.control}
