@@ -5,6 +5,10 @@ if (!process.env.MONGODB_URI) {
   throw new Error('Invalid/Missing environment variable: "MONGODB_URI"');
 }
 
+if (!process.env.JWT_SECRET) {
+  throw new Error('Invalid/Missing environment variable: "JWT_SECRET"');
+}
+
 const uri = process.env.MONGODB_URI;
 const options = {};
 
