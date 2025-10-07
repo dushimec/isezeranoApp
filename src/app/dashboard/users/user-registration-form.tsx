@@ -74,17 +74,26 @@ export function UserRegistrationForm() {
       profileImageUrl: `https://picsum.photos/seed/${Math.random()}/400/400`,
     };
 
-    // Use the non-blocking function which handles errors internally
-    addDocumentNonBlocking(usersCollectionRef, userProfile);
+    try {
+        addDocumentNonBlocking(usersCollectionRef, userProfile);
 
-    // Optimistically show success toast
-    toast({
-        title: "User Registration Submitted",
-        description: `Profile for ${values.fullName} is being created.`,
-    });
-    
-    form.reset();
-    setIsLoading(false);
+        toast({
+            title: "User Registration Submitted",
+            description: `Profile for ${values.fullName} is being created.`,
+        });
+        
+        form.reset();
+    } catch (error) {
+        // This catch block is primarily for unexpected client-side errors,
+        // as the non-blocking function handles the Firestore-specific errors.
+        toast({
+            variant: "destructive",
+            title: "Client Error",
+            description: "An unexpected error occurred while submitting the form.",
+        });
+    } finally {
+        setIsLoading(false);
+    }
   }
 
   return (
