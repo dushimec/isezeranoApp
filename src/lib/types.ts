@@ -4,6 +4,8 @@ import type { ObjectId, WithId } from 'mongodb';
 export type Role = 'ADMIN' | 'SECRETARY' | 'DISCIPLINARIAN' | 'SINGER';
 export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE';
 export type EventType = 'REHEARSAL' | 'SERVICE';
+export type ClaimStatus = 'PENDING' | 'IN_REVIEW' | 'RESOLVED' | 'REJECTED';
+export type ClaimSeverity = 'LOW' | 'MEDIUM' | 'HIGH';
 
 export type User = {
   _id: ObjectId;
@@ -75,6 +77,26 @@ export type Service = {
     updatedAt: Date;
 }
 
+export type Claim = {
+    _id: ObjectId;
+    id: string;
+    title: string;
+    description: string;
+    submittedById: ObjectId;
+    submittedBy: { // Populated field
+        firstName: string;
+        lastName: string;
+        profileImage?: string;
+    };
+    isAnonymous: boolean;
+    status: ClaimStatus;
+    severity: ClaimSeverity;
+    attachment?: string;
+    resolutionNote?: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 
 // A simplified, combined type for displaying events
 export type Event = {
@@ -106,3 +128,4 @@ export type AnnouncementDocument = WithId<Omit<Announcement, 'id' | 'createdBy'>
 export type RehearsalDocument = WithId<Omit<Rehearsal, 'id'>>;
 export type ServiceDocument = WithId<Omit<Service, 'id'>>;
 export type AttendanceDocument = WithId<Omit<Attendance, 'id' | 'user' | 'event'>>;
+export type ClaimDocument = WithId<Omit<Claim, 'id' | 'submittedBy'>>;

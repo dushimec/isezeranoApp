@@ -5,356 +5,157 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user of the Isezerano CMS application.",
+      "description": "Stores all users in the system, regardless of their role (Admin, Secretary, Disciplinarian, Singer). Each user has personal information, login credentials, and a role that determines access permissions.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the User entity (matches Firebase Auth UID)."
-        },
-        "firstName": {
-          "type": "string",
-          "description": "The first name of the user."
-        },
-        "lastName": {
-          "type": "string",
-          "description": "The last name of the user."
-        },
-        "username": {
-          "type": "string",
-          "description": "The user's unique username."
-        },
-        "email": {
-          "type": "string",
-          "format": "email",
-          "description": "User's email address, used for authentication."
-        },
-        "profileImageUrl": {
-          "type": "string",
-          "format": "uri",
-          "description": "URL for the user's profile picture."
-        },
-        "role": {
-          "type": "string",
-          "description": "User's role within the system (SINGER, SECRETARY, DISCIPLINARIAN, ADMIN).",
-          "enum": [
-            "SINGER",
-            "SECRETARY",
-            "DISCIPLINARIAN",
-            "ADMIN"
-          ]
-        },
-        "isActive": {
-          "type": "boolean",
-          "description": "Indicates if the user account is active.",
-          "default": true
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp of when the user was created."
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp of the last user update."
-        }
+        "id": { "type": "string", "description": "Unique identifier for each user (matches Firebase Auth UID)." },
+        "firstName": { "type": "string", "description": "User’s first name." },
+        "lastName": { "type": "string", "description": "User’s last name." },
+        "username": { "type": "string", "description": "Unique username used for login (Secretary, Disciplinarian, Singer)." },
+        "email": { "type": "string", "format": "email", "description": "User’s email address (required for Admin, optional for others)." },
+        "profileImage": { "type": "string", "format": "uri", "description": "URL to the user’s profile picture." },
+        "role": { "type": "string", "enum": ["ADMIN", "SECRETARY", "DISCIPLINARIAN", "SINGER"], "description": "Determines the user’s privileges." },
+        "isActive": { "type": "boolean", "default": true, "description": "Indicates if the account is active." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of account creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Timestamp of last update." }
       },
-      "required": [
-        "id",
-        "firstName",
-        "lastName",
-        "username",
-        "email",
-        "role",
-        "isActive",
-        "createdAt",
-        "updatedAt"
-      ]
+      "required": ["id", "firstName", "lastName", "role", "createdAt", "updatedAt"]
     },
     "Announcement": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Announcement",
       "type": "object",
-      "description": "Represents an announcement sent to choir members.",
+      "description": "Stores all announcements posted by the Secretary or Admin.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Announcement entity."
-        },
-        "title": {
-          "type": "string",
-          "description": "Title of the announcement."
-        },
-        "message": {
-          "type": "string",
-          "description": "Content of the announcement."
-        },
-        "createdBy": {
-          "type": "string",
-          "description": "User ID of the creator (Admin, Secretary)."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the announcement was created.",
-          "format": "date-time"
-        },
-        "priority": {
-          "type": "string",
-          "enum": [
-            "High",
-            "Normal",
-            "Low"
-          ],
-          "description": "Priority level of the announcement."
-        },
-        "attachment": {
-          "type": "string",
-          "format": "uri",
-          "description": "Optional URL for an attachment."
-        }
+        "id": { "type": "string", "description": "Unique announcement ID." },
+        "title": { "type": "string", "description": "Title of the announcement." },
+        "message": { "type": "string", "description": "Main content of the announcement." },
+        "attachment": { "type": "string", "format": "uri", "description": "File or image URL (optional)." },
+        "priority": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH"], "description": "Importance level." },
+        "createdById": { "type": "string", "description": "The ID of the user who created the announcement." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when announcement was posted." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Timestamp of last modification." }
       },
-      "required": [
-        "id",
-        "title",
-        "message",
-        "createdBy",
-        "createdAt"
-      ]
+      "required": ["id", "title", "message", "createdById", "createdAt", "updatedAt"]
+    },
+    "Notification": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Notification",
+      "type": "object",
+      "description": "Holds all in-app notifications sent to users, usually generated automatically when an announcement is created.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique notification ID." },
+        "title": { "type": "string", "description": "Notification title." },
+        "message": { "type": "string", "description": "Notification body content." },
+        "senderRole": { "type": "string", "enum": ["ADMIN", "SECRETARY", "DISCIPLINARIAN"], "description": "Role of the sender who triggered the notification." },
+        "userId": { "type": "string", "description": "The receiver (Singer, Secretary, etc.)." },
+        "isRead": { "type": "boolean", "default": false, "description": "Whether the user has read the notification." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when notification was created." }
+      },
+      "required": ["id", "title", "message", "senderRole", "userId", "createdAt"]
     },
     "Rehearsal": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Rehearsal",
       "type": "object",
-      "description": "Represents a scheduled rehearsal.",
+      "description": "Represents choir rehearsals managed by the Secretary.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Rehearsal entity."
-        },
-        "date": {
-          "type": "string",
-          "description": "Date of the rehearsal.",
-          "format": "date-time"
-        },
-        "time": {
-          "type": "string",
-          "description": "Time of the rehearsal."
-        },
-        "location": {
-          "type": "string",
-          "description": "Location of the rehearsal."
-        },
-        "notes": {
-          "type": "string",
-          "description": "Additional notes for the rehearsal."
-        },
-        "createdBy": {
-          "type": "string",
-          "description": "User ID of the creator (Admin, Secretary)."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp of when the schedule was created.",
-          "format": "date-time"
-        }
+        "id": { "type": "string", "description": "Unique rehearsal ID." },
+        "title": { "type": "string", "description": "Rehearsal name or theme." },
+        "date": { "type": "string", "format": "date", "description": "Date of the rehearsal." },
+        "time": { "type": "string", "format": "time", "description": "Starting time." },
+        "location": { "type": "string", "description": "Venue where rehearsal is held." },
+        "notes": { "type": "string", "description": "Additional details or instructions." },
+        "createdById": { "type": "string", "description": "The Secretary who created this rehearsal." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Update timestamp." }
       },
-      "required": [
-        "id",
-        "date",
-        "time",
-        "location",
-        "createdBy",
-        "createdAt"
-      ]
+      "required": ["id", "title", "date", "time", "location", "createdById", "createdAt", "updatedAt"]
     },
     "Service": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Service",
       "type": "object",
-      "description": "Represents a scheduled service.",
+      "description": "Represents Sunday or event services where the choir performs.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Service entity."
-        },
-        "date": {
-          "type": "string",
-          "description": "Date of the service.",
-          "format": "date-time"
-        },
-        "churchLocation": {
-          "type": "string",
-          "description": "Location of the service."
-        },
-        "attire": {
-          "type": "string",
-          "description": "Attire required for the service."
-        },
-        "notes": {
-          "type": "string",
-          "description": "Additional notes for the service."
-        },
-        "createdBy": {
-          "type": "string",
-          "description": "User ID of the creator (Admin, Secretary)."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp of when the schedule was created.",
-          "format": "date-time"
-        }
+        "id": { "type": "string", "description": "Unique service ID." },
+        "title": { "type": "string", "description": "Service name or event." },
+        "date": { "type": "string", "format": "date", "description": "Date of the service." },
+        "time": { "type": "string", "format": "time", "description": "Time of the service." },
+        "churchLocation": { "type": "string", "description": "Church or venue location." },
+        "attire": { "type": "string", "description": "Dress code or uniform for the service." },
+        "notes": { "type": "string", "description": "Additional instructions." },
+        "createdById": { "type": "string", "description": "The Secretary who scheduled the service." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Timestamp." }
       },
-      "required": [
-        "id",
-        "date",
-        "churchLocation",
-        "attire",
-        "createdBy",
-        "createdAt"
-      ]
+      "required": ["id", "title", "date", "time", "churchLocation", "createdById", "createdAt", "updatedAt"]
     },
     "Attendance": {
-      "$schema": "http://json-schema.org/draft_07/schema#",
+      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Attendance",
       "type": "object",
-      "description": "Represents an attendance record for a user at a specific event.",
+      "description": "Tracks participation of singers in both Rehearsals and Services, managed by the Disciplinarian.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Attendance entity."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to the User whose attendance is being recorded."
-        },
-        "eventType": {
-          "type": "string",
-          "description": "Type of the Event (Rehearsal/Service).",
-          "enum": [
-            "Rehearsal",
-            "Service"
-          ]
-        },
-        "eventId": {
-          "type": "string",
-          "description": "Reference to the specific Rehearsal or Service."
-        },
-        "status": {
-          "type": "string",
-          "description": "Attendance status.",
-          "enum": [
-            "Present",
-            "Absent",
-            "Late"
-          ]
-        },
-        "markedBy": {
-          "type": "string",
-          "description": "User ID of the person who marked attendance (Admin, Disciplinarian)."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp of when the attendance was recorded.",
-          "format": "date-time"
-        }
+        "id": { "type": "string", "description": "Unique attendance record." },
+        "userId": { "type": "string", "description": "The singer being tracked." },
+        "eventType": { "type": "string", "enum": ["REHEARSAL", "SERVICE"], "description": "Type of event attended." },
+        "eventId": { "type": "string", "description": "Reference to specific Rehearsal.id or Service.id." },
+        "status": { "type": "string", "enum": ["PRESENT", "ABSENT", "LATE"], "description": "Attendance status." },
+        "markedById": { "type": "string", "description": "The Disciplinarian who marked the attendance." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When attendance was marked." }
       },
-      "required": [
-        "id",
-        "userId",
-        "eventType",
-        "eventId",
-        "status",
-        "markedBy",
-        "createdAt"
-      ]
+      "required": ["id", "userId", "eventType", "eventId", "status", "markedById", "createdAt"]
+    },
+    "Claim": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Claim",
+      "type": "object",
+      "description": "Represents a claim or issue submitted by a singer for review by the Disciplinarian.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the claim." },
+        "title": { "type": "string", "description": "The title or summary of the claim." },
+        "description": { "type": "string", "description": "A detailed description of the issue." },
+        "submittedById": { "type": "string", "description": "The ID of the user who submitted the claim." },
+        "isAnonymous": { "type": "boolean", "default": false, "description": "Whether the claim was submitted anonymously." },
+        "status": { "type": "string", "enum": ["PENDING", "IN_REVIEW", "RESOLVED", "REJECTED"], "description": "The current status of the claim." },
+        "severity": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH"], "description": "The severity level of the claim." },
+        "attachment": { "type": "string", "format": "uri", "description": "Optional URL for an attachment (e.g., image, document)." },
+        "resolutionNote": { "type": "string", "description": "Notes from the Disciplinarian on how the claim was resolved." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of when the claim was submitted." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Timestamp of the last update." }
+      },
+      "required": ["id", "title", "description", "submittedById", "status", "severity", "createdAt", "updatedAt"]
     }
-  },
-  "auth": {
-    "providers": [
-      "email"
-    ]
   },
   "firestore": {
     "structure": [
       {
         "path": "/users/{userId}",
-        "definition": {
-          "entityName": "User",
-          "schema": {
-            "$ref": "#/entities/User"
-          },
-          "description": "Stores user profiles, including role information.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "Unique identifier for the user."
-            }
-          ]
-        }
+        "definition": { "entityName": "User", "schema": { "$ref": "#/entities/User" } }
       },
       {
         "path": "/announcements/{announcementId}",
-        "definition": {
-          "entityName": "Announcement",
-          "schema": {
-            "$ref": "#/entities/Announcement"
-          },
-          "description": "Stores announcements for the choir.",
-          "params": [
-            {
-              "name": "announcementId",
-              "description": "Unique identifier for the announcement."
-            }
-          ]
-        }
+        "definition": { "entityName": "Announcement", "schema": { "$ref": "#/entities/Announcement" } }
+      },
+      {
+        "path": "/users/{userId}/notifications/{notificationId}",
+        "definition": { "entityName": "Notification", "schema": { "$ref": "#/entities/Notification" } }
       },
       {
         "path": "/rehearsals/{rehearsalId}",
-        "definition": {
-          "entityName": "Rehearsal",
-          "schema": {
-            "$ref": "#/entities/Rehearsal"
-          },
-          "description": "Stores rehearsal schedules.",
-          "params": [
-            {
-              "name": "rehearsalId",
-              "description": "Unique identifier for the rehearsal."
-            }
-          ]
-        }
+        "definition": { "entityName": "Rehearsal", "schema": { "$ref": "#/entities/Rehearsal" } }
       },
       {
         "path": "/services/{serviceId}",
-        "definition": {
-          "entityName": "Service",
-          "schema": {
-            "$ref": "#/entities/Service"
-          },
-          "description": "Stores service schedules.",
-          "params": [
-            {
-              "name": "serviceId",
-              "description": "Unique identifier for the service."
-            }
-          ]
-        }
+        "definition": { "entityName": "Service", "schema": { "$ref": "#/entities/Service" } }
       },
       {
         "path": "/attendance/{attendanceId}",
-        "definition": {
-          "entityName": "Attendance",
-          "schema": {
-            "$ref": "#/entities/Attendance"
-          },
-          "description": "Stores attendance records for events.",
-          "params": [
-            {
-              "name": "attendanceId",
-              "description": "Unique identifier for the attendance record."
-            }
-          ]
-        }
+        "definition": { "entityName": "Attendance", "schema": { "$ref": "#/entities/Attendance" } }
+      },
+      {
+        "path": "/claims/{claimId}",
+        "definition": { "entityName": "Claim", "schema": { "$ref": "#/entities/Claim" } }
       }
     ]
   }

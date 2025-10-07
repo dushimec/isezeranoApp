@@ -4,6 +4,7 @@ import { verifyToken } from '@/lib/auth';
 import { Role } from '@/lib/types';
 
 // Defines which roles can access which API prefixes.
+// More specific roles are listed first.
 const ROLE_ACCESS_HIERARCHY: { role: Role; prefix: string }[] = [
   { role: 'SINGER', prefix: '/api/singer' },
   { role: 'DISCIPLINARIAN', prefix: '/api/disciplinarian' },
@@ -11,7 +12,13 @@ const ROLE_ACCESS_HIERARCHY: { role: Role; prefix: string }[] = [
   { role: 'ADMIN', prefix: '/api/admin' },
 ];
 
-const ALL_PROTECTED_PREFIXES = [...ROLE_ACCESS_HIERARCHY.map(item => item.prefix), '/api/profile'];
+const ALL_PROTECTED_PREFIXES = [
+    ...new Set(ROLE_ACCESS_HIERARCHY.map(item => item.prefix)),
+    '/api/profile',
+    '/api/rehearsals',
+    '/api/services',
+    '/api/announcements',
+];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -38,14 +45,15 @@ export async function middleware(req: NextRequest) {
     
     const userRole = payload.role as Role;
 
-    // Any authenticated user can access the generic profile endpoints
-    if (pathname.startsWith('/api/profile')) {
-      return NextResponse.next();
-    }
-    
     // Admins can access everything
     if (userRole === 'ADMIN') {
          return NextResponse.next();
+    }
+
+    // Any authenticated user can access these common endpoints
+    const commonEndpoints = ['/api/profile', '/api/rehearsals', '/api/services', '/api/announcements'];
+    if (commonEndpoints.some(p => pathname.startsWith(p))) {
+        return NextResponse.next();
     }
     
     // Check if the user's role has permission for the requested path
@@ -67,5 +75,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/api/admin/:path*', '/api/secretary/:path*', '/api/disciplinarian/:path*', '/api/singer/:path*', '/api/profile/:path*'],
+  matcher: ['/api/:path*'],
 };

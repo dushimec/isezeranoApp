@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -13,6 +14,7 @@ import {
   Megaphone,
   Menu,
   Music,
+  ShieldAlert,
   User,
   Users,
 } from "lucide-react";
@@ -43,7 +45,10 @@ export default function DashboardLayout({
     if (!loading && !user) {
       router.push("/login");
     }
-  }, [loading, user, router]);
+    if (!loading && user?.forcePasswordChange && pathname !== '/dashboard/change-password') {
+        router.push('/dashboard/change-password');
+    }
+  }, [loading, user, router, pathname]);
 
   const handleLogout = async () => {
     logout();
@@ -55,7 +60,9 @@ export default function DashboardLayout({
     { href: "/dashboard/announcements", label: "Announcements", icon: Megaphone, roles: ['ADMIN', 'SECRETARY', 'DISCIPLINARIAN', 'SINGER'] },
     { href: "/dashboard/schedule", label: "Schedule", icon: Calendar, roles: ['ADMIN', 'SECRETARY', 'DISCIPLINARIAN', 'SINGER'] },
     { href: "/dashboard/attendance", label: "Take Attendance", icon: ClipboardCheck, roles: ['ADMIN', 'DISCIPLINARIAN'] },
+    { href: "/dashboard/claims", label: "Claims", icon: ShieldAlert, roles: ['ADMIN', 'DISCIPLINARIAN'] },
     { href: "/dashboard/my-attendance", label: "My Attendance", icon: ClipboardCheck, roles: ['SINGER'] },
+    { href: "/dashboard/my-claims", label: "My Claims", icon: ShieldAlert, roles: ['SINGER'] },
     { href: "/dashboard/reports", label: "Reports", icon: BarChart, roles: ['ADMIN', 'SECRETARY', 'DISCIPLINARIAN'] },
     { href: "/dashboard/users", label: "User Management", icon: Users, roles: ['ADMIN'] },
   ];
@@ -68,6 +75,14 @@ export default function DashboardLayout({
         <div className="flex items-center justify-center min-h-screen">
             <div className="loader">Loading...</div>
         </div>
+    );
+  }
+
+  if (user.forcePasswordChange && pathname !== '/dashboard/change-password') {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="loader">Redirecting...</div>
+      </div>
     );
   }
 
