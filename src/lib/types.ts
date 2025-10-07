@@ -3,10 +3,11 @@ export interface User {
   id: string;
   fullName: string;
   phoneNumber: string;
-  role: "SINGER" | "SECRETARY" | "DISCIPLINARIAN" | "ADMIN";
+  role: 'Singer' | 'Secretary' | 'Disciplinarian' | 'Admin';
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  profileImageUrl?: string;
 }
 
 export interface OTP {
