@@ -1,6 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken, Role } from '@/lib/auth';
+import { verifyToken } from '@/lib/auth';
+import { Role } from '@/lib/types';
 
 const API_PREFIXES: Record<Role, string> = {
   ADMIN: '/api/admin',
@@ -10,10 +11,10 @@ const API_PREFIXES: Record<Role, string> = {
 };
 
 const ROLE_HIERARCHY: Record<Role, Role[]> = {
-    ADMIN: [Role.ADMIN, Role.SECRETARY, Role.DISCIPLINARIAN, Role.SINGER],
-    SECRETARY: [Role.SECRETARY],
-    DISCIPLINARIAN: [Role.DISCIPLINARIAN],
-    SINGER: [Role.SINGER]
+    ADMIN: ['ADMIN', 'SECRETARY', 'DISCIPLINARIAN', 'SINGER'],
+    SECRETARY: ['SECRETARY'],
+    DISCIPLINARIAN: ['DISCIPLINARIAN'],
+    SINGER: ['SINGER']
 };
 
 const PROTECTED_API_ROUTES = Object.values(API_PREFIXES);
@@ -41,7 +42,7 @@ export async function middleware(req: NextRequest) {
     
     const userRole = payload.role as Role;
 
-    if (userRole === Role.ADMIN) {
+    if (userRole === 'ADMIN') {
          return NextResponse.next();
     }
     

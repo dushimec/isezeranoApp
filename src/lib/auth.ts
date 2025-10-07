@@ -1,9 +1,8 @@
 
 import { NextRequest } from 'next/server';
 import { jwtVerify, SignJWT } from 'jose';
+import { Role } from './types';
 
-// Define Role type locally
-export type Role = 'ADMIN' | 'SECRETARY' | 'DISCIPLINARIAN' | 'SINGER';
 
 if (!process.env.JWT_SECRET) {
   // This check is important for server-side code.
