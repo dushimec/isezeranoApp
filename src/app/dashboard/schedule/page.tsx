@@ -109,58 +109,58 @@ export default function SchedulePage() {
 
     return (
         <form onSubmit={(e) => handleCreateEvent(e, type, date)} className="space-y-4">
-        <div>
-            <Label htmlFor="title">Title</Label>
-            <Input id="title" name="title" required />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
             <div>
-            <Label>Date</Label>
-             <Popover>
-                <PopoverTrigger asChild>
-                <Button
-                    variant={"outline"}
-                    className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
-                    )}
-                >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "PPP") : <span>Pick a date</span>}
-                </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    initialFocus
-                />
-                </PopoverContent>
-            </Popover>
+                <Label htmlFor="title">Title</Label>
+                <Input id="title" name="title" required />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                <Label>Date</Label>
+                 <Popover>
+                    <PopoverTrigger asChild>
+                    <Button
+                        variant={"outline"}
+                        className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !date && "text-muted-foreground"
+                        )}
+                    >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {date ? format(date, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                    <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={setDate}
+                        initialFocus
+                    />
+                    </PopoverContent>
+                </Popover>
+                </div>
+                <div>
+                <Label htmlFor="time">Time</Label>
+                <Input id="time" name="time" type="time" required />
+                </div>
             </div>
             <div>
-            <Label htmlFor="time">Time</Label>
-            <Input id="time" name="time" type="time" required />
+                <Label htmlFor="location">{type === 'rehearsal' ? 'Location' : 'Church Location'}</Label>
+                <Input id="location" name={type === 'rehearsal' ? 'location' : 'churchLocation'} required />
             </div>
-        </div>
-        <div>
-            <Label htmlFor="location">{type === 'rehearsal' ? 'Location' : 'Church Location'}</Label>
-            <Input id="location" name={type === 'rehearsal' ? 'location' : 'churchLocation'} required />
-        </div>
-        {type === 'service' && (
+            {type === 'service' && (
+                <div>
+                <Label htmlFor="attire">Attire</Label>
+                <Input id="attire" name="attire" />
+                </div>
+            )}
             <div>
-            <Label htmlFor="attire">Attire</Label>
-            <Input id="attire" name="attire" />
+                <Label htmlFor="notes">Notes</Label>
+                <Textarea id="notes" name="notes" />
             </div>
-        )}
-        <div>
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea id="notes" name="notes" />
-        </div>
-        <div className="flex justify-end">
-            <Button type="submit">Create Event</Button>
-        </div>
+            <div className="flex justify-end">
+                <Button type="submit">Create Event</Button>
+            </div>
         </form>
     );
   }
@@ -278,7 +278,3 @@ export default function SchedulePage() {
     </div>
   );
 }
-
-    
-
-    
