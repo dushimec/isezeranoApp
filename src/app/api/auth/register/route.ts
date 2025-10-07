@@ -19,15 +19,17 @@ export async function POST(req: NextRequest) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const finalUsername = username || email;
 
     const user = await prisma.user.create({
       data: {
         firstName,
         lastName,
-        username: username || email, // Admin can use email as username if not provided
+        username: finalUsername,
         email,
         password: hashedPassword,
         role: 'ADMIN',
+        profileImage: `https://picsum.photos/seed/${finalUsername}/400/400`,
       },
     });
 
@@ -46,8 +48,8 @@ export async function POST(req: NextRequest) {
       if(target.includes('username')){
           return NextResponse.json({ error: 'A user with this username already exists.' }, { status: 409 });
       }
-      return NextResponse.json({ error: 'A user with these details already exists.' }, { status: 409 });
     }
+    // Generic error for other cases
     return NextResponse.json({ error: 'An internal error occurred.', details: error.message }, { status: 500 });
   }
 }
