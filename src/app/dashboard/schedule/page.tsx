@@ -188,20 +188,22 @@ export default function SchedulePage() {
                 <DialogTitle>Create New Event</DialogTitle>
                 <DialogDescription>Select the event type and fill in the details.</DialogDescription>
               </DialogHeader>
-              <ScrollArea className="pr-4">
                 <Tabs defaultValue="rehearsal" className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="rehearsal">Rehearsal</TabsTrigger>
                     <TabsTrigger value="service">Service</TabsTrigger>
                     </TabsList>
                     <TabsContent value="rehearsal">
-                      <EventForm type="rehearsal" />
+                      <ScrollArea className="max-h-[60vh] pr-4">
+                        <EventForm type="rehearsal" />
+                      </ScrollArea>
                     </TabsContent>
                     <TabsContent value="service">
-                      <EventForm type="service" />
+                       <ScrollArea className="max-h-[60vh] pr-4">
+                        <EventForm type="service" />
+                      </ScrollArea>
                     </TabsContent>
                 </Tabs>
-              </ScrollArea>
             </DialogContent>
           </Dialog>
           )}
@@ -276,5 +278,7 @@ export default function SchedulePage() {
     </div>
   );
 }
+
+    
 
     
