@@ -1,10 +1,13 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
-import { Role } from '@prisma/client';
+import clientPromise from '@/lib/db';
+import { Role } from '@/lib/types';
 
 export async function GET(req: NextRequest) {
   try {
-    const adminCount = await prisma.user.count({ where: { role: Role.ADMIN } });
+    const client = await clientPromise;
+    const db = client.db();
+    const adminCount = await db.collection('users').countDocuments({ role: 'ADMIN' as Role });
     return NextResponse.json({ exists: adminCount > 0 });
   } catch (error) {
     console.error('Error checking for admin:', error);

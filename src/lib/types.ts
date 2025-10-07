@@ -1,22 +1,79 @@
 
-import type { User as PrismaUser, Role, Announcement as PrismaAnnouncement, Notification as PrismaNotification, Rehearsal as PrismaRehearsal, Service as PrismaService, Attendance as PrismaAttendance, AttendanceStatus, EventType } from '@prisma/client';
+import type { ObjectId, WithId } from 'mongodb';
 
-export type { Role, AttendanceStatus, EventType };
+export type Role = 'ADMIN' | 'SECRETARY' | 'DISCIPLINARIAN' | 'SINGER';
+export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE';
+export type EventType = 'REHEARSAL' | 'SERVICE';
 
-export type User = Omit<PrismaUser, 'password'>;
+export type User = {
+  _id: ObjectId;
+  id: string; // string version of _id
+  firstName: string;
+  lastName: string;
+  username?: string;
+  email?: string;
+  profileImage?: string;
+  role: Role;
+  password?: string; // Will be excluded in most queries
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
-export type Announcement = PrismaAnnouncement & {
-  createdBy: {
+export type Announcement = {
+  _id: ObjectId;
+  id: string;
+  title: string;
+  message: string;
+  attachment?: string;
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH';
+  createdById: ObjectId;
+  createdBy: { // Populated field
     firstName: string;
     lastName: string;
-  }
+  };
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type Notification = {
+    _id: ObjectId;
+    id: string;
+    title: string;
+    message: string;
+    senderRole: Role;
+    userId: ObjectId;
+    isRead: boolean;
+    createdAt: Date;
+};
+
+export type Rehearsal = {
+    _id: ObjectId;
+    id: string;
+    title: string;
+    date: Date;
+    time: string;
+    location: string;
+    notes?: string;
+    createdById: ObjectId;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
-export type Notification = PrismaNotification;
+export type Service = {
+    _id: ObjectId;
+    id: string;
+    title: string;
+    date: Date;
+    time: string;
+    churchLocation: string;
+    attire?: string;
+    notes?: string;
+    createdById: ObjectId;
+    createdAt: Date;
+    updatedAt: Date;
+}
 
-export type Rehearsal = PrismaRehearsal;
-
-export type Service = PrismaService;
 
 // A simplified, combined type for displaying events
 export type Event = {
@@ -42,5 +99,9 @@ export type Attendance = {
     };
 };
 
-
-export type TUser = PrismaUser;
+// Raw MongoDB document types
+export type UserDocument = WithId<Omit<User, 'id'>>;
+export type AnnouncementDocument = WithId<Omit<Announcement, 'id' | 'createdBy'>>;
+export type RehearsalDocument = WithId<Omit<Rehearsal, 'id'>>;
+export type ServiceDocument = WithId<Omit<Service, 'id'>>;
+export type AttendanceDocument = WithId<Omit<Attendance, 'id' | 'user' | 'event'>>;

@@ -1,42 +1,53 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import clientPromise from '@/lib/db';
 
 async function GET(req: NextRequest) {
     try {
-        const attendanceRecords = await prisma.attendance.findMany({
-            orderBy: {
-                createdAt: 'desc',
-            },
-            include: {
-                user: {
-                    select: {
-                        firstName: true,
-                        lastName: true,
-                    }
-                },
-                rehearsal: {
-                    select: {
-                        title: true,
-                        date: true,
-                    }
-                },
-                service: {
-                    select: {
-                        title: true,
-                        date: true,
-                    }
+        const client = await clientPromise;
+        const db = client.db();
+
+        const attendanceRecords = await db.collection('attendance').aggregate([
+            { $sort: { createdAt: -1 } },
+            { 
+                $lookup: {
+                    from: 'users',
+                    localField: 'userId',
+                    foreignField: '_id',
+                    as: 'user'
                 }
-            }
-        });
+            },
+            { $unwind: '$user'},
+             { 
+                $lookup: {
+                    from: 'rehearsals',
+                    localField: 'eventId',
+                    foreignField: '_id',
+                    as: 'rehearsal'
+                }
+            },
+             { 
+                $lookup: {
+                    from: 'services',
+                    localField: 'eventId',
+                    foreignField: '_id',
+                    as: 'service'
+                }
+            },
+            { $unwind: { path: '$rehearsal', preserveNullAndEmptyArrays: true } },
+            { $unwind: { path: '$service', preserveNullAndEmptyArrays: true } },
+        ]).toArray();
 
         const formattedAttendance = attendanceRecords.map(a => {
             const eventDetails = a.rehearsal || a.service;
             
             return {
-                id: a.id,
+                id: a._id.toHexString(),
                 status: a.status,
-                user: a.user,
+                user: {
+                    firstName: a.user.firstName,
+                    lastName: a.user.lastName,
+                },
                 event: {
                     title: eventDetails?.title ?? 'Deleted Event',
                     date: eventDetails?.date ?? a.createdAt,

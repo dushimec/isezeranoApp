@@ -39,7 +39,7 @@ export function UserTable({ users, currentUser, onEdit, onDelete }: UserTablePro
     }
   };
 
-  const creatableRoles: Role[] = ['SECRETARY', 'DISCIPLINARIAN', 'SINGER'];
+  const creatableRoles = Object.values(Role).filter(r => r !== 'ADMIN');
 
 
   return (

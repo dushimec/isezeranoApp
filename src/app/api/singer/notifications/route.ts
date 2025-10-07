@@ -1,6 +1,8 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import clientPromise from '@/lib/db';
 import { getUserIdFromToken } from '@/lib/auth';
+import { ObjectId } from 'mongodb';
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,12 +12,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const notifications = await prisma.notification.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-    });
+    const client = await clientPromise;
+    const db = client.db();
 
-    return NextResponse.json(notifications);
+    const notifications = await db.collection('notifications').find({ 
+        userId: new ObjectId(userId) 
+    }).sort({ createdAt: -1 }).toArray();
+
+    return NextResponse.json(notifications.map(n => ({...n, id: n._id.toHexString()})));
   } catch (error: any) {
     console.error(error);
     if(error.message.includes('token')) {

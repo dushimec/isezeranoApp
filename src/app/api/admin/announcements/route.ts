@@ -1,23 +1,41 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import clientPromise from '@/lib/db';
 import { getUserIdFromToken } from '@/lib/auth';
+import { ObjectId } from 'mongodb';
+import { UserDocument } from '@/lib/types';
+
 
 export async function GET(req: NextRequest) {
   try {
-    const announcements = await prisma.announcement.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: {
-        createdBy: {
-          select: {
-            firstName: true,
-            lastName: true,
-          }
-        }
-      }
-    });
+    const client = await clientPromise;
+    const db = client.db();
 
-    return NextResponse.json(announcements);
+    const announcements = await db.collection('announcements').aggregate([
+        { $sort: { createdAt: -1 } },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'createdById',
+                foreignField: '_id',
+                as: 'createdBy'
+            }
+        },
+        { $unwind: '$createdBy' },
+        {
+            $project: {
+                title: 1,
+                message: 1,
+                priority: 1,
+                createdAt: 1,
+                'createdBy.firstName': 1,
+                'createdBy.lastName': 1,
+            }
+        }
+    ]).toArray();
+
+
+    return NextResponse.json(announcements.map(a => ({...a, id: a._id.toHexString()})));
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -36,31 +54,42 @@ export async function POST(req: NextRequest) {
     if (!title || !message) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+    
+    const client = await clientPromise;
+    const db = client.db();
 
-    const newAnnouncement = await prisma.announcement.create({
-      data: {
+    const newAnnouncement = {
         title,
         message,
         priority,
-        createdById: userId,
-      }
-    });
+        createdById: new ObjectId(userId),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    };
+
+    const result = await db.collection('announcements').insertOne(newAnnouncement);
+    const announcementId = result.insertedId;
     
     // Create notifications for all singers
-    const singers = await prisma.user.findMany({ where: { role: 'SINGER' }, select: { id: true } });
+    const singers = await db.collection<UserDocument>('users').find({ role: 'SINGER' }, { projection: { _id: 1 } }).toArray();
+
     if (singers.length > 0) {
-        await prisma.notification.createMany({
-            data: singers.map(singer => ({
-                userId: singer.id,
-                announcementId: newAnnouncement.id,
+        const creator = await db.collection<UserDocument>('users').findOne({_id: new ObjectId(userId)});
+        if (creator) {
+            const notifications = singers.map(singer => ({
+                userId: singer._id,
+                announcementId: announcementId,
                 title: 'New Announcement',
                 message: newAnnouncement.title,
-                senderRole: 'ADMIN', // Or dynamically set based on creator's role
-            }))
-        });
+                senderRole: creator.role, 
+                isRead: false,
+                createdAt: new Date(),
+            }));
+            await db.collection('notifications').insertMany(notifications);
+        }
     }
 
-    return NextResponse.json(newAnnouncement, { status: 201 });
+    return NextResponse.json({ ...newAnnouncement, id: announcementId.toHexString() }, { status: 201 });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -13,7 +13,7 @@ import { UserRegistrationForm } from './user-registration-form';
 import { UserTable } from './user-table';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import { Role, User } from '@prisma/client';
+import { Role, User } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
 export default function UsersPage() {
@@ -51,7 +51,7 @@ export default function UsersPage() {
 
   React.useEffect(() => {
     if (!loading) {
-      if (!user || user.role !== Role.ADMIN) {
+      if (!user || user.role !== 'ADMIN') {
         router.push('/unauthorized');
       } else {
         fetchUsers();
@@ -129,7 +129,7 @@ export default function UsersPage() {
     return <div className="flex items-center justify-center min-h-screen"><div className="loader">Loading...</div></div>;
   }
   
-  if (!user || user.role !== Role.ADMIN) {
+  if (!user || user.role !== 'ADMIN') {
     return null;
   }
 

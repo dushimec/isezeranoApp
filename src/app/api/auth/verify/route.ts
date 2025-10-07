@@ -1,7 +1,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
-import { prisma } from '@/lib/db';
+import clientPromise from '@/lib/db';
+import { ObjectId } from 'mongodb';
+import { UserDocument } from '@/lib/types';
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,10 +18,11 @@ export async function POST(req: NextRequest) {
     if (!payload || !payload.sub) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
+    
+    const client = await clientPromise;
+    const db = client.db();
 
-    const user = await prisma.user.findUnique({
-      where: { id: payload.sub },
-    });
+    const user = await db.collection<UserDocument>('users').findOne({ _id: new ObjectId(payload.sub) });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -31,7 +34,7 @@ export async function POST(req: NextRequest) {
 
     const { password, ...userWithoutPassword } = user;
 
-    return NextResponse.json({ user: userWithoutPassword });
+    return NextResponse.json({ user: { ...userWithoutPassword, id: user._id.toHexString() } });
   } catch (error) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

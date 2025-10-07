@@ -1,22 +1,42 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import clientPromise from '@/lib/db';
 
 async function GET(req: NextRequest) {
     try {
-        const rehearsals = await prisma.rehearsal.findMany({
-            orderBy: { date: 'desc' },
-            include: { attendance: { select: { userId: true } } }
-        });
+        const client = await clientPromise;
+        const db = client.db();
 
-        const services = await prisma.service.findMany({
-            orderBy: { date: 'desc' },
-            include: { attendance: { select: { userId: true } } }
-        });
+        const rehearsals = await db.collection('rehearsals').find({}).sort({ date: -1 }).toArray();
+        const services = await db.collection('services').find({}).sort({ date: -1 }).toArray();
+        
+        const attendance = await db.collection('attendance').find({}).toArray();
+        const attendanceByEvent = attendance.reduce((acc, curr) => {
+            const eventId = curr.eventId.toHexString();
+            if (!acc[eventId]) {
+                acc[eventId] = [];
+            }
+            acc[eventId].push({ userId: curr.userId.toHexString() });
+            return acc;
+        }, {} as Record<string, {userId: string}[]>);
 
         const events = [
-            ...rehearsals.map(r => ({ ...r, type: 'REHEARSAL', attendees: r.attendance, location: r.location })),
-            ...services.map(s => ({ ...s, type: 'SERVICE', attendees: s.attendance, location: s.churchLocation }))
+            ...rehearsals.map(r => ({
+                id: r._id.toHexString(), 
+                title: r.title,
+                date: r.date,
+                type: 'REHEARSAL',
+                attendees: attendanceByEvent[r._id.toHexString()] || [],
+                location: r.location
+            })),
+            ...services.map(s => ({ 
+                id: s._id.toHexString(),
+                title: s.title,
+                date: s.date,
+                type: 'SERVICE',
+                attendees: attendanceByEvent[s._id.toHexString()] || [],
+                location: s.churchLocation
+            }))
         ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
         return NextResponse.json(events);

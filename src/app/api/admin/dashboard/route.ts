@@ -1,53 +1,39 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { Role } from '@prisma/client';
+import clientPromise from '@/lib/db';
+import { Role } from '@/lib/types';
 
 export async function GET(req: NextRequest) {
   try {
-    const userCounts = await db.user.groupBy({
-      by: ['role'],
-      _count: {
-        role: true,
-      },
-    });
+    const client = await clientPromise;
+    const db = client.db();
 
-    const totalUsers = await db.user.count();
-
-    const formattedUserCounts = userCounts.reduce((acc, count) => {
-        acc[count.role] = count._count.role;
+    const userCountsCursor = db.collection('users').aggregate([
+      { $group: { _id: "$role", count: { $sum: 1 } } }
+    ]);
+    
+    const userCountsArray = await userCountsCursor.toArray();
+    const formattedUserCounts = userCountsArray.reduce((acc, count) => {
+        acc[count._id as Role] = count.count;
         return acc;
     }, {} as Record<Role, number>);
 
+    const totalUsers = await db.collection('users').countDocuments();
 
-    const upcomingRehearsals = db.rehearsal.findMany({
-        where: { date: { gte: new Date() } },
-        orderBy: { date: 'asc' },
-        take: 5
-    });
-    const upcomingServices = db.service.findMany({
-        where: { date: { gte: new Date() } },
-        orderBy: { date: 'asc' },
-        take: 5
-    });
+    const upcomingRehearsals = await db.collection('rehearsals').find({ date: { $gte: new Date() } }).sort({ date: 'asc' }).limit(5).toArray();
+    const upcomingServices = await db.collection('services').find({ date: { $gte: new Date() } }).sort({ date: 'asc' }).limit(5).toArray();
     
-    const [rehearsals, services] = await Promise.all([upcomingRehearsals, upcomingServices]);
-
-    const upcomingEvents = [...rehearsals.map(r => ({...r, type: 'REHEARSAL', location: r.location})), ...services.map(s => ({...s, type: 'SERVICE', location: s.churchLocation}))]
+    const upcomingEvents = [...upcomingRehearsals.map(r => ({...r, type: 'REHEARSAL', location: r.location})), ...upcomingServices.map(s => ({...s, type: 'SERVICE', location: s.churchLocation}))]
         .sort((a,b) => a.date.getTime() - b.date.getTime())
         .slice(0, 5);
 
-
-    const recentAnnouncements = await db.announcement.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-    });
+    const recentAnnouncements = await db.collection('announcements').find().sort({ createdAt: 'desc' }).limit(5).toArray();
 
     return NextResponse.json({
       totalUsers,
       userCounts: formattedUserCounts,
-      upcomingEvents,
-      recentAnnouncements,
+      upcomingEvents: upcomingEvents.map(e => ({...e, id: e._id.toHexString()})),
+      recentAnnouncements: recentAnnouncements.map(a => ({...a, id: a._id.toHexString()})),
     });
   } catch (error) {
     console.error(error);

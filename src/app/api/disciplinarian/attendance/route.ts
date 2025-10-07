@@ -1,36 +1,28 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
-import { EventType } from '@prisma/client';
+import clientPromise from '@/lib/db';
+import { EventType } from '@/lib/types';
+import { ObjectId } from 'mongodb';
 
 export async function GET(req: NextRequest) {
   try {
-    const attendanceRecords = await prisma.attendance.findMany({
-      include: {
-        user: {
-          select: {
-            firstName: true,
-            lastName: true,
-          },
-        },
-        rehearsal: true,
-        service: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    const client = await clientPromise;
+    const db = client.db();
+
+    const attendanceRecords = await db.collection('attendance').aggregate([
+        { $sort: { createdAt: -1 } },
+        { $lookup: { from: 'users', localField: 'userId', foreignField: '_id', as: 'user' } },
+        { $unwind: '$user' },
+        { $lookup: { from: 'rehearsals', localField: 'eventId', foreignField: '_id', as: 'rehearsal' } },
+        { $lookup: { from: 'services', localField: 'eventId', foreignField: '_id', as: 'service' } },
+        { $unwind: { path: '$rehearsal', preserveNullAndEmptyArrays: true } },
+        { $unwind: { path: '$service', preserveNullAndEmptyArrays: true } },
+    ]).toArray();
 
     const formattedAttendance = attendanceRecords.map(a => {
-        let event;
-        if(a.eventType === EventType.REHEARSAL) {
-            event = a.rehearsal
-        } else {
-            event = a.service;
-        }
-
+        const event = a.rehearsal || a.service;
         return {
-            id: a.id,
+            id: a._id.toHexString(),
             status: a.status,
             userName: `${a.user.firstName} ${a.user.lastName}`,
             eventType: a.eventType,
@@ -53,20 +45,33 @@ export async function POST(req: NextRequest) {
         if (!eventId || !eventType || !Array.isArray(attendanceData) || !markedById) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
+        
+        const client = await clientPromise;
+        const db = client.db();
 
-        const transactions = attendanceData.map(({ userId, status }) => {
-           return prisma.attendance.create({
-                data: {
-                    userId,
-                    eventId,
-                    eventType,
-                    status,
-                    markedById
-                }
-            })
-        });
+        const operations = attendanceData.map(({ userId, status }) => ({
+            updateOne: {
+                filter: {
+                    userId: new ObjectId(userId),
+                    eventId: new ObjectId(eventId)
+                },
+                update: {
+                    $set: {
+                        userId: new ObjectId(userId),
+                        eventId: new ObjectId(eventId),
+                        eventType,
+                        status,
+                        markedById: new ObjectId(markedById),
+                        createdAt: new Date(), // or updatedAt
+                    }
+                },
+                upsert: true
+            }
+        }));
 
-        await prisma.$transaction(transactions);
+        if (operations.length > 0) {
+            await db.collection('attendance').bulkWrite(operations);
+        }
 
         return NextResponse.json({ message: 'Attendance recorded successfully' }, { status: 201 });
 

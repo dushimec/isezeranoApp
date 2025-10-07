@@ -2,44 +2,61 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
 import { createToken, Role } from '@/lib/auth';
-import { db } from '@/lib/db';
+import clientPromise from '@/lib/db';
+import { ObjectId } from 'mongodb';
 
 export async function POST(req: NextRequest) {
   try {
-    const { firstName, lastName, email, password, role } = await req.json();
+    const { firstName, lastName, email, password, username } = await req.json();
 
-    if (!firstName || !lastName || !email || !password || !role) {
+    if (!firstName || !lastName || !email || !password) {
       return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
     }
+    
+    const client = await clientPromise;
+    const db = client.db();
 
-    if (role !== 'ADMIN') {
-        return NextResponse.json({ message: 'Only ADMIN registration is allowed through this endpoint' }, { status: 400 });
+    // Check if an admin already exists
+    const adminCount = await db.collection('users').countDocuments({ role: 'ADMIN' });
+    if (adminCount > 0) {
+        return NextResponse.json({ message: 'An admin account already exists.' }, { status: 403 });
     }
 
-    const existingUser = await db.user.findUnique({ where: { email } });
+    const existingUser = await db.collection('users').findOne({ email });
     if (existingUser) {
       return NextResponse.json({ message: 'User with this email already exists' }, { status: 409 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await db.user.create({
-      data: {
+    const result = await db.collection('users').insertOne({
+      firstName,
+      lastName,
+      email,
+      username: username || email.split('@')[0],
+      password: hashedPassword,
+      role: 'ADMIN' as Role,
+      isActive: true,
+      profileImage: `https://picsum.photos/seed/${username || email}/100/100`,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const user = {
+        _id: result.insertedId,
         firstName,
         lastName,
         email,
-        password: hashedPassword,
-        role: role as Role,
-      },
-    });
+        role: 'ADMIN' as Role,
+    }
 
-    const token = await createToken(user.id, user.role as Role);
+    const token = await createToken(result.insertedId.toHexString(), user.role as Role);
 
     return NextResponse.json({ 
         message: 'Admin registered successfully',
         token,
         user: {
-            id: user.id,
+            id: user._id.toHexString(),
             firstName: user.firstName,
             lastName: user.lastName,
             email: user.email,

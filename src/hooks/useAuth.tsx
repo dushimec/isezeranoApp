@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { User } from '@prisma/client';
+import { User } from '@/lib/types';
 
 export interface AuthContextType {
   user: User | null;
@@ -38,6 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (data.user) {
           setToken(storedToken);
           setUser(data.user);
+          localStorage.setItem('user', JSON.stringify(data.user));
         } else {
           localStorage.removeItem('token');
           localStorage.removeItem('user');

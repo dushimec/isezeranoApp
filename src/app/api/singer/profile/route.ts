@@ -1,6 +1,10 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import clientPromise from '@/lib/db';
 import { getUserIdFromToken } from '@/lib/auth';
+import { ObjectId } from 'mongodb';
+import { UserDocument } from '@/lib/types';
+
 
 export async function GET(req: NextRequest) {
   try {
@@ -9,28 +13,20 @@ export async function GET(req: NextRequest) {
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    
+    const client = await clientPromise;
+    const db = client.db();
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        username: true,
-        email: true,
-        role: true,
-        profileImage: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+    const user = await db.collection('users').findOne(
+        { _id: new ObjectId(userId) },
+        { projection: { password: 0 } }
+    );
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json(user);
+    return NextResponse.json({...user, id: user._id.toHexString()});
   } catch (error: any) {
     console.error(error);
     if(error.message.includes('token')) {
@@ -49,36 +45,32 @@ export async function PATCH(req: NextRequest) {
     }
 
     const { firstName, lastName, username, email } = await req.json();
+    
+    const client = await clientPromise;
+    const db = client.db();
 
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        firstName,
-        lastName,
-        username,
-        email
-      },
-    });
+    const updateData: any = { updatedAt: new Date() };
+    if(firstName) updateData.firstName = firstName;
+    if(lastName) updateData.lastName = lastName;
+    if(username) updateData.username = username;
+    if(email) updateData.email = email;
 
-    const { password, ...userWithoutPassword } = updatedUser;
+    const result = await db.collection<UserDocument>('users').findOneAndUpdate(
+      { _id: new ObjectId(userId) },
+      { $set: updateData },
+      { returnDocument: 'after', projection: { password: 0 } }
+    );
+    
+    if(!result) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
 
-    return NextResponse.json(userWithoutPassword);
+    return NextResponse.json(result);
   } catch (error: any) {
     console.error(error);
-    if(error.code === 'P2002') {
-         const target = error.meta?.target as string[];
-        let message = 'A user with this ';
-        if (target.includes('username')) {
-            message += 'username';
-        }
-        if (target.includes('email')) {
-            message += target.includes('username') ? ' or email' : 'email';
-        }
-        message += ' already exists.';
-        return NextResponse.json({ error: message }, { status: 409 });
-    }
-    if(error.code === 'P2025') {
-        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    // Basic check for duplicate key error from MongoDB
+    if(error.code === 11000) {
+        return NextResponse.json({ error: 'Username or email already exists' }, { status: 409 });
     }
     if(error.message.includes('token')) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

@@ -23,14 +23,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Role } from "@prisma/client";
+import { Role } from "@/lib/types";
 import { useAuth } from "@/hooks/useAuth";
 
 interface UserRegistrationFormProps {
   onUserCreated: () => void;
 }
 
-const creatableRoles = Object.values(Role).filter(role => role !== Role.ADMIN) as [string, ...string[]];
+const creatableRoles: Role[] = ['SECRETARY', 'DISCIPLINARIAN', 'SINGER'];
 
 const formSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
@@ -38,7 +38,7 @@ const formSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
   email: z.string().email("Invalid email address").optional().or(z.literal('')),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.enum(creatableRoles),
+  role: z.enum(creatableRoles as [string, ...string[]]),
 });
 
 export function UserRegistrationForm({ onUserCreated }: UserRegistrationFormProps) {
@@ -54,7 +54,7 @@ export function UserRegistrationForm({ onUserCreated }: UserRegistrationFormProp
       username: "",
       email: "",
       password: "",
-      role: Role.SINGER,
+      role: 'SINGER',
     },
   });
 
@@ -73,7 +73,7 @@ export function UserRegistrationForm({ onUserCreated }: UserRegistrationFormProp
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create user.');
+        throw new Error(errorData.message || 'Failed to create user.');
       }
 
       toast({

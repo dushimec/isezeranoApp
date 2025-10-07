@@ -30,7 +30,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Image from "next/image";
 import { IsezeranoLogo } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
-import { Role } from "@prisma/client";
+import { Role } from "@/lib/types";
 
 export default function DashboardLayout({
   children,
@@ -54,9 +54,9 @@ export default function DashboardLayout({
 
   const allNavItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home, roles: [Role.ADMIN, Role.SECRETARY, Role.DISCIPLINARIAN, Role.SINGER] },
-    { href: "/dashboard/announcements", label: "Announcements", icon: Megaphone, roles: [Role.ADMIN, Role.SECRETARY, Role.SINGER] },
+    { href: "/dashboard/announcements", label: "Announcements", icon: Megaphone, roles: [Role.ADMIN, Role.SECRETARY] },
     { href: "/dashboard/schedule", label: "Schedule", icon: Calendar, roles: [Role.ADMIN, Role.SECRETARY, Role.SINGER] },
-    { href: "/dashboard/attendance", label: "Attendance", icon: ClipboardCheck, roles: [Role.ADMIN, Role.DISCIPLINARIAN] },
+    { href: "/dashboard/attendance", label: "Take Attendance", icon: ClipboardCheck, roles: [Role.ADMIN, Role.DISCIPLINARIAN] },
     { href: "/dashboard/my-attendance", label: "My Attendance", icon: ClipboardCheck, roles: [Role.SINGER] },
     { href: "/dashboard/reports", label: "Reports", icon: BarChart, roles: [Role.ADMIN, Role.SECRETARY, Role.DISCIPLINARIAN] },
     { href: "/dashboard/users", label: "User Management", icon: Users, roles: [Role.ADMIN] },

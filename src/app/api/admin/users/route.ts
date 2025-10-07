@@ -1,24 +1,23 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
-import { db } from '@/lib/db';
+import clientPromise from '@/lib/db';
 import { Role } from '@/lib/auth';
-import { adminAuth } from '@/lib/middleware';
 
 // Create a new user (Admin only)
 export async function POST(req: NextRequest) {
-  const adminResponse = await adminAuth(req);
-  if (adminResponse) return adminResponse;
-
   try {
     const { firstName, lastName, email, password, role, username } = await req.json();
 
-    if (!firstName || !lastName || !email || !password || !role || !username) {
+    if (!firstName || !lastName || !password || !role || !username) {
       return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
     }
+    
+    const client = await clientPromise;
+    const db = client.db();
 
-    const existingUser = await db.user.findFirst({
-      where: { OR: [{ email }, { username }] },
+    const existingUser = await db.collection('users').findOne({
+      $or: [{ email }, { username }],
     });
 
     if (existingUser) {
@@ -27,26 +26,29 @@ export async function POST(req: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = await db.user.create({
-      data: {
+    const result = await db.collection('users').insertOne({
         firstName,
         lastName,
         email,
         username,
         password: hashedPassword,
         role: role as Role,
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        username: true,
-        role: true,
-        createdAt: true,
         isActive: true,
-      }
+        profileImage: `https://picsum.photos/seed/${username}/100/100`,
+        createdAt: new Date(),
+        updatedAt: new Date(),
     });
+    
+    const newUser = {
+        _id: result.insertedId,
+        firstName,
+        lastName,
+        email,
+        username,
+        role,
+        createdAt: new Date(),
+        isActive: true,
+    }
 
     return NextResponse.json(newUser, { status: 201 });
   } catch (error) {
@@ -57,23 +59,15 @@ export async function POST(req: NextRequest) {
 
 // Get all users (Admin only)
 export async function GET(req: NextRequest) {
-    const adminResponse = await adminAuth(req);
-    if (adminResponse) return adminResponse;
-
     try {
-        const users = await db.user.findMany({
-            select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true,
-                username: true,
-                role: true,
-                createdAt: true,
-                isActive: true,
-            }
-        });
-        return NextResponse.json(users);
+        const client = await clientPromise;
+        const db = client.db();
+
+        const users = await db.collection('users').find({}, {
+            projection: { password: 0 } // Exclude password from the result
+        }).toArray();
+
+        return NextResponse.json(users.map(u => ({...u, id: u._id.toHexString()})));
     } catch (error) {
         console.error('Error fetching users:', error);
         return NextResponse.json({ message: 'Internal server error' }, { status: 500 });

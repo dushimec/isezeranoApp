@@ -1,25 +1,35 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import clientPromise from '@/lib/db';
+import { Role } from '@/lib/types';
 
 export async function GET(req: NextRequest) {
   try {
-    const users = await prisma.user.findMany({
-      select: { 
-          id: true, 
-          firstName: true,
-          lastName: true, 
-          role: true 
-      },
-      orderBy: { 
-          firstName: 'asc' 
-      },
-    });
+    const client = await clientPromise;
+    const db = client.db();
+
+    const users = await db.collection('users').find(
+      { role: { $in: ['SINGER', 'DISCIPLINARIAN', 'SECRETARY'] as Role[] } },
+      { 
+          projection: { 
+            _id: 1, 
+            firstName: 1,
+            lastName: 1, 
+            role: 1,
+            profileImage: 1
+          },
+          sort: { 
+              firstName: 'asc' 
+          },
+      }
+    ).toArray();
     
-    // Combine firstName and lastName into fullName
     const formattedUsers = users.map(u => ({
-        ...u,
-        fullName: `${u.firstName} ${u.lastName}`
-    }))
+        id: u._id.toHexString(),
+        fullName: `${u.firstName} ${u.lastName}`,
+        profileImage: u.profileImage,
+        role: u.role
+    }));
 
     return NextResponse.json(formattedUsers);
   } catch (error) {
