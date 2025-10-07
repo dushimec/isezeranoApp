@@ -1,87 +1,103 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
-import { Role } from '@prisma/client';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+import { Role } from '@/lib/auth';
+import { adminAuth } from '@/lib/middleware';
+import bcrypt from 'bcrypt';
+
+interface UserIdParams {
+  params: { id: string };
+}
+
+// Get a single user by ID (Admin only)
+export async function GET(req: NextRequest, { params }: UserIdParams) {
+  const adminResponse = await adminAuth(req);
+  if (adminResponse) return adminResponse;
+
+  const { id } = params;
+
   try {
-    const { id } = params;
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { id },
       select: {
         id: true,
         firstName: true,
         lastName: true,
-        username: true,
         email: true,
+        username: true,
         role: true,
+        createdAt: true,
         isActive: true,
-        profileImage: true,
       }
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json({ message: 'User not found' }, { status: 404 });
     }
 
     return NextResponse.json(user);
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error(`Error fetching user ${id}:`, error);
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  try {
-    const { id } = params;
-    const { firstName, lastName, username, email, role, isActive } = await req.json();
+// Update a user (Admin only)
+export async function PUT(req: NextRequest, { params }: UserIdParams) {
+  const adminResponse = await adminAuth(req);
+  if (adminResponse) return adminResponse;
 
-    const user = await prisma.user.update({
+  const { id } = params;
+  try {
+    const { firstName, lastName, email, username, password, role, isActive } = await req.json();
+
+    let hashedPassword;
+    if (password) {
+      hashedPassword = await bcrypt.hash(password, 10);
+    }
+
+    const updatedUser = await db.user.update({
       where: { id },
       data: {
         firstName,
         lastName,
-        username,
         email,
-        role: role as Role,
-        isActive,
+        username,
+        ...(password && { password: hashedPassword }),
+        ...(role && { role: role as Role }),
+        ...(isActive !== undefined && { isActive }),
       },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        username: true,
+        role: true,
+        createdAt: true,
+        isActive: true,
+      }
     });
 
-    const { password, ...userWithoutPassword } = user;
-    return NextResponse.json(userWithoutPassword);
-  } catch (error: any) {
-    console.error(error);
-     if (error.code === 'P2002') {
-        const target = error.meta?.target as string[];
-        let message = 'A user with this ';
-        if (target.includes('username')) {
-            message += 'username';
-        }
-        if (target.includes('email')) {
-            message += target.includes('username') ? ' or email' : 'email';
-        }
-        message += ' already exists.';
-        return NextResponse.json({ error: message }, { status: 409 });
-    }
-    if (error.code === 'P2025') { // Record to update not found
-        return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(updatedUser);
+  } catch (error) {
+    console.error(`Error updating user ${id}:`, error);
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  try {
+// Delete a user (Admin only)
+export async function DELETE(req: NextRequest, { params }: UserIdParams) {
+    const adminResponse = await adminAuth(req);
+    if (adminResponse) return adminResponse;
+
     const { id } = params;
-    await prisma.user.delete({
-      where: { id },
-    });
-    return NextResponse.json({ message: 'User deleted successfully' });
-  } catch (error: any) {
-    console.error(error);
-    if (error.code === 'P2025') { // Record to delete not found
-        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+
+    try {
+        await db.user.delete({ where: { id } });
+        return NextResponse.json({ message: 'User deleted successfully' }, { status: 200 });
+    } catch (error) {
+        console.error(`Error deleting user ${id}:`, error);
+        return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
 }

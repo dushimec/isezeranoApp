@@ -1,55 +1,54 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
 import bcrypt from 'bcrypt';
-import { Role } from '@prisma/client';
+import { createToken, Role } from '@/lib/auth';
+import { db } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
-  const { firstName, lastName, username, email, password } = await req.json();
-
-  if (!firstName || !lastName || !email || !password) {
-    return NextResponse.json({ error: 'Missing required fields for admin registration' }, { status: 400 });
-  }
-
   try {
-    const adminCount = await prisma.user.count({ where: { role: 'ADMIN' } });
+    const { firstName, lastName, email, password, role } = await req.json();
 
-    if (adminCount > 0) {
-      return NextResponse.json({ error: 'An admin account already exists. Please log in.' }, { status: 403 });
+    if (!firstName || !lastName || !email || !password || !role) {
+      return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
+    }
+
+    if (role !== 'ADMIN') {
+        return NextResponse.json({ message: 'Only ADMIN registration is allowed through this endpoint' }, { status: 400 });
+    }
+
+    const existingUser = await db.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return NextResponse.json({ message: 'User with this email already exists' }, { status: 409 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const finalUsername = username || email;
 
-    const user = await prisma.user.create({
+    const user = await db.user.create({
       data: {
         firstName,
         lastName,
-        username: finalUsername,
         email,
         password: hashedPassword,
-        role: 'ADMIN',
-        profileImage: `https://picsum.photos/seed/${finalUsername}/400/400`,
+        role: role as Role,
       },
     });
 
-    // Omit password from the returned user object
-    const { password: _, ...userWithoutPassword } = user;
+    const token = await createToken(user.id, user.role as Role);
 
-    return NextResponse.json({ message: "Admin user created successfully", user: userWithoutPassword }, { status: 201 });
+    return NextResponse.json({ 
+        message: 'Admin registered successfully',
+        token,
+        user: {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role,
+        }
+    }, { status: 201 });
 
-  } catch (error: any) {
-    console.error('Error during admin registration:', error);
-    if (error.code === 'P2002' && error.meta?.target) { // Prisma unique constraint violation
-      const target = error.meta.target as string[];
-      if(target.includes('email')){
-          return NextResponse.json({ error: 'A user with this email already exists.' }, { status: 409 });
-      }
-      if(target.includes('username')){
-          return NextResponse.json({ error: 'A user with this username already exists.' }, { status: 409 });
-      }
-    }
-    // Generic error for other cases
-    return NextResponse.json({ error: 'An internal error occurred.', details: error.message }, { status: 500 });
+  } catch (error) {
+    console.error('Registration error:', error);
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

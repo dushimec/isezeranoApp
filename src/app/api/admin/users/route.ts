@@ -1,75 +1,81 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
 import bcrypt from 'bcrypt';
-import { Role } from '@prisma/client';
+import { db } from '@/lib/db';
+import { Role } from '@/lib/auth';
+import { adminAuth } from '@/lib/middleware';
 
+// Create a new user (Admin only)
 export async function POST(req: NextRequest) {
-  const { firstName, lastName, username, email, password, role } = await req.json();
-
-  if (!firstName || !lastName || !password || !role) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-  }
-  
-  if (!username && !email) {
-    return NextResponse.json({ error: 'Either username or email is required' }, { status: 400 });
-  }
+  const adminResponse = await adminAuth(req);
+  if (adminResponse) return adminResponse;
 
   try {
+    const { firstName, lastName, email, password, role, username } = await req.json();
+
+    if (!firstName || !lastName || !email || !password || !role || !username) {
+      return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
+    }
+
+    const existingUser = await db.user.findFirst({
+      where: { OR: [{ email }, { username }] },
+    });
+
+    if (existingUser) {
+      return NextResponse.json({ message: 'User with this email or username already exists' }, { status: 409 });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await prisma.user.create({
+
+    const newUser = await db.user.create({
       data: {
         firstName,
         lastName,
-        username,
         email,
+        username,
         password: hashedPassword,
         role: role as Role,
-        profileImage: `https://picsum.photos/seed/${username || email}/400/400`,
       },
-    });
-
-    const { password: _, ...userWithoutPassword } = user;
-    return NextResponse.json(userWithoutPassword, { status: 201 });
-  } catch (error: any) {
-    console.error('Error creating user:', error);
-    if (error.code === 'P2002') { // Prisma unique constraint violation
-      const target = error.meta?.target as string[];
-      let message = 'A user with this ';
-      if (target.includes('username')) {
-        message += 'username';
-      }
-      if (target.includes('email')) {
-        message += target.includes('username') ? ' or email' : 'email';
-      }
-      message += ' already exists.';
-        return NextResponse.json({ error: message }, { status: 409 });
-    }
-    return NextResponse.json({ error: 'Internal server error', details: error.message }, { status: 500 });
-  }
-}
-
-export async function GET(req: NextRequest) {
-  try {
-    const users = await prisma.user.findMany({
       select: {
         id: true,
         firstName: true,
         lastName: true,
-        username: true,
         email: true,
+        username: true,
         role: true,
-        isActive: true,
-        profileImage: true,
         createdAt: true,
-        updatedAt: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
+        isActive: true,
+      }
     });
-    return NextResponse.json(users);
+
+    return NextResponse.json(newUser, { status: 201 });
   } catch (error) {
-    console.error('Error fetching users:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error creating user:', error);
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
+}
+
+// Get all users (Admin only)
+export async function GET(req: NextRequest) {
+    const adminResponse = await adminAuth(req);
+    if (adminResponse) return adminResponse;
+
+    try {
+        const users = await db.user.findMany({
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                username: true,
+                role: true,
+                createdAt: true,
+                isActive: true,
+            }
+        });
+        return NextResponse.json(users);
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    }
 }

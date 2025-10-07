@@ -1,8 +1,8 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 import bcrypt from 'bcrypt';
 import { createToken } from '@/lib/auth';
-import { Role } from '@prisma/client';
 
 export async function POST(req: NextRequest) {
   const { identifier, password, loginType } = await req.json();
@@ -14,15 +14,10 @@ export async function POST(req: NextRequest) {
   try {
     let user;
     if (loginType === 'email') {
-        user = await prisma.user.findUnique({
-            where: { email: identifier, role: Role.ADMIN },
-        });
+        user = await db.user.findUnique({ where: { email: identifier, role: 'ADMIN' } });
     } else {
-        user = await prisma.user.findUnique({
-            where: { username: identifier },
-        });
+        user = await db.user.findFirst({ where: { username: identifier } });
     }
-
 
     if (!user) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
@@ -38,7 +33,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Your account is inactive. Please contact an administrator.' }, { status: 403 });
     }
 
-    const token = await createToken(user.id, user.role);
+    const token = await createToken(user.id.toString(), user.role);
 
     const { password: _, ...userWithoutPassword } = user;
 

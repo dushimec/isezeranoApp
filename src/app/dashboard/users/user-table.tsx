@@ -1,127 +1,150 @@
 
-"use client";
+'use client';
 
-import * as React from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Edit, MoreHorizontal, Trash } from "lucide-react";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuPortal,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
-    DropdownMenuSeparator,
-    DropdownMenuSub,
-    DropdownMenuSubContent,
-    DropdownMenuSubTrigger,
-    DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
-import Image from "next/image";
-import { Badge } from "@/components/ui/badge";
-import { Role, User } from "@prisma/client";
+import React, { useEffect, useState } from 'react';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { fetchUsers, updateUser, deleteUser } from '@/store/usersSlice';
+import { User, Role } from '@/lib/types';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { MoreHorizontal } from 'lucide-react';
 
-interface UserTableProps {
-  users: User[];
-  currentUser?: User | null;
-  onEdit: (userId: string, data: Partial<User>) => void;
-  onDelete: (user: User) => void;
-}
+export default function UserTable() {
+  const dispatch = useAppDispatch();
+  const { users, loading } = useAppSelector((state) => state.users);
+  const { token } = useAppSelector((state) => state.auth);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-const editableRoles = Object.values(Role).filter(r => r !== Role.ADMIN);
+  useEffect(() => {
+    if (token) {
+      dispatch(fetchUsers(token));
+    }
+  }, [dispatch, token]);
 
-
-export function UserTable({ users, currentUser, onEdit, onDelete }: UserTableProps) {
-  
-  const handleRoleChange = (userId: string, newRole: Role) => {
-    onEdit(userId, { role: newRole });
+  const handleEditClick = (user: User) => {
+    setSelectedUser(user);
+    setIsEditDialogOpen(true);
   };
 
+  const handleDeleteClick = (id: string) => {
+    if (token) {
+      dispatch(deleteUser({ id, token }));
+    }
+  };
+
+  const handleUpdateUser = () => {
+    if (selectedUser && token) {
+        dispatch(updateUser({ user: selectedUser, token }));
+        setIsEditDialogOpen(false);
+        setSelectedUser(null);
+    }
+  };
+
+  if (loading) return <div>Loading users...</div>;
+
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>User</TableHead>
-          <TableHead>Role</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>
-            <span className="sr-only">Actions</span>
-          </TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {users.map((user) => (
-          <TableRow key={user.id}>
-            <TableCell>
-                <div className="flex items-center gap-3">
-                    <Image
-                        src={user.profileImage || `https://picsum.photos/seed/${user.id}/40/40`}
-                        width={40}
-                        height={40}
-                        alt={`${user.firstName} ${user.lastName}`}
-                        className="rounded-full object-cover"
-                        data-ai-hint="person portrait"
-                    />
-                    <div>
-                        <p className="font-medium">{user.firstName} {user.lastName}</p>
-                        <p className="text-sm text-muted-foreground">{user.email || user.username}</p>
+    <>
+        <Table>
+            <TableHeader>
+            <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Username</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+            </TableRow>
+            </TableHeader>
+            <TableBody>
+            {users.map((user) => (
+                <TableRow key={user.id}>
+                <TableCell>{`${user.firstName} ${user.lastName}`}</TableCell>
+                <TableCell>{user.email}</TableCell>
+                <TableCell>{user.username}</TableCell>
+                <TableCell>{user.role}</TableCell>
+                <TableCell>{user.isActive ? 'Active' : 'Inactive'}</TableCell>
+                <TableCell>
+                    <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => handleEditClick(user)}>Edit</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDeleteClick(user.id)} className="text-red-600">Delete</DropdownMenuItem>
+                    </DropdownMenuContent>
+                    </DropdownMenu>
+                </TableCell>
+                </TableRow>
+            ))}
+            </TableBody>
+        </Table>
+
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Edit User</DialogTitle>
+                </DialogHeader>
+                {selectedUser && (
+                    <div className="space-y-4 py-4">
+                        <Input 
+                            defaultValue={selectedUser.firstName}
+                            onChange={(e) => setSelectedUser({...selectedUser, firstName: e.target.value})}
+                            placeholder="First Name"
+                        />
+                         <Input 
+                            defaultValue={selectedUser.lastName}
+                            onChange={(e) => setSelectedUser({...selectedUser, lastName: e.target.value})}
+                            placeholder="Last Name"
+                        />
+                        <Input 
+                            defaultValue={selectedUser.email}
+                            onChange={(e) => setSelectedUser({...selectedUser, email: e.target.value})}
+                            placeholder="Email"
+                        />
+                        <Input 
+                            defaultValue={selectedUser.username}
+                            onChange={(e) => setSelectedUser({...selectedUser, username: e.target.value})}
+                            placeholder="Username"
+                        />
+                       <Select 
+                            defaultValue={selectedUser.role} 
+                            onValueChange={(value) => setSelectedUser({...selectedUser, role: value as Role})}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                            {Object.values(Role).map((role) => (
+                                <SelectItem key={role} value={role}>
+                                {role}
+                                </SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                        <div className="flex items-center space-x-2">
+                            <Switch 
+                                id="user-status"
+                                checked={selectedUser.isActive}
+                                onCheckedChange={(checked) => setSelectedUser({...selectedUser, isActive: checked})}
+                            />
+                            <label htmlFor="user-status">Active</label>
+                        </div>
+
+                        <Button onClick={handleUpdateUser}>Save Changes</Button>
                     </div>
-                </div>
-            </TableCell>
-            <TableCell>{user.role}</TableCell>
-            <TableCell>
-                 <Badge variant={user.isActive ? 'default' : 'outline'} className={user.isActive ? 'bg-green-500/20 text-green-700 border-green-500/20' : ''}>
-                    {user.isActive ? "Active" : "Inactive"}
-                </Badge>
-            </TableCell>
-            <TableCell>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button aria-haspopup="true" size="icon" variant="ghost" disabled={user.id === currentUser?.id || user.role === Role.ADMIN}>
-                    <MoreHorizontal className="h-4 w-4" />
-                    <span className="sr-only">Toggle menu</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
-                      <Edit className="mr-2 h-4 w-4" />
-                      Change Role
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuPortal>
-                        <DropdownMenuSubContent>
-                             <DropdownMenuRadioGroup value={user.role} onValueChange={(value) => handleRoleChange(user.id, value as Role)}>
-                                {editableRoles.map(role => (
-                                    <DropdownMenuRadioItem key={role} value={role}>{role}</DropdownMenuRadioItem>
-                                ))}
-                            </DropdownMenuRadioGroup>
-                        </DropdownMenuSubContent>
-                    </DropdownMenuPortal>
-                  </DropdownMenuSub>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-destructive"
-                    onClick={() => onDelete(user)}
-                  >
-                    <Trash className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+                )}
+            </DialogContent>
+        </Dialog>
+    </>
   );
 }

@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
-import { verifyToken } from '@/auth/auth';
+import { prisma } from '@/lib/db';
+import { verifyToken } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
   const token = req.headers.get('authorization')?.split(' ')[1];
@@ -12,18 +12,27 @@ export async function GET(req: NextRequest) {
 
   try {
     const decoded = await verifyToken(token);
-    const sectionLeaderId = decoded.userId;
+    const sectionLeaderId = decoded.sub;
 
-    const sectionResult = await pool.query('SELECT section FROM users WHERE id = $1', [sectionLeaderId]);
-    const section = sectionResult.rows[0]?.section;
+    if (!sectionLeaderId) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
 
-    if (!section) {
+    const user = await prisma.user.findUnique({
+      where: { id: sectionLeaderId },
+      select: { section: true },
+    });
+
+    if (!user || !user.section) {
         return NextResponse.json({ error: 'Section not found for this leader' }, { status: 404 });
     }
 
-    const members = await pool.query('SELECT id, fullName FROM users WHERE section = $1', [section]);
+    const members = await prisma.user.findMany({
+        where: { section: user.section },
+        select: { id: true, fullName: true },
+    });
 
-    return NextResponse.json(members.rows);
+    return NextResponse.json(members);
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

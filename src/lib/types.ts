@@ -1,4 +1,5 @@
-import type { User as PrismaUser, Role, Announcement as PrismaAnnouncement, Notification as PrismaNotification, Rehearsal as PrismaRehearsal, Service as PrismaService, Attendance as PrismaAttendance, AttendanceStatus, EventType } from '@prisma/client';
+
+import type { User as PrismaUser, Role, Announcement as PrismaAnnouncement, Notification as PrismaNotification, Rehearsal as PrismaRehearsal, Service as PrismaService, Attendance as PrismaAttendance, Event as PrismaEvent, AttendanceStatus, EventType } from '@prisma/client';
 
 export type { Role, AttendanceStatus, EventType };
 
@@ -17,6 +18,18 @@ export type Rehearsal = PrismaRehearsal;
 
 export type Service = PrismaService;
 
-export type Attendance = PrismaAttendance;
+export type Event = PrismaEvent & {
+    attendees: PrismaAttendance[];
+};
+
+export type Attendance = PrismaAttendance & {
+    user: {
+        firstName: string;
+        lastName: string;
+    };
+    event: {
+        title: string;
+    };
+};
 
 export type TUser = PrismaUser;

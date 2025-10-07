@@ -13,8 +13,8 @@
 ## Style Guidelines:
 
 - Primary color: Soft blue (#A7C4BC), evoking calmness and trust.
-- Background color: Very light desaturated cyan (#0F0F0F). This provides a clean backdrop that will emphasize the content, in keeping with the app's informational focus.
-- Accent color: Pale Green (#FFF) for a subtle highlight color, creating a visually pleasing, balanced and friendly feel.
+- Background color: A very dark gray, near-black (#0F0F0F). This provides a clean, modern backdrop that will emphasize the content in the dark theme.
+- Accent color: Dark desaturated cyan. This is used for subtle highlights and selected items, creating a visually pleasing and balanced feel in the dark theme.
 - Body: 'PT Sans' sans-serif provides modern readability
 - Headline: 'Playfair' modern serif font, offers a contrasting elegance, well-suited for headlines and titles. Use 'PT Sans' for body text.
 - Consistent, professional icons for navigation and actions.

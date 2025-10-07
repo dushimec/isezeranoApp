@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/hooks/useAuth';
+import { StoreProvider } from '@/store/StoreProvider';
 
 export const metadata: Metadata = {
   title: 'Isezerano CMS',
@@ -29,10 +30,12 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <AuthProvider>
+        <StoreProvider>
+          <AuthProvider>
             {children}
             <Toaster />
-        </AuthProvider>
+          </AuthProvider>
+        </StoreProvider>
       </body>
     </html>
   );

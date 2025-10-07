@@ -74,11 +74,13 @@ export default function DashboardLayout({
   }
 
   const getActiveClasses = (href: string) => {
-    // Handle nested routes for highlighting
-    if (href !== "/dashboard" && pathname.startsWith(href)) {
+    if (href === "/dashboard" && pathname !== "/dashboard") {
+      return "text-muted-foreground";
+    }
+    if (pathname.startsWith(href)) {
       return "bg-accent text-accent-foreground";
     }
-    return pathname === href ? "bg-accent text-accent-foreground" : "text-muted-foreground";
+    return "text-muted-foreground";
   };
 
 

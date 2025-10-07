@@ -1,17 +1,18 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 import { Role } from '@prisma/client';
 
 export async function GET(req: NextRequest) {
   try {
-    const userCounts = await prisma.user.groupBy({
+    const userCounts = await db.user.groupBy({
       by: ['role'],
       _count: {
         role: true,
       },
     });
 
-    const totalUsers = await prisma.user.count();
+    const totalUsers = await db.user.count();
 
     const formattedUserCounts = userCounts.reduce((acc, count) => {
         acc[count.role] = count._count.role;
@@ -19,12 +20,12 @@ export async function GET(req: NextRequest) {
     }, {} as Record<Role, number>);
 
 
-    const upcomingRehearsals = prisma.rehearsal.findMany({
+    const upcomingRehearsals = db.rehearsal.findMany({
         where: { date: { gte: new Date() } },
         orderBy: { date: 'asc' },
         take: 5
     });
-    const upcomingServices = prisma.service.findMany({
+    const upcomingServices = db.service.findMany({
         where: { date: { gte: new Date() } },
         orderBy: { date: 'asc' },
         take: 5
@@ -32,12 +33,12 @@ export async function GET(req: NextRequest) {
     
     const [rehearsals, services] = await Promise.all([upcomingRehearsals, upcomingServices]);
 
-    const upcomingEvents = [...rehearsals.map(r => ({...r, type: 'rehearsal'})), ...services.map(s => ({...s, type: 'service'}))]
+    const upcomingEvents = [...rehearsals.map(r => ({...r, type: 'REHEARSAL', location: r.location})), ...services.map(s => ({...s, type: 'SERVICE', location: s.churchLocation}))]
         .sort((a,b) => a.date.getTime() - b.date.getTime())
         .slice(0, 5);
 
 
-    const recentAnnouncements = await prisma.announcement.findMany({
+    const recentAnnouncements = await db.announcement.findMany({
       orderBy: { createdAt: 'desc' },
       take: 5,
     });

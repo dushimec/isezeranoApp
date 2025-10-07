@@ -1,6 +1,8 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import clientPromise from '@/lib/db';
 import { getUserIdFromToken } from '@/lib/auth';
+import { ObjectId } from 'mongodb';
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,21 +17,42 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const service = await prisma.service.create({
-      data: {
+    const client = await clientPromise;
+    const db = client.db();
+
+    const newService = {
         title,
         date: new Date(date),
         time,
         churchLocation,
         attire,
         notes,
-        createdById: userId,
-      },
-    });
+        createdById: new ObjectId(userId),
+        createdAt: new Date(),
+      };
 
-    // TODO: Trigger notifications for singers
+    const result = await db.collection('services').insertOne(newService);
+    const serviceId = result.insertedId;
 
-    return NextResponse.json(service, { status: 201 });
+    // Create notifications for all singers
+    const singers = await db.collection('users').find({ role: 'SINGER' }).project({ _id: 1 }).toArray();
+    if (singers.length > 0) {
+      const notifications = singers.map(singer => ({
+        userId: singer._id,
+        serviceId: serviceId,
+        message: `New service scheduled: ${title}`,
+        isRead: false,
+        createdAt: new Date(),
+      }));
+      await db.collection('notifications').insertMany(notifications);
+    }
+
+    const createdService = {
+        _id: serviceId,
+        ...newService
+    }
+
+    return NextResponse.json(createdService, { status: 201 });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -38,11 +61,10 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
     try {
-        const services = await prisma.service.findMany({
-            orderBy: {
-                date: 'desc'
-            }
-        });
+        const client = await clientPromise;
+        const db = client.db();
+
+        const services = await db.collection('services').find({}).sort({ date: -1 }).toArray();
         return NextResponse.json(services);
     } catch (error) {
         console.error(error);

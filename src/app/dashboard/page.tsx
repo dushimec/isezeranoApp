@@ -14,13 +14,23 @@ import { BarChart, Users, Megaphone, CalendarCheck, CheckCircle, XCircle, Clock 
 import React, { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { Announcement } from '@/lib/types';
+
+// Define a unified event type for the dashboard
+type DashboardEvent = {
+  id: string;
+  title: string;
+  date: string;
+  location: string;
+  type: 'REHEARSAL' | 'SERVICE';
+};
 
 type DashboardData = {
     totalUsers?: number;
     userCounts?: Record<Role, number>;
-    upcomingEvents?: any[];
-    recentAnnouncements?: any[];
-    attendanceSummary?: {status: string, count: number}[];
+    upcomingEvents?: DashboardEvent[];
+    recentAnnouncements?: Announcement[];
+    attendanceSummary?: {status: string, _count: { status: number }}[];
     notifications?: any[];
 }
 
@@ -87,22 +97,22 @@ const SecretaryDashboard = ({ data }: { data: DashboardData }) => {
             </Card>
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Present Members (Avg)</CardTitle>
+                    <CardTitle className="text-sm font-medium">Present Members (Total)</CardTitle>
                     <CheckCircle className="h-4 w-4 text-green-500" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{data.attendanceSummary?.find(s => s.status === 'PRESENT')?.count || 0}</div>
-                    <p className="text-xs text-muted-foreground">Average per event</p>
+                    <div className="text-2xl font-bold">{data.attendanceSummary?.find(s => s.status === 'PRESENT')?._count.status || 0}</div>
+                    <p className="text-xs text-muted-foreground">Across all events</p>
                 </CardContent>
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Recent Announcements</CardTitle>
+                    <CardTitle className="text-sm font-medium">Announcements</CardTitle>
                     <Megaphone className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{data.recentAnnouncements?.length || 0}</div>
-                    <p className="text-xs text-muted-foreground">Published recently</p>
+                    <p className="text-xs text-muted-foreground">Recently published</p>
                 </CardContent>
             </Card>
         </div>
@@ -110,9 +120,9 @@ const SecretaryDashboard = ({ data }: { data: DashboardData }) => {
 }
 
 const DisciplinarianDashboard = ({ data }: { data: DashboardData }) => {
-    const present = data.attendanceSummary?.find(s => s.status === 'PRESENT')?.count || 0;
-    const late = data.attendanceSummary?.find(s => s.status === 'LATE')?.count || 0;
-    const absent = data.attendanceSummary?.find(s => s.status === 'ABSENT')?.count || 0;
+    const present = data.attendanceSummary?.find(s => s.status === 'PRESENT')?._count.status || 0;
+    const late = data.attendanceSummary?.find(s => s.status === 'LATE')?._count.status || 0;
+    const absent = data.attendanceSummary?.find(s => s.status === 'ABSENT')?._count.status || 0;
     const total = present + late + absent;
     const avgAttendance = total > 0 ? ((present + late) / total) * 100 : 0;
 
@@ -164,10 +174,10 @@ const DisciplinarianDashboard = ({ data }: { data: DashboardData }) => {
 
 const SingerDashboard = ({ data }: { data: DashboardData }) => {
     const nextEvent = data.upcomingEvents?.[0];
-    const latestAnnouncement = data.announcements?.[0];
-    const present = data.attendanceSummary?.find(s => s.status === 'PRESENT')?.count || 0;
-    const late = data.attendanceSummary?.find(s => s.status === 'LATE')?.count || 0;
-    const absent = data.attendanceSummary?.find(s => s.status === 'ABSENT')?.count || 0;
+    const latestAnnouncement = data.recentAnnouncements?.[0];
+    const present = data.attendanceSummary?.find(s => s.status === 'PRESENT')?._count.status || 0;
+    const late = data.attendanceSummary?.find(s => s.status === 'LATE')?._count.status || 0;
+    const absent = data.attendanceSummary?.find(s => s.status === 'ABSENT')?._count.status || 0;
     const total = present + late + absent;
     const attendancePercentage = total > 0 ? ((present + late) / total) * 100 : 0;
     
@@ -177,12 +187,12 @@ const SingerDashboard = ({ data }: { data: DashboardData }) => {
                 <CardHeader>
                     <CardTitle>Next Event</CardTitle>
                      <CardDescription>
-                        {nextEvent ? `${nextEvent.type === 'rehearsal' ? 'Rehearsal' : 'Service'} on ${format(new Date(nextEvent.date), 'MMMM d')}` : 'No upcoming events'}
+                        {nextEvent ? `${nextEvent.type === 'REHEARSAL' ? 'Rehearsal' : 'Service'} on ${format(new Date(nextEvent.date), 'MMMM d')}` : 'No upcoming events'}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <p className="text-lg font-semibold">{nextEvent?.title}</p>
-                    <p className="text-muted-foreground">{nextEvent ? `${format(new Date(nextEvent.date), 'p')} at ${nextEvent.location || nextEvent.churchLocation}` : 'Check back later'}</p>
+                    <p className="text-muted-foreground">{nextEvent ? `${format(new Date(nextEvent.date), 'p')} at ${nextEvent.location}` : 'Check back later'}</p>
                 </CardContent>
             </Card>
             <Card>
@@ -211,6 +221,13 @@ const SingerDashboard = ({ data }: { data: DashboardData }) => {
     )
 }
 
+const API_PATHS: Record<Role, string> = {
+    [Role.ADMIN]: '/api/admin/dashboard',
+    [Role.SECRETARY]: '/api/secretary/dashboard',
+    [Role.DISCIPLINARIAN]: '/api/disciplinarian/dashboard',
+    [Role.SINGER]: '/api/singer/dashboard',
+}
+
 export default function DashboardPage() {
   const { user, token, loading } = useAuth();
   const [data, setData] = useState<DashboardData>({});
@@ -223,13 +240,19 @@ export default function DashboardPage() {
     const fetchData = async () => {
         setDataLoading(true);
         try {
-            const response = await fetch(`/api/${user.role.toLowerCase()}/dashboard`, {
+            const apiPath = API_PATHS[user.role];
+            if (!apiPath) {
+                throw new Error('Invalid user role for dashboard.');
+            }
+            const response = await fetch(apiPath,
+             {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
             if (!response.ok) {
-                throw new Error('Failed to fetch dashboard data');
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to fetch dashboard data');
             }
             const dashboardData = await response.json();
             setData(dashboardData);

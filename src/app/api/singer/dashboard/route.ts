@@ -1,5 +1,6 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 import { getUserIdFromToken } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
@@ -10,33 +11,41 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const upcomingRehearsals = await prisma.rehearsal.findMany({
+    const upcomingRehearsals = await db.rehearsal.findMany({
         where: { date: { gte: new Date() } },
         orderBy: { date: 'asc' },
         take: 5,
       });
-      const upcomingServices = await prisma.service.findMany({
+      const upcomingServices = await db.service.findMany({
           where: { date: { gte: new Date() } },
           orderBy: { date: 'asc' },
           take: 5
       });
   
-      const upcomingEvents = [...upcomingRehearsals.map(r => ({...r, type: 'rehearsal'})), ...upcomingServices.map(s => ({...s, type: 'service'}))]
+      const upcomingEvents = [...upcomingRehearsals.map(r => ({...r, type: 'REHEARSAL', location: r.location})), ...upcomingServices.map(s => ({...s, type: 'SERVICE', location: s.churchLocation}))]
           .sort((a,b) => a.date.getTime() - b.date.getTime())
           .slice(0, 5);
 
-    const announcements = await prisma.announcement.findMany({
+    const announcements = await db.announcement.findMany({
       orderBy: { createdAt: 'desc' },
       take: 5,
+      include: {
+          createdBy: {
+              select: {
+                  firstName: true,
+                  lastName: true,
+              }
+          }
+      }
     });
 
-    const notifications = await prisma.notification.findMany({
+    const notifications = await db.notification.findMany({
       where: { userId, isRead: false },
       orderBy: { createdAt: 'desc' },
       take: 5,
     });
 
-    const attendanceSummary = await prisma.attendance.groupBy({
+    const attendanceSummary = await db.attendance.groupBy({
         by: ['status'],
         where: { userId },
         _count: {
@@ -46,9 +55,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       upcomingEvents,
-      announcements,
+      recentAnnouncements: announcements,
       notifications,
-      attendanceSummary: attendanceSummary.map(item => ({ status: item.status, count: item._count.status })),
+      attendanceSummary,
     });
   } catch (error: any) {
     console.error(error);
