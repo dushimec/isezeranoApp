@@ -50,7 +50,7 @@ export default function UsersPage() {
       await updateDoc(userDocRef, { role: newRole });
       toast({
         title: 'User Updated',
-        description: `Role for ${userToUpdate.fullName} updated to ${newRole}.`,
+        description: `Role for ${userToUpdate.firstName} ${userToUpdate.lastName} updated to ${newRole}.`,
       });
     } catch (error: any) {
       toast({
@@ -68,7 +68,7 @@ export default function UsersPage() {
       await deleteDoc(userDocRef);
       toast({
         title: 'User Deleted',
-        description: `${userToDelete.fullName} has been removed from the system.`,
+        description: `${userToDelete.firstName} ${userToDelete.lastName} has been removed from the system.`,
       });
     } catch (error: any) {
       toast({

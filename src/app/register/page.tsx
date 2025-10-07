@@ -32,7 +32,9 @@ import { useFirebase, useFirestore } from "@/firebase";
 import { USER_ROLES } from "@/lib/user-roles";
 
 const FormSchema = z.object({
-  fullName: z.string().min(3, "Full name is required"),
+  firstName: z.string().min(2, "First name is required"),
+  lastName: z.string().min(2, "Last name is required"),
+  username: z.string().min(3, "Username is required"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
@@ -68,7 +70,9 @@ export default function RegisterPage() {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      fullName: "",
+      firstName: "",
+      lastName: "",
+      username: "",
       email: "",
       password: "",
     },
@@ -90,7 +94,9 @@ export default function RegisterPage() {
       // 2. Create user profile in Firestore
       const userProfile = {
         id: user.uid,
-        fullName: data.fullName,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        username: data.username,
         email: data.email,
         role: USER_ROLES.ADMIN,
         isActive: true,
@@ -136,14 +142,42 @@ export default function RegisterPage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="flex gap-4">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>First Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Jane" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <FormField
                 control={form.control}
-                name="fullName"
+                name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Full Name</FormLabel>
+                    <FormLabel>Username</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your full name" {...field} />
+                      <Input placeholder="janedoe" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -60,12 +60,12 @@ export function UserTable({ users, currentUser, onEdit, onDelete }: UserTablePro
                         src={user.profileImageUrl || `https://picsum.photos/seed/${user.id}/40/40`}
                         width={40}
                         height={40}
-                        alt={user.fullName}
+                        alt={`${user.firstName} ${user.lastName}`}
                         className="rounded-full"
                         data-ai-hint="person portrait"
                     />
                     <div>
-                        <p className="font-medium">{user.fullName}</p>
+                        <p className="font-medium">{user.firstName} {user.lastName}</p>
                         <p className="text-sm text-muted-foreground">{user.email}</p>
                     </div>
                 </div>

@@ -6,13 +6,14 @@ import { initFirebaseAdmin } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
   await initFirebaseAdmin();
-  const { fullName, email, password, role } = await req.json();
+  const { firstName, lastName, username, email, password, role } = await req.json();
 
-  if (!fullName || !email || !password || !role) {
+  if (!firstName || !lastName || !username || !email || !password || !role) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
   try {
+    const fullName = `${firstName} ${lastName}`;
     // Create user in Firebase Auth
     const userRecord = await getAuth().createUser({
       email,
@@ -23,7 +24,9 @@ export async function POST(req: NextRequest) {
     // Create user profile in Firestore
     const userProfile = {
       id: userRecord.uid,
-      fullName,
+      firstName,
+      lastName,
+      username,
       email,
       role,
       isActive: true,
@@ -50,10 +53,12 @@ export async function POST(req: NextRequest) {
                 uid: 'ADMIN_UID_UNKNOWN_IN_THIS_CONTEXT',
             },
             method: 'create',
-            path: `/databases/(default)/documents/users/${userRecord.uid}`, // Using uid for path
+            path: `/databases/(default)/documents/users/${email}`, // Simplified path
             resource: {
                 data: {
-                    fullName,
+                    firstName,
+                    lastName,
+                    username,
                     email,
                     role,
                     isActive: true,

@@ -11,14 +11,27 @@
           "type": "string",
           "description": "Unique identifier for the User entity."
         },
-        "fullName": {
+        "firstName": {
           "type": "string",
-          "description": "The full name of the user."
+          "description": "The first name of the user."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the user."
+        },
+        "username": {
+          "type": "string",
+          "description": "The user's unique username."
         },
         "email": {
           "type": "string",
           "format": "email",
           "description": "User's email address, used for authentication."
+        },
+        "profileImageUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL for the user's profile picture."
         },
         "role": {
           "type": "string",
@@ -48,7 +61,9 @@
       },
       "required": [
         "id",
-        "fullName",
+        "firstName",
+        "lastName",
+        "username",
         "email",
         "role",
         "isActive",

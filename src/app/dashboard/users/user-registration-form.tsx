@@ -24,12 +24,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { USER_ROLES } from "@/lib/user-roles";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore } from "@/firebase";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-
 
 const formSchema = z.object({
-  fullName: z.string().min(2, "Full name must be at least 2 characters"),
+  firstName: z.string().min(2, "First name must be at least 2 characters"),
+  lastName: z.string().min(2, "Last name must be at least 2 characters"),
+  username: z.string().min(3, "Username must be at least 3 characters"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   role: z.nativeEnum(USER_ROLES),
@@ -38,12 +37,13 @@ const formSchema = z.object({
 export function UserRegistrationForm() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
-  const firestore = useFirestore();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      fullName: "",
+      firstName: "",
+      lastName: "",
+      username: "",
       email: "",
       password: "",
       role: USER_ROLES.SINGER,
@@ -54,31 +54,31 @@ export function UserRegistrationForm() {
     setIsLoading(true);
 
     try {
-        const response = await fetch('/api/admin/users', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(values),
-        });
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+      });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.details || errorData.error || 'Failed to create user.');
-        }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.details || errorData.error || 'Failed to create user.');
+      }
 
-        toast({
-            title: "User Created",
-            description: `An account for ${values.fullName} has been created.`,
-        });
-        
-        form.reset();
+      toast({
+        title: "User Created",
+        description: `An account for ${values.firstName} ${values.lastName} has been created.`,
+      });
+      
+      form.reset();
     } catch (error: any) {
-        toast({
-            variant: "destructive",
-            title: "Registration Failed",
-            description: error.message,
-        });
+      toast({
+        variant: "destructive",
+        title: "Registration Failed",
+        description: error.message,
+      });
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   }
 
@@ -86,18 +86,44 @@ export function UserRegistrationForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
-            control={form.control}
-            name="fullName"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel>Full Name</FormLabel>
-                <FormControl>
-                    <Input placeholder="John Doe" {...field} />
-                </FormControl>
-                <FormMessage />
-                </FormItem>
-            )}
-            />
+          control={form.control}
+          name="firstName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>First Name</FormLabel>
+              <FormControl>
+                <Input placeholder="John" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="lastName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Last Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Doe" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="username"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Username</FormLabel>
+              <FormControl>
+                <Input placeholder="johndoe" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="email"
@@ -111,7 +137,7 @@ export function UserRegistrationForm() {
             </FormItem>
           )}
         />
-         <FormField
+        <FormField
           control={form.control}
           name="password"
           render={({ field }) => (
@@ -149,7 +175,7 @@ export function UserRegistrationForm() {
           )}
         />
         <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Registering...' : 'Register User'}
+          {isLoading ? 'Registering...' : 'Register User'}
         </Button>
       </form>
     </Form>

@@ -7,9 +7,9 @@ import { USER_ROLES } from '@/lib/user-roles';
 
 export async function POST(req: NextRequest) {
   await initFirebaseAdmin();
-  const { fullName, email, password } = await req.json();
+  const { firstName, lastName, username, email, password } = await req.json();
 
-  if (!fullName || !email || !password) {
+  if (!firstName || !lastName || !username || !email || !password) {
     return NextResponse.json({ error: 'Missing required fields for registration' }, { status: 400 });
   }
 
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     const userRecord = await getAuth().createUser({
         email,
         password,
-        displayName: fullName,
+        displayName: `${firstName} ${lastName}`,
     });
 
     const uid = userRecord.uid;
@@ -34,7 +34,9 @@ export async function POST(req: NextRequest) {
     const now = new Date();
     const userProfile = {
       id: uid,
-      fullName,
+      firstName,
+      lastName,
+      username,
       email,
       role: USER_ROLES.ADMIN,
       isActive: true,
@@ -66,7 +68,9 @@ export async function POST(req: NextRequest) {
             path: `/databases/(default)/documents/users/${email}`, // Simplified path for clarity
             resource: {
                 data: {
-                    fullName,
+                    firstName,
+                    lastName,
+                    username,
                     email,
                     role: USER_ROLES.ADMIN,
                     isActive: true,
