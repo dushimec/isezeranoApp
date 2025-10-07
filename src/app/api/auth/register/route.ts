@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    await getAuth().verifyIdToken(idToken);
+    const decodedToken = await getAuth().verifyIdToken(idToken);
 
     const db = firestore();
     
@@ -55,9 +55,31 @@ export async function POST(req: NextRequest) {
 
     // Check for Firestore permission error specifically
     if (error.code === 'permission-denied') {
+        const securityRuleRequest = {
+            auth: {
+                uid: uid,
+                token: {
+                    phone_number: phoneNumber
+                }
+            },
+            method: 'create',
+            path: `/databases/(default)/documents/users/${uid}`,
+            resource: {
+                data: {
+                    id: uid,
+                    fullName,
+                    phoneNumber,
+                    role,
+                    isActive: true,
+                }
+            }
+        };
+
+        const errorMessage = `Missing or insufficient permissions: The following request was denied by Firestore Security Rules:\n${JSON.stringify(securityRuleRequest, null, 2)}`;
+        
         return NextResponse.json({ 
-            error: 'Firestore permission denied. Ensure your security rules allow this operation.',
-            details: error.message
+            error: 'Firestore permission denied.',
+            details: errorMessage
         }, { status: 403 });
     }
 
@@ -68,4 +90,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'An internal error occurred.' }, { status: 500 });
   }
 }
-
