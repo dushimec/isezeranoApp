@@ -29,7 +29,6 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Image from "next/image";
 import { IsezeranoLogo } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
-import { Role } from "@/lib/types";
 
 export default function DashboardLayout({
   children,
@@ -53,8 +52,8 @@ export default function DashboardLayout({
 
   const allNavItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home, roles: ['ADMIN', 'SECRETARY', 'DISCIPLINARIAN', 'SINGER'] },
-    { href: "/dashboard/announcements", label: "Announcements", icon: Megaphone, roles: ['ADMIN', 'SECRETARY', 'SINGER'] },
-    { href: "/dashboard/schedule", label: "Schedule", icon: Calendar, roles: ['ADMIN', 'SECRETARY', 'SINGER'] },
+    { href: "/dashboard/announcements", label: "Announcements", icon: Megaphone, roles: ['ADMIN', 'SECRETARY', 'DISCIPLINARIAN', 'SINGER'] },
+    { href: "/dashboard/schedule", label: "Schedule", icon: Calendar, roles: ['ADMIN', 'SECRETARY', 'DISCIPLINARIAN', 'SINGER'] },
     { href: "/dashboard/attendance", label: "Take Attendance", icon: ClipboardCheck, roles: ['ADMIN', 'DISCIPLINARIAN'] },
     { href: "/dashboard/my-attendance", label: "My Attendance", icon: ClipboardCheck, roles: ['SINGER'] },
     { href: "/dashboard/reports", label: "Reports", icon: BarChart, roles: ['ADMIN', 'SECRETARY', 'DISCIPLINARIAN'] },
