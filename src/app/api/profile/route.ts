@@ -53,8 +53,13 @@ export async function PATCH(req: NextRequest) {
     const updateData: any = { updatedAt: new Date() };
     if(firstName) updateData.firstName = firstName;
     if(lastName) updateData.lastName = lastName;
-    if(username) updateData.username = username;
-    if(email) updateData.email = email;
+    
+    // Only allow admins to change username and email
+    const currentUser = await db.collection<UserDocument>('users').findOne({ _id: new ObjectId(userId) });
+    if (currentUser?.role === 'ADMIN') {
+        if(username) updateData.username = username;
+        if(email) updateData.email = email;
+    }
     
     if (profileImage) {
         const user = await db.collection<UserDocument>('users').findOne({ _id: new ObjectId(userId) });
@@ -66,7 +71,6 @@ export async function PATCH(req: NextRequest) {
             updateData.profileImage = uploadResult.secure_url;
         }
     }
-
 
     const result = await db.collection('users').findOneAndUpdate(
       { _id: new ObjectId(userId) },

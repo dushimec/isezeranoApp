@@ -77,7 +77,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const updateUser = useCallback(async (data: Partial<User>) => {
     if (!user || !token) throw new Error('Not authenticated');
 
-    const response = await fetch(`/api/singer/profile`, {
+    const response = await fetch(`/api/profile`, {
         method: 'PATCH',
         headers: { 
             'Content-Type': 'application/json',

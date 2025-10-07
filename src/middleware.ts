@@ -4,7 +4,6 @@ import { verifyToken } from '@/lib/auth';
 import { Role } from '@/lib/types';
 
 // Defines which roles can access which API prefixes.
-// The order implies a hierarchy: an Admin can access everything a Secretary can, etc.
 const ROLE_ACCESS_HIERARCHY: { role: Role; prefix: string }[] = [
   { role: 'SINGER', prefix: '/api/singer' },
   { role: 'DISCIPLINARIAN', prefix: '/api/disciplinarian' },
@@ -12,7 +11,7 @@ const ROLE_ACCESS_HIERARCHY: { role: Role; prefix: string }[] = [
   { role: 'ADMIN', prefix: '/api/admin' },
 ];
 
-const ALL_PROTECTED_PREFIXES = ROLE_ACCESS_HIERARCHY.map(item => item.prefix);
+const ALL_PROTECTED_PREFIXES = [...ROLE_ACCESS_HIERARCHY.map(item => item.prefix), '/api/profile'];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -38,6 +37,11 @@ export async function middleware(req: NextRequest) {
     }
     
     const userRole = payload.role as Role;
+
+    // Any authenticated user can access the generic profile endpoints
+    if (pathname.startsWith('/api/profile')) {
+      return NextResponse.next();
+    }
     
     // Admins can access everything
     if (userRole === 'ADMIN') {
@@ -63,5 +67,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/api/admin/:path*', '/api/secretary/:path*', '/api/disciplinarian/:path*', '/api/singer/:path*'],
+  matcher: ['/api/admin/:path*', '/api/secretary/:path*', '/api/disciplinarian/:path*', '/api/singer/:path*', '/api/profile/:path*'],
 };
