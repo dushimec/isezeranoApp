@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -16,7 +17,7 @@ import {
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { User, Event, Attendance } from '@/lib/types';
+import { User, Event, Attendance, Role } from '@/lib/types';
 import { format, subMonths, getMonth, getYear } from 'date-fns';
 
 const chartConfig = {
@@ -32,7 +33,7 @@ type MonthlyAttendance = {
 };
 
 export default function ReportsPage() {
-  const { token } = useAuth();
+  const { user, token } = useAuth();
   const { toast } = useToast();
 
   const [users, setUsers] = useState<User[]>([]);
@@ -41,15 +42,17 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !user) return;
 
     const fetchData = async () => {
       setLoading(true);
       try {
+        const apiPrefix = user.role === 'ADMIN' ? '/api/admin' : '/api/secretary';
+
         const [usersRes, eventsRes, attendanceRes] = await Promise.all([
-          fetch('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } }),
-          fetch('/api/admin/events', { headers: { Authorization: `Bearer ${token}` } }),
-          fetch('/api/admin/attendance', { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${apiPrefix}/users`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${apiPrefix}/events`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${apiPrefix}/attendance`, { headers: { Authorization: `Bearer ${token}` } }),
         ]);
 
         if (!usersRes.ok || !eventsRes.ok || !attendanceRes.ok) {
@@ -71,7 +74,7 @@ export default function ReportsPage() {
     };
 
     fetchData();
-  }, [token, toast]);
+  }, [token, user, toast]);
 
   const totalUsers = users.length;
   const singers = users.filter((u) => u.role === 'SINGER').length;
