@@ -1,4 +1,3 @@
-
 import { NextRequest } from 'next/server';
 import { jwtVerify, SignJWT } from 'jose';
 import { Role } from './types';
@@ -51,11 +50,6 @@ export async function getUserIdFromToken(req: NextRequest): Promise<string | nul
   const token = authHeader.split(' ')[1];
   if (!token) return null;
 
-  try {
-    const payload = await verifyToken(token);
-    return payload?.sub || null;
-  } catch (error) {
-    console.error("Error extracting user ID from token:", error);
-    return null;
-  }
+  const payload = await verifyToken(token);
+  return payload?.sub || null;
 }
