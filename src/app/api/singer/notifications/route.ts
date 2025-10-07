@@ -1,6 +1,5 @@
-
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { prisma } from '@/lib/db';
 import { getUserIdFromToken } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
@@ -11,14 +10,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const notifications = await pool.query(
-      'SELECT * FROM notifications WHERE userId = $1 ORDER BY createdAt DESC', 
-      [userId]
-    );
+    const notifications = await prisma.notification.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
 
-    return NextResponse.json(notifications.rows);
-  } catch (error) {
+    return NextResponse.json(notifications);
+  } catch (error: any) {
     console.error(error);
+    if(error.message.includes('token')) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

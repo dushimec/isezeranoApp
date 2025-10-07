@@ -1,17 +1,28 @@
-
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { prisma } from '@/lib/db';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
-    const user = await pool.query('SELECT id, fullName, phoneNumber, role FROM users WHERE id = $1', [id]);
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        username: true,
+        email: true,
+        role: true,
+        isActive: true,
+        profileImage: true,
+      }
+    });
 
-    if (user.rows.length === 0) {
+    if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json(user.rows[0]);
+    return NextResponse.json(user);
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -21,20 +32,30 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
-    const { fullName, phoneNumber, role } = await req.json();
+    const { firstName, lastName, username, email, role, isActive } = await req.json();
 
-    const result = await pool.query(
-      'UPDATE users SET fullName = $1, phoneNumber = $2, role = $3 WHERE id = $4 RETURNING id, fullName, phoneNumber, role',
-      [fullName, phoneNumber, role, id]
-    );
+    const user = await prisma.user.update({
+      where: { id },
+      data: {
+        firstName,
+        lastName,
+        username,
+        email,
+        role,
+        isActive,
+      },
+    });
 
-    if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    return NextResponse.json(result.rows[0]);
-  } catch (error) {
+    const { password, ...userWithoutPassword } = user;
+    return NextResponse.json(userWithoutPassword);
+  } catch (error: any) {
     console.error(error);
+     if (error.code === 'P2002') {
+        return NextResponse.json({ error: 'A user with this email or username already exists.' }, { status: 409 });
+    }
+    if (error.code === 'P2025') { // Record to update not found
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -42,15 +63,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
-    const result = await pool.query('DELETE FROM users WHERE id = $1 RETURNING *', [id]);
-
-    if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
+    await prisma.user.delete({
+      where: { id },
+    });
     return NextResponse.json({ message: 'User deleted successfully' });
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
+    if (error.code === 'P2025') { // Record to delete not found
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

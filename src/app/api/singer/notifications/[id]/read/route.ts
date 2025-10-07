@@ -1,6 +1,5 @@
-
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { prisma } from '@/lib/db';
 import { getUserIdFromToken } from '@/lib/auth';
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -12,18 +11,25 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const result = await pool.query(
-      'UPDATE notifications SET isRead = true WHERE id = $1 AND userId = $2 RETURNING *',
-      [id, userId]
-    );
+    const notification = await prisma.notification.findUnique({
+        where: { id }
+    });
 
-    if (result.rows.length === 0) {
+    if (!notification || notification.userId !== userId) {
       return NextResponse.json({ error: 'Notification not found' }, { status: 404 });
     }
+    
+    const updatedNotification = await prisma.notification.update({
+        where: { id },
+        data: { isRead: true }
+    });
 
-    return NextResponse.json(result.rows[0]);
-  } catch (error) {
+    return NextResponse.json(updatedNotification);
+  } catch (error: any) {
     console.error(error);
+    if(error.message.includes('token')) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

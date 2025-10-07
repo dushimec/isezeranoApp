@@ -1,13 +1,47 @@
-
 import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
-    // This function can remain if needed for read operations not subject to user-specific rules
-    // or be implemented using the client SDK on the frontend.
-    return NextResponse.json({ error: 'Not implemented' }, { status: 501 });
+  try {
+    const announcements = await prisma.announcement.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        createdBy: {
+          select: {
+            firstName: true,
+            lastName: true,
+          }
+        }
+      }
+    });
+    return NextResponse.json(announcements);
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
-    // This should be handled on the client-side to enforce security rules
-    return NextResponse.json({ error: 'This operation should be performed on the client.' }, { status-code: 405 });
+  try {
+    const { title, message, priority, createdById } = await req.json();
+
+    if (!title || !message || !createdById) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    const announcement = await prisma.announcement.create({
+      data: {
+        title,
+        message,
+        priority,
+        createdById,
+      },
+    });
+    return NextResponse.json(announcement, { status: 201 });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

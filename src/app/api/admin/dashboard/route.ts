@@ -1,19 +1,37 @@
-
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { prisma } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
   try {
-    const totalUsers = await pool.query('SELECT COUNT(*) FROM users');
-    const upcomingEvents = await pool.query(
-      '(SELECT id, date, time, location, \'rehearsal\' as type FROM rehearsals WHERE date >= NOW()) UNION (SELECT id, date, churchLocation as location, null as time, \'service\' as type FROM services WHERE date >= NOW()) ORDER BY date ASC LIMIT 5'
-    );
-    const recentAnnouncements = await pool.query('SELECT * FROM announcements ORDER BY createdAt DESC LIMIT 5');
+    const totalUsers = await prisma.user.count();
+
+    const upcomingRehearsals = prisma.rehearsal.findMany({
+        where: { date: { gte: new Date() } },
+        orderBy: { date: 'asc' },
+        take: 5
+    });
+    const upcomingServices = prisma.service.findMany({
+        where: { date: { gte: new Date() } },
+        orderBy: { date: 'asc' },
+        take: 5
+    });
+    
+    const [rehearsals, services] = await Promise.all([upcomingRehearsals, upcomingServices]);
+
+    const upcomingEvents = [...rehearsals.map(r => ({...r, type: 'rehearsal'})), ...services.map(s => ({...s, type: 'service'}))]
+        .sort((a,b) => a.date.getTime() - b.date.getTime())
+        .slice(0, 5);
+
+
+    const recentAnnouncements = await prisma.announcement.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+    });
 
     return NextResponse.json({
-      totalUsers: totalUsers.rows[0].count,
-      upcomingEvents: upcomingEvents.rows,
-      recentAnnouncements: recentAnnouncements.rows,
+      totalUsers,
+      upcomingEvents,
+      recentAnnouncements,
     });
   } catch (error) {
     console.error(error);

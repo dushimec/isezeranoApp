@@ -1,11 +1,14 @@
-
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { prisma } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
   try {
-    const announcements = await pool.query('SELECT * FROM announcements ORDER BY createdAt DESC');
-    return NextResponse.json(announcements.rows);
+    const announcements = await prisma.announcement.findMany({
+        orderBy: { 
+            createdAt: 'desc' 
+        },
+    });
+    return NextResponse.json(announcements);
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
