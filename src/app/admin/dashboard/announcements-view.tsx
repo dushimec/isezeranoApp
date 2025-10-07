@@ -1,42 +1,69 @@
 
 'use client';
 
-import React, { useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { fetchAnnouncements } from '@/store/announcementsSlice';
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Announcement } from '@/lib/types';
+import { format } from 'date-fns';
 
 export default function AnnouncementsView() {
-  const dispatch = useAppDispatch();
-  const { announcements, loading } = useAppSelector((state) => state.announcements);
-  const { token } = useAppSelector((state) => state.auth);
+  const { token } = useAuth();
+  const { toast } = useToast();
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (token) {
-      dispatch(fetchAnnouncements(token));
+      const fetchAnnouncements = async () => {
+        setLoading(true);
+        try {
+          const response = await fetch('/api/admin/announcements', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (!response.ok) {
+            throw new Error('Failed to fetch announcements');
+          }
+          const data = await response.json();
+          setAnnouncements(data);
+        } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Error', description: error.message });
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchAnnouncements();
     }
-  }, [dispatch, token]);
+  }, [token, toast]);
 
   if (loading) return <div>Loading announcements...</div>;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Announcements</CardTitle>
+        <CardTitle>All Announcements</CardTitle>
       </CardHeader>
       <CardContent>
-        <Accordion type="single" collapsible className="w-full">
-          {announcements.map((announcement) => (
-            <AccordionItem key={announcement.id} value={announcement.id}>
-              <AccordionTrigger>{announcement.title}</AccordionTrigger>
-              <AccordionContent>
-                <p>{announcement.content}</p>
-                <p className="text-sm text-muted-foreground mt-2">{new Date(announcement.createdAt).toLocaleString()}</p>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+        {announcements.length === 0 ? (
+          <p className="text-muted-foreground">No announcements found.</p>
+        ) : (
+          <Accordion type="single" collapsible className="w-full">
+            {announcements.map((announcement) => (
+              <AccordionItem key={announcement.id} value={announcement.id}>
+                <AccordionTrigger>{announcement.title}</AccordionTrigger>
+                <AccordionContent>
+                  <p>{announcement.message}</p>
+                  <div className="text-sm text-muted-foreground mt-2">
+                    <p>By: {announcement.createdBy.firstName} {announcement.createdBy.lastName}</p>
+                    <p>Created: {format(new Date(announcement.createdAt), 'PPP p')}</p>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        )}
       </CardContent>
     </Card>
   );

@@ -17,7 +17,7 @@ import { Role, User } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
 
 export default function UsersPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, token } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [users, setUsers] = React.useState<User[]>([]);
@@ -25,9 +25,12 @@ export default function UsersPage() {
   const [usersError, setUsersError] = React.useState<string | null>(null);
 
   const fetchUsers = React.useCallback(async () => {
+    if (!token) return;
     setUsersLoading(true);
     try {
-      const response = await fetch('/api/admin/users');
+      const response = await fetch('/api/admin/users', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch users');
       }
@@ -36,16 +39,23 @@ export default function UsersPage() {
       setUsersError(null);
     } catch (error: any) {
       setUsersError(error.message);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message,
+      });
     } finally {
       setUsersLoading(false);
     }
-  }, []);
+  }, [token, toast]);
 
   React.useEffect(() => {
-    if (!loading && (!user || user.role !== Role.ADMIN)) {
-      router.push('/unauthorized');
-    } else if (user) {
-      fetchUsers();
+    if (!loading) {
+      if (!user || user.role !== Role.ADMIN) {
+        router.push('/unauthorized');
+      } else {
+        fetchUsers();
+      }
     }
   }, [user, loading, router, fetchUsers]);
 
@@ -54,10 +64,17 @@ export default function UsersPage() {
   };
   
   const handleEditUser = async (userId: string, data: Partial<User>) => {
+     if (!token) {
+      toast({ variant: 'destructive', title: 'Authentication Error', description: 'No auth token found.' });
+      return;
+    }
     try {
       const response = await fetch(`/api/admin/users/${userId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(data),
       });
 
@@ -80,9 +97,14 @@ export default function UsersPage() {
   };
 
   const handleDeleteUser = async (userToDelete: User) => {
+     if (!token) {
+      toast({ variant: 'destructive', title: 'Authentication Error', description: 'No auth token found.' });
+      return;
+    }
      try {
       const response = await fetch(`/api/admin/users/${userToDelete.id}`, {
         method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
       });
 
       if (!response.ok) {
@@ -103,7 +125,7 @@ export default function UsersPage() {
     }
   };
 
-  if (loading || usersLoading) {
+  if (loading || (!user && !usersLoading)) {
     return <div className="flex items-center justify-center min-h-screen"><div className="loader">Loading...</div></div>;
   }
   
@@ -145,7 +167,9 @@ export default function UsersPage() {
             </CardHeader>
             <CardContent>
               {usersError && <p className="text-destructive">{usersError}</p>}
-              {users && (
+              {usersLoading ? (
+                <p>Loading users...</p>
+              ) : (
                 <UserTable
                   users={users}
                   currentUser={user}

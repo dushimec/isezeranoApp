@@ -1,16 +1,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { adminAuth } from '@/lib/middleware';
+import { prisma } from '@/lib/db';
 
-export async function GET(req: NextRequest) {
-    const adminResponse = await adminAuth(req);
-    if (adminResponse) return adminResponse;
-
+async function GET(req: NextRequest) {
     try {
-        const attendance = await db.attendance.findMany({
+        const attendanceRecords = await prisma.attendance.findMany({
             orderBy: {
-                date: 'desc',
+                createdAt: 'desc',
             },
             include: {
                 user: {
@@ -19,16 +15,40 @@ export async function GET(req: NextRequest) {
                         lastName: true,
                     }
                 },
-                event: {
+                rehearsal: {
                     select: {
                         title: true,
+                        date: true,
+                    }
+                },
+                service: {
+                    select: {
+                        title: true,
+                        date: true,
                     }
                 }
             }
         });
-        return NextResponse.json(attendance);
+
+        const formattedAttendance = attendanceRecords.map(a => {
+            const eventDetails = a.rehearsal || a.service;
+            
+            return {
+                id: a.id,
+                status: a.status,
+                user: a.user,
+                event: {
+                    title: eventDetails?.title ?? 'Deleted Event',
+                    date: eventDetails?.date ?? a.createdAt,
+                }
+            }
+        });
+
+        return NextResponse.json(formattedAttendance);
     } catch (error) {
         console.error('Error fetching attendance:', error);
         return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
     }
 }
+
+export { GET };

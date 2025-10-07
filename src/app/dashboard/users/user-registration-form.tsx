@@ -24,28 +24,26 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Role } from "@prisma/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface UserRegistrationFormProps {
   onUserCreated: () => void;
 }
 
-// Admin cannot create another Admin
-const creatableRoles = Object.values(Role).filter(role => role !== Role.ADMIN);
+const creatableRoles = Object.values(Role).filter(role => role !== Role.ADMIN) as [string, ...string[]];
 
 const formSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
   lastName: z.string().min(2, "Last name must be at least 2 characters"),
-  username: z.string().min(3, "Username must be at least 3 characters").optional().or(z.literal('')),
+  username: z.string().min(3, "Username must be at least 3 characters"),
   email: z.string().email("Invalid email address").optional().or(z.literal('')),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.enum(creatableRoles as [string, ...string[]]),
-}).refine(data => data.username || data.email, {
-  message: "Either Username or Email is required.",
-  path: ["username"], // you can use any field for the error message
+  role: z.enum(creatableRoles),
 });
 
 export function UserRegistrationForm({ onUserCreated }: UserRegistrationFormProps) {
   const { toast } = useToast();
+  const { token } = useAuth();
   const [isLoading, setIsLoading] = React.useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -66,7 +64,10 @@ export function UserRegistrationForm({ onUserCreated }: UserRegistrationFormProp
     try {
       const response = await fetch('/api/admin/users', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(values),
       });
 
@@ -96,6 +97,7 @@ export function UserRegistrationForm({ onUserCreated }: UserRegistrationFormProp
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-2 gap-4">
         <FormField
           control={form.control}
           name="firstName"
@@ -122,6 +124,7 @@ export function UserRegistrationForm({ onUserCreated }: UserRegistrationFormProp
             </FormItem>
           )}
         />
+        </div>
         <FormField
           control={form.control}
           name="username"

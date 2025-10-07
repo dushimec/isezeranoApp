@@ -1,52 +1,46 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { fetchUsers, updateUser, deleteUser } from '@/store/usersSlice';
-import { User, Role } from '@/lib/types';
+import React, { useState } from 'react';
+import { User, Role } from '@prisma/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import Image from 'next/image';
 
-export default function UserTable() {
-  const dispatch = useAppDispatch();
-  const { users, loading } = useAppSelector((state) => state.users);
-  const { token } = useAppSelector((state) => state.auth);
+interface UserTableProps {
+    users: User[];
+    currentUser: User;
+    onEdit: (id: string, data: Partial<User>) => void;
+    onDelete: (user: User) => void;
+}
+
+
+export function UserTable({ users, currentUser, onEdit, onDelete }: UserTableProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    if (token) {
-      dispatch(fetchUsers(token));
-    }
-  }, [dispatch, token]);
 
   const handleEditClick = (user: User) => {
     setSelectedUser(user);
     setIsEditDialogOpen(true);
   };
-
-  const handleDeleteClick = (id: string) => {
-    if (token) {
-      dispatch(deleteUser({ id, token }));
-    }
-  };
-
+  
   const handleUpdateUser = () => {
-    if (selectedUser && token) {
-        dispatch(updateUser({ user: selectedUser, token }));
+    if (selectedUser) {
+        onEdit(selectedUser.id, selectedUser);
         setIsEditDialogOpen(false);
         setSelectedUser(null);
     }
   };
 
-  if (loading) return <div>Loading users...</div>;
+  const creatableRoles = Object.values(Role).filter(r => r !== 'ADMIN');
+
 
   return (
     <>
@@ -54,22 +48,39 @@ export default function UserTable() {
             <TableHeader>
             <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Username</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>
+                    <span className="sr-only">Actions</span>
+                </TableHead>
             </TableRow>
             </TableHeader>
             <TableBody>
             {users.map((user) => (
                 <TableRow key={user.id}>
-                <TableCell>{`${user.firstName} ${user.lastName}`}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.username}</TableCell>
-                <TableCell>{user.role}</TableCell>
-                <TableCell>{user.isActive ? 'Active' : 'Inactive'}</TableCell>
                 <TableCell>
+                    <div className="flex items-center gap-3">
+                        <Image
+                            src={user.profileImage || `https://picsum.photos/seed/${user.id}/40/40`}
+                            width={40}
+                            height={40}
+                            alt={user.firstName}
+                            className="rounded-full object-cover"
+                        />
+                        <div>
+                            <p className="font-medium">{`${user.firstName} ${user.lastName}`}</p>
+                            <p className="text-sm text-muted-foreground">{user.email || user.username}</p>
+                        </div>
+                    </div>
+                </TableCell>
+                <TableCell>{user.role}</TableCell>
+                <TableCell>
+                     <Badge variant={user.isActive ? 'default' : 'secondary'}>
+                        {user.isActive ? 'Active' : 'Inactive'}
+                    </Badge>
+                </TableCell>
+                <TableCell>
+                    {user.id !== currentUser.id && (
                     <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
@@ -80,9 +91,10 @@ export default function UserTable() {
                     <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem onClick={() => handleEditClick(user)}>Edit</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDeleteClick(user.id)} className="text-red-600">Delete</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onDelete(user)} className="text-destructive">Delete</DropdownMenuItem>
                     </DropdownMenuContent>
                     </DropdownMenu>
+                    )}
                 </TableCell>
                 </TableRow>
             ))}
@@ -96,35 +108,37 @@ export default function UserTable() {
                 </DialogHeader>
                 {selectedUser && (
                     <div className="space-y-4 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <Input 
+                                defaultValue={selectedUser.firstName}
+                                onChange={(e) => setSelectedUser({...selectedUser, firstName: e.target.value})}
+                                placeholder="First Name"
+                            />
+                            <Input 
+                                defaultValue={selectedUser.lastName}
+                                onChange={(e) => setSelectedUser({...selectedUser, lastName: e.target.value})}
+                                placeholder="Last Name"
+                            />
+                        </div>
                         <Input 
-                            defaultValue={selectedUser.firstName}
-                            onChange={(e) => setSelectedUser({...selectedUser, firstName: e.target.value})}
-                            placeholder="First Name"
-                        />
-                         <Input 
-                            defaultValue={selectedUser.lastName}
-                            onChange={(e) => setSelectedUser({...selectedUser, lastName: e.target.value})}
-                            placeholder="Last Name"
-                        />
-                        <Input 
-                            defaultValue={selectedUser.email}
+                            defaultValue={selectedUser.email || ''}
                             onChange={(e) => setSelectedUser({...selectedUser, email: e.target.value})}
                             placeholder="Email"
                         />
                         <Input 
-                            defaultValue={selectedUser.username}
+                            defaultValue={selectedUser.username || ''}
                             onChange={(e) => setSelectedUser({...selectedUser, username: e.target.value})}
                             placeholder="Username"
                         />
                        <Select 
-                            defaultValue={selectedUser.role} 
+                            value={selectedUser.role} 
                             onValueChange={(value) => setSelectedUser({...selectedUser, role: value as Role})}
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="Select a role" />
                             </SelectTrigger>
                             <SelectContent>
-                            {Object.values(Role).map((role) => (
+                            {creatableRoles.map((role) => (
                                 <SelectItem key={role} value={role}>
                                 {role}
                                 </SelectItem>
@@ -137,10 +151,10 @@ export default function UserTable() {
                                 checked={selectedUser.isActive}
                                 onCheckedChange={(checked) => setSelectedUser({...selectedUser, isActive: checked})}
                             />
-                            <label htmlFor="user-status">Active</label>
+                            <label htmlFor="user-status">{selectedUser.isActive ? 'Active' : 'Inactive'}</label>
                         </div>
 
-                        <Button onClick={handleUpdateUser}>Save Changes</Button>
+                        <Button onClick={handleUpdateUser} className="w-full">Save Changes</Button>
                     </div>
                 )}
             </DialogContent>
