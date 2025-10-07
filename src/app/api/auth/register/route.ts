@@ -1,9 +1,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
-import { createToken, Role } from '@/lib/auth';
+import { createToken } from '@/lib/auth';
 import clientPromise from '@/lib/db';
-import { ObjectId } from 'mongodb';
+import { Role } from '@/lib/types';
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,16 +28,17 @@ export async function POST(req: NextRequest) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const effectiveUsername = username || email.split('@')[0];
 
     const result = await db.collection('users').insertOne({
       firstName,
       lastName,
       email,
-      username: username || email.split('@')[0],
+      username: effectiveUsername,
       password: hashedPassword,
       role: 'ADMIN' as Role,
       isActive: true,
-      profileImage: `https://picsum.photos/seed/${username || email}/100/100`,
+      profileImage: `https://picsum.photos/seed/${effectiveUsername}/100/100`,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
