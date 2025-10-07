@@ -17,8 +17,11 @@ import {
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { User, Event, Attendance, Role } from '@/lib/types';
+import { User, Event, Attendance } from '@/lib/types';
 import { format, subMonths, getMonth, getYear } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Download } from 'lucide-react';
 
 const chartConfig = {
   attendance: {
@@ -32,6 +35,8 @@ type MonthlyAttendance = {
   attendance: number;
 };
 
+type ReportPeriod = 'this-month' | 'last-3-months' | 'last-6-months' | 'this-year';
+
 export default function ReportsPage() {
   const { user, token } = useAuth();
   const { toast } = useToast();
@@ -40,6 +45,8 @@ export default function ReportsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reportPeriod, setReportPeriod] = useState<ReportPeriod>('this-month');
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     if (!token || !user) return;
@@ -75,6 +82,39 @@ export default function ReportsPage() {
 
     fetchData();
   }, [token, user, toast]);
+  
+  const handleDownloadReport = async () => {
+    if (!token) return;
+    setIsDownloading(true);
+    try {
+        const response = await fetch(`/api/admin/reports/attendance?period=${reportPeriod}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to download report.');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `attendance-report-${reportPeriod}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        
+        toast({ title: 'Success', description: 'Report downloaded successfully.' });
+
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Download Failed', description: error.message });
+    } finally {
+        setIsDownloading(false);
+    }
+  };
+
 
   const totalUsers = users.length;
   const singers = users.filter((u) => u.role === 'SINGER').length;
@@ -95,14 +135,17 @@ export default function ReportsPage() {
     }
 
     attendance.forEach(record => {
-      const recordDate = new Date(record.event.date);
-      const monthKey = `${getYear(recordDate)}-${getMonth(recordDate)}`;
+      // Ensure record.event.date is valid before creating a Date object
+      if (record?.event?.date) {
+          const recordDate = new Date(record.event.date);
+          const monthKey = `${getYear(recordDate)}-${getMonth(recordDate)}`;
 
-      if (monthlyData[monthKey]) {
-        monthlyData[monthKey].total++;
-        if (record.status === 'PRESENT' || record.status === 'LATE') {
-          monthlyData[monthKey].present++;
-        }
+          if (monthlyData[monthKey]) {
+              monthlyData[monthKey].total++;
+              if (record.status === 'PRESENT' || record.status === 'LATE') {
+                  monthlyData[monthKey].present++;
+              }
+          }
       }
     });
 
@@ -165,36 +208,66 @@ export default function ReportsPage() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Attendance Overview</CardTitle>
-          <CardDescription>
-            Monthly attendance percentage for the last 6 months.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer config={chartConfig} className="h-[300px] w-full">
-            <BarChart accessibilityLayer data={attendanceChartData}>
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="name"
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-              />
-              <YAxis
-                tickFormatter={(value) => `${value}%`}
-                domain={[0, 100]}
-              />
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent />}
-              />
-              <Bar dataKey="attendance" fill="var(--color-attendance)" radius={8} />
-            </BarChart>
-          </ChartContainer>
-        </CardContent>
-      </Card>
+       <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+            <CardHeader>
+            <CardTitle>Attendance Overview</CardTitle>
+            <CardDescription>
+                Monthly attendance percentage for the last 6 months.
+            </CardDescription>
+            </CardHeader>
+            <CardContent>
+            <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                <BarChart accessibilityLayer data={attendanceChartData}>
+                <CartesianGrid vertical={false} />
+                <XAxis
+                    dataKey="name"
+                    tickLine={false}
+                    tickMargin={10}
+                    axisLine={false}
+                />
+                <YAxis
+                    tickFormatter={(value) => `${value}%`}
+                    domain={[0, 100]}
+                />
+                <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent />}
+                />
+                <Bar dataKey="attendance" fill="var(--color-attendance)" radius={8} />
+                </BarChart>
+            </ChartContainer>
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle>Attendance Report</CardTitle>
+                <CardDescription>
+                    Download a detailed attendance report for a specific period.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+                 <div>
+                    <label htmlFor="report-period" className="text-sm font-medium">Select Period</label>
+                    <Select value={reportPeriod} onValueChange={(value) => setReportPeriod(value as ReportPeriod)}>
+                        <SelectTrigger id="report-period">
+                            <SelectValue placeholder="Select a period" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="this-month">This Month</SelectItem>
+                            <SelectItem value="last-3-months">Last 3 Months</SelectItem>
+                            <SelectItem value="last-6-months">Last 6 Months</SelectItem>
+                            <SelectItem value="this-year">This Year</SelectItem>
+                        </SelectContent>
+                    </Select>
+                 </div>
+                 <Button onClick={handleDownloadReport} disabled={isDownloading}>
+                    <Download className="mr-2 h-4 w-4" />
+                    {isDownloading ? 'Generating...' : 'Download Excel Report'}
+                 </Button>
+            </CardContent>
+        </Card>
+       </div>
     </div>
   );
 }
