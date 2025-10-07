@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/card";
 import { IsezeranoLogo } from "@/components/icons";
 import { useToast } from "@/hooks/use-toast";
-import { useFirebase, useFirestore } from "@/firebase";
+import { useAuth, useFirestore } from "@/firebase";
 import { USER_ROLES } from "@/lib/user-roles";
 import Link from "next/link";
 
@@ -42,18 +42,22 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
   const [adminExists, setAdminExists] = React.useState<boolean | null>(null);
-  const { auth } = useFirebase();
+  const auth = useAuth();
   const firestore = useFirestore();
 
   React.useEffect(() => {
     const checkAdmin = async () => {
-      if (!firestore) return;
+      if (!firestore) {
+        setIsLoading(false);
+        return;
+      };
+      setIsLoading(true);
       try {
         const usersRef = collection(firestore, "users");
         const q = query(usersRef, where("role", "==", USER_ROLES.ADMIN), limit(1));
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) {
-          router.replace('/register');
+          setAdminExists(false);
         } else {
           setAdminExists(true);
         }
@@ -64,10 +68,12 @@ export default function LoginPage() {
           title: "Error",
           description: "Could not verify system status. Please try again."
         })
+      } finally {
+        setIsLoading(false);
       }
     };
     checkAdmin();
-  }, [firestore, router, toast]);
+  }, [firestore, toast]);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -98,23 +104,64 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (error: any) {
       console.error("Error signing in:", error);
+      let errorMessage = "An unknown error occurred.";
+      if (error.code) {
+        switch (error.code) {
+          case 'auth/user-not-found':
+            errorMessage = "No user found with this email.";
+            break;
+          case 'auth/wrong-password':
+            errorMessage = "Incorrect password. Please try again.";
+            break;
+          case 'auth/invalid-credential':
+             errorMessage = "Invalid credentials. Please check your email and password.";
+            break;
+          default:
+            errorMessage = error.message;
+            break;
+        }
+      }
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: error.message || "Invalid email or password.",
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);
     }
   }
 
-  if (adminExists === null) {
+  if (isLoading || adminExists === null) {
      return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="loader">Verifying system status...</div>
       </div>
     );
   }
+
+  if (adminExists === false) {
+    return (
+        <div className="flex min-h-screen w-full items-center justify-center">
+            <Card className="w-full max-w-md mx-4">
+                <CardHeader className="text-center">
+                <div className="flex justify-center mb-4">
+                    <IsezeranoLogo className="w-16 h-16" />
+                </div>
+                <CardTitle className="text-3xl font-headline">Welcome</CardTitle>
+                <CardDescription>
+                    No administrator account exists. Please register to begin.
+                </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button className="w-full" asChild>
+                        <Link href="/register">Register Admin Account</Link>
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+    )
+  }
+
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center">
