@@ -2,7 +2,7 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
-import { Role } from '@prisma/client';
+import { Role } from '@/lib/types';
 import {
   Card,
   CardContent,
@@ -222,10 +222,10 @@ const SingerDashboard = ({ data }: { data: DashboardData }) => {
 }
 
 const API_PATHS: Record<Role, string> = {
-    [Role.ADMIN]: '/api/admin/dashboard',
-    [Role.SECRETARY]: '/api/secretary/dashboard',
-    [Role.DISCIPLINARIAN]: '/api/disciplinarian/dashboard',
-    [Role.SINGER]: '/api/singer/dashboard',
+    'ADMIN': '/api/admin/dashboard',
+    'SECRETARY': '/api/secretary/dashboard',
+    'DISCIPLINARIAN': '/api/disciplinarian/dashboard',
+    'SINGER': '/api/singer/dashboard',
 }
 
 export default function DashboardPage() {
@@ -272,13 +272,13 @@ export default function DashboardPage() {
   const renderDashboard = () => {
     if(!user) return null;
     switch (user.role) {
-      case Role.ADMIN:
+      case 'ADMIN':
         return <AdminDashboard data={data} />;
-      case Role.SECRETARY:
+      case 'SECRETARY':
         return <SecretaryDashboard data={data} />;
-      case Role.DISCIPLINARIAN:
+      case 'DISCIPLINARIAN':
         return <DisciplinarianDashboard data={data} />;
-      case Role.SINGER:
+      case 'SINGER':
         return <SingerDashboard data={data} />;
       default:
         return <p>Welcome to your dashboard.</p>;

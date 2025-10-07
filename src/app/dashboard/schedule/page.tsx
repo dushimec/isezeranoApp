@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -15,7 +16,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Rehearsal, Service, Role } from '@prisma/client';
+import { Rehearsal, Service, Role } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -52,8 +53,8 @@ export default function SchedulePage() {
       const services = await servicesRes.json();
 
       const allEvents: TEvent[] = [
-        ...rehearsals.map((r: Rehearsal) => ({ ...r, type: 'rehearsal' })),
-        ...services.map((s: Service) => ({ ...s, type: 'service' })),
+        ...rehearsals.map((r: Rehearsal) => ({ ...r, type: 'rehearsal' as 'rehearsal' })),
+        ...services.map((s: Service) => ({ ...s, type: 'service' as 'service' })),
       ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       
       setEvents(allEvents);
@@ -139,7 +140,7 @@ export default function SchedulePage() {
               Manage rehearsal and service schedules.
             </p>
           </div>
-          {user?.role === Role.SECRETARY && (
+          {user?.role === 'SECRETARY' && (
           <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <DialogTrigger asChild>
                 <Button>
@@ -189,7 +190,7 @@ export default function SchedulePage() {
                       {event.type === 'service' && (event as Service).attire && <p className="flex items-center gap-2"><Shirt className="h-4 w-4"/> {(event as Service).attire}</p>}
                     </div>
                   </div>
-                  {user?.role === Role.SECRETARY && (
+                  {user?.role === 'SECRETARY' && (
                     <div>
                       <Button variant="ghost" size="icon">
                         <MoreVertical className="h-4 w-4" />
@@ -211,7 +212,7 @@ export default function SchedulePage() {
               selected={selectedDate}
               onSelect={setSelectedDate}
               className="rounded-md"
-              disabled={user?.role !== Role.SECRETARY}
+              disabled={user?.role !== 'SECRETARY'}
             />
           </CardContent>
         </Card>
