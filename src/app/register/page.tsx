@@ -28,6 +28,8 @@ import { IsezeranoLogo } from "@/components/icons";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
+import Image from "next/image";
+import { Label } from "@/components/ui/label";
 
 const FormSchema = z.object({
   firstName: z.string().min(2, "First name is required"),
@@ -35,6 +37,7 @@ const FormSchema = z.object({
   username: z.string().optional(),
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  profileImage: z.string().optional(),
 });
 
 export default function RegisterPage() {
@@ -43,6 +46,7 @@ export default function RegisterPage() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = React.useState(true);
   const [adminExists, setAdminExists] = React.useState<boolean | null>(null);
+  const [imagePreview, setImagePreview] = React.useState<string | null>(null);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -52,6 +56,7 @@ export default function RegisterPage() {
       username: "",
       email: "",
       password: "",
+      profileImage: "",
     },
   });
 
@@ -84,6 +89,19 @@ export default function RegisterPage() {
   }, [router, toast]);
 
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUri = reader.result as string;
+        form.setValue('profileImage', dataUri);
+        setImagePreview(dataUri);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   async function onSubmit(values: z.infer<typeof FormSchema>) {
     setIsLoading(true);
 
@@ -97,7 +115,7 @@ export default function RegisterPage() {
       const responseData = await response.json();
 
       if (!response.ok) {
-        throw new Error(responseData.error || 'Failed to create admin user.');
+        throw new Error(responseData.message || 'Failed to create admin user.');
       }
       
       toast({
@@ -142,6 +160,19 @@ export default function RegisterPage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+               <div className="flex items-center gap-4">
+                <Image
+                  src={imagePreview || `https://picsum.photos/seed/new-admin/100/100`}
+                  width={80}
+                  height={80}
+                  alt="Profile preview"
+                  className="rounded-full object-cover"
+                />
+                <div className="grid w-full max-w-sm items-center gap-1.5">
+                  <Label htmlFor="picture">Profile Picture</Label>
+                  <Input id="picture" type="file" onChange={handleImageChange} accept="image/*" />
+                </div>
+              </div>
               <div className="flex gap-4">
                 <FormField
                   control={form.control}

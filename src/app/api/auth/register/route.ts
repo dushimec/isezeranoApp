@@ -7,7 +7,7 @@ import { Role } from '@/lib/types';
 
 export async function POST(req: NextRequest) {
   try {
-    const { firstName, lastName, email, password, username } = await req.json();
+    const { firstName, lastName, email, password, username, profileImage } = await req.json();
 
     if (!firstName || !lastName || !email || !password) {
       return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const effectiveUsername = username || email.split('@')[0];
+    const finalProfileImage = profileImage || `https://picsum.photos/seed/${effectiveUsername}/100/100`;
 
     const result = await db.collection('users').insertOne({
       firstName,
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
       password: hashedPassword,
       role: 'ADMIN' as Role,
       isActive: true,
-      profileImage: `https://picsum.photos/seed/${effectiveUsername}/100/100`,
+      profileImage: finalProfileImage,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
