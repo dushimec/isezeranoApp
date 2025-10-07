@@ -46,8 +46,8 @@ export default function SchedulePage() {
     setIsLoading(true);
     try {
       const [rehearsalsRes, servicesRes] = await Promise.all([
-        fetch('/api/secretary/rehearsals', { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch('/api/secretary/services', { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch('/api/rehearsals', { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch('/api/services', { headers: { 'Authorization': `Bearer ${token}` } }),
       ]);
       const rehearsals = await rehearsalsRes.json();
       const services = await servicesRes.json();

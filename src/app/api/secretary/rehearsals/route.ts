@@ -58,16 +58,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-
-export async function GET(req: NextRequest) {
-    try {
-        const client = await clientPromise;
-        const db = client.db();
-
-        const rehearsals = await db.collection('rehearsals').find({}).sort({ date: -1 }).toArray();
-        return NextResponse.json(rehearsals);
-    } catch (error) {
-        console.error(error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-    }
-}
