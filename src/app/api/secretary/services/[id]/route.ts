@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/db';
 import { ObjectId } from 'mongodb';
+import { getUserIdFromToken } from '@/lib/auth';
+import { UserDocument } from '@/lib/types';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -28,6 +30,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
+    const userId = await getUserIdFromToken(req);
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const { id } = params;
     if (!ObjectId.isValid(id)) {
       return NextResponse.json({ error: 'Invalid service ID' }, { status: 400 });
@@ -57,11 +63,21 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       return NextResponse.json({ error: 'Service not found' }, { status: 404 });
     }
 
-    if (title) {
-        await db.collection('notifications').updateMany(
-            { serviceId: new ObjectId(id) },
-            { $set: { message: `Service updated: ${title}` } }
-        );
+    // Notify singers of the update
+    const singers = await db.collection<UserDocument>('users').find({ role: 'SINGER' }).project({ _id: 1 }).toArray();
+    const creator = await db.collection<UserDocument>('users').findOne({_id: new ObjectId(userId)});
+    
+    if (singers.length > 0 && creator) {
+      const notifications = singers.map(singer => ({
+        userId: singer._id,
+        serviceId: new ObjectId(id),
+        title: 'Service Updated',
+        message: `The service "${title}" has been updated.`,
+        senderRole: creator.role,
+        isRead: false,
+        createdAt: new Date(),
+      }));
+      await db.collection('notifications').insertMany(notifications);
     }
 
     return NextResponse.json(result);
