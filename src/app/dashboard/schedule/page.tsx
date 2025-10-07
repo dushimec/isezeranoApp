@@ -72,7 +72,12 @@ export default function SchedulePage() {
   const handleCreateEvent = async (e: React.FormEvent<HTMLFormElement>, type: 'rehearsal' | 'service') => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const data = Object.fromEntries(formData.entries());
+    let data = Object.fromEntries(formData.entries());
+    
+    // Ensure the selected date is included if the form doesn't have it
+    if (!data.date && selectedDate) {
+        data = {...data, date: selectedDate.toISOString()};
+    }
     
     const endpoint = type === 'rehearsal' ? '/api/secretary/rehearsals' : '/api/secretary/services';
 
