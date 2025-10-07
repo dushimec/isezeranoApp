@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -49,15 +48,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import SingerAnnouncementsPage from '@/app/singer/announcements/page';
 
 export default function AnnouncementsPage() {
-  const { token } = useAuth();
+  const { user, token } = useAuth();
   const { toast } = useToast();
   const [announcements, setAnnouncements] = React.useState<Announcement[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isFormOpen, setIsFormOpen] = React.useState(false);
 
   const fetchAnnouncements = React.useCallback(async () => {
+    if (!token) return;
     setIsLoading(true);
     try {
       const response = await fetch('/api/admin/announcements', {
@@ -101,6 +102,10 @@ export default function AnnouncementsPage() {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     }
   };
+  
+  if (user?.role === 'SINGER') {
+    return <SingerAnnouncementsPage />;
+  }
 
 
   return (

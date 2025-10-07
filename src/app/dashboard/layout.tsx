@@ -52,13 +52,13 @@ export default function DashboardLayout({
   };
 
   const allNavItems = [
-    { href: "/dashboard", label: "Dashboard", icon: Home, roles: ['ADMIN', 'SECRETARY', 'DISCIPLINARIAN', 'SINGER'] as Role[] },
-    { href: "/dashboard/announcements", label: "Announcements", icon: Megaphone, roles: ['ADMIN', 'SECRETARY'] as Role[] },
-    { href: "/dashboard/schedule", label: "Schedule", icon: Calendar, roles: ['ADMIN', 'SECRETARY', 'SINGER'] as Role[] },
-    { href: "/dashboard/attendance", label: "Take Attendance", icon: ClipboardCheck, roles: ['ADMIN', 'DISCIPLINARIAN'] as Role[] },
-    { href: "/dashboard/my-attendance", label: "My Attendance", icon: ClipboardCheck, roles: ['SINGER'] as Role[] },
-    { href: "/dashboard/reports", label: "Reports", icon: BarChart, roles: ['ADMIN', 'SECRETARY', 'DISCIPLINARIAN'] as Role[] },
-    { href: "/dashboard/users", label: "User Management", icon: Users, roles: ['ADMIN'] as Role[] },
+    { href: "/dashboard", label: "Dashboard", icon: Home, roles: ['ADMIN', 'SECRETARY', 'DISCIPLINARIAN', 'SINGER'] },
+    { href: "/dashboard/announcements", label: "Announcements", icon: Megaphone, roles: ['ADMIN', 'SECRETARY', 'SINGER'] },
+    { href: "/dashboard/schedule", label: "Schedule", icon: Calendar, roles: ['ADMIN', 'SECRETARY', 'SINGER'] },
+    { href: "/dashboard/attendance", label: "Take Attendance", icon: ClipboardCheck, roles: ['ADMIN', 'DISCIPLINARIAN'] },
+    { href: "/dashboard/my-attendance", label: "My Attendance", icon: ClipboardCheck, roles: ['SINGER'] },
+    { href: "/dashboard/reports", label: "Reports", icon: BarChart, roles: ['ADMIN', 'SECRETARY', 'DISCIPLINARIAN'] },
+    { href: "/dashboard/users", label: "User Management", icon: Users, roles: ['ADMIN'] },
   ];
 
   const navItems = allNavItems.filter(item => user?.role && item.roles.includes(user.role));
