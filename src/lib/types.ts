@@ -5,16 +5,10 @@ export interface User {
   lastName: string;
   username: string;
   email: string;
-  role: 'Singer' | 'Secretary' | 'Disciplinarian' | 'Admin' | 'Section Leader';
+  role: 'Admin' | 'Secretary' | 'Disciplinarian' | 'Singer';
   isActive: boolean;
-  createdAt: {
-    seconds: number;
-    nanoseconds: number;
-  };
-  updatedAt: {
-    seconds: number;
-    nanoseconds: number;
-  };
+  createdAt: any; // Firestore Timestamp
+  updatedAt: any; // Firestore Timestamp
   profileImageUrl?: string;
 }
 

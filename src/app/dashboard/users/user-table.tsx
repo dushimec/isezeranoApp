@@ -13,7 +13,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { User } from "@/lib/types";
 import { Edit, MoreHorizontal, Trash } from "lucide-react";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuPortal, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuPortal,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuSeparator,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { USER_ROLES } from "@/lib/user-roles";
@@ -24,6 +37,9 @@ interface UserTableProps {
   onEdit: (user: User, newRole: User['role']) => void;
   onDelete: (user: User) => void;
 }
+
+const editableRoles = Object.values(USER_ROLES).filter(r => r !== USER_ROLES.ADMIN);
+
 
 export function UserTable({ users, currentUser, onEdit, onDelete }: UserTableProps) {
   const [editingRole, setEditingRole] = React.useState<{ [userId: string]: User['role'] }>({});
@@ -79,7 +95,7 @@ export function UserTable({ users, currentUser, onEdit, onDelete }: UserTablePro
             <TableCell>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button aria-haspopup="true" size="icon" variant="ghost" disabled={user.id === currentUser?.id}>
+                  <Button aria-haspopup="true" size="icon" variant="ghost" disabled={user.id === currentUser?.id || user.role === USER_ROLES.ADMIN}>
                     <MoreHorizontal className="h-4 w-4" />
                     <span className="sr-only">Toggle menu</span>
                   </Button>
@@ -94,7 +110,7 @@ export function UserTable({ users, currentUser, onEdit, onDelete }: UserTablePro
                     <DropdownMenuPortal>
                         <DropdownMenuSubContent>
                              <DropdownMenuRadioGroup value={editingRole[user.id] || user.role} onValueChange={(value) => handleRoleChange(user.id, value as User['role'])}>
-                                {Object.values(USER_ROLES).map(role => (
+                                {editableRoles.map(role => (
                                     <DropdownMenuRadioItem key={role} value={role}>{role}</DropdownMenuRadioItem>
                                 ))}
                             </DropdownMenuRadioGroup>

@@ -14,14 +14,12 @@ export async function POST(req: NextRequest) {
 
   try {
     const fullName = `${firstName} ${lastName}`;
-    // Create user in Firebase Auth
     const userRecord = await getAuth().createUser({
       email,
       password,
       displayName: fullName,
     });
 
-    // Create user profile in Firestore
     const userProfile = {
       id: userRecord.uid,
       firstName,
@@ -41,19 +39,19 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('Error creating user:', error);
-    // Check for specific auth errors
+    
     if (error.code === 'auth/email-already-exists') {
       return NextResponse.json({ error: 'A user with this email already exists.' }, { status: 409 });
     }
-     // Check for Firestore permission error specifically
+    
     if (error.code === 'permission-denied') {
         const securityRuleRequest = {
+            // This would be the admin user's auth context, which is complex to simulate here
             auth: {
-                // This would be the admin user's auth context, which is complex to simulate here
                 uid: 'ADMIN_UID_UNKNOWN_IN_THIS_CONTEXT',
             },
             method: 'create',
-            path: `/databases/(default)/documents/users/${email}`, // Simplified path
+            path: `/databases/(default)/documents/users/${email}`,
             resource: {
                 data: {
                     firstName,

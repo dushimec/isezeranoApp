@@ -9,7 +9,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the User entity."
+          "description": "Unique identifier for the User entity (matches Firebase Auth UID)."
         },
         "firstName": {
           "type": "string",
@@ -29,9 +29,9 @@
           "description": "User's email address, used for authentication."
         },
         "profileImageUrl": {
-            "type": "string",
-            "format": "uri",
-            "description": "URL for the user's profile picture."
+          "type": "string",
+          "format": "uri",
+          "description": "URL for the user's profile picture."
         },
         "role": {
           "type": "string",
@@ -91,7 +91,7 @@
         },
         "createdBy": {
           "type": "string",
-          "description": "User ID of the creator (Secretary/Admin)."
+          "description": "User ID of the creator (Admin, Secretary)."
         },
         "createdAt": {
           "type": "string",
@@ -118,52 +118,6 @@
         "title",
         "message",
         "createdBy",
-        "createdAt"
-      ]
-    },
-    "Notification": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Notification",
-      "type": "object",
-      "description": "Represents a notification for a user.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Notification."
-        },
-        "userId": {
-          "type": "string",
-          "description": "The ID of the user who will receive the notification."
-        },
-        "title": {
-          "type": "string",
-          "description": "The title of the notification."
-        },
-        "message": {
-          "type": "string",
-          "description": "The content of the notification."
-        },
-        "senderRole": {
-          "type": "string",
-          "description": "The role of the user who triggered the notification."
-        },
-        "isRead": {
-          "type": "boolean",
-          "description": "Whether the notification has been read.",
-          "default": false
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp of when the notification was created."
-        }
-      },
-      "required": [
-        "id",
-        "userId",
-        "title",
-        "message",
-        "isRead",
         "createdAt"
       ]
     },
@@ -196,7 +150,7 @@
         },
         "createdBy": {
           "type": "string",
-          "description": "User ID of the creator."
+          "description": "User ID of the creator (Admin, Secretary)."
         },
         "createdAt": {
           "type": "string",
@@ -242,7 +196,7 @@
         },
         "createdBy": {
           "type": "string",
-          "description": "User ID of the creator."
+          "description": "User ID of the creator (Admin, Secretary)."
         },
         "createdAt": {
           "type": "string",
@@ -260,7 +214,7 @@
       ]
     },
     "Attendance": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$schema": "http://json-schema.org/draft_07/schema#",
       "title": "Attendance",
       "type": "object",
       "description": "Represents an attendance record for a user at a specific event.",
@@ -296,7 +250,7 @@
         },
         "markedBy": {
           "type": "string",
-          "description": "User ID of the person who marked attendance (Disciplinarian)."
+          "description": "User ID of the person who marked attendance (Admin, Disciplinarian)."
         },
         "createdAt": {
           "type": "string",
@@ -327,7 +281,7 @@
         "definition": {
           "entityName": "User",
           "schema": {
-            "$ref": "#/backend/entities/User"
+            "$ref": "#/entities/User"
           },
           "description": "Stores user profiles, including role information.",
           "params": [
@@ -343,7 +297,7 @@
         "definition": {
           "entityName": "Announcement",
           "schema": {
-            "$ref": "#/backend/entities/Announcement"
+            "$ref": "#/entities/Announcement"
           },
           "description": "Stores announcements for the choir.",
           "params": [
@@ -355,27 +309,11 @@
         }
       },
       {
-        "path": "/notifications/{notificationId}",
-        "definition": {
-          "entityName": "Notification",
-          "schema": {
-            "$ref": "#/backend/entities/Notification"
-          },
-          "description": "Stores notifications for individual users.",
-          "params": [
-            {
-              "name": "notificationId",
-              "description": "Unique identifier for the notification."
-            }
-          ]
-        }
-      },
-      {
         "path": "/rehearsals/{rehearsalId}",
         "definition": {
           "entityName": "Rehearsal",
           "schema": {
-            "$ref": "#/backend/entities/Rehearsal"
+            "$ref": "#/entities/Rehearsal"
           },
           "description": "Stores rehearsal schedules.",
           "params": [
@@ -391,7 +329,7 @@
         "definition": {
           "entityName": "Service",
           "schema": {
-            "$ref": "#/backend/entities/Service"
+            "$ref": "#/entities/Service"
           },
           "description": "Stores service schedules.",
           "params": [
@@ -407,7 +345,7 @@
         "definition": {
           "entityName": "Attendance",
           "schema": {
-            "$ref": "#/backend/entities/Attendance"
+            "$ref": "#/entities/Attendance"
           },
           "description": "Stores attendance records for events.",
           "params": [

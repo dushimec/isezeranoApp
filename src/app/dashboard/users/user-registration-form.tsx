@@ -25,13 +25,16 @@ import { Button } from "@/components/ui/button";
 import { USER_ROLES } from "@/lib/user-roles";
 import { useToast } from "@/hooks/use-toast";
 
+// Admin cannot create another Admin
+const creatableRoles = Object.values(USER_ROLES).filter(role => role !== USER_ROLES.ADMIN);
+
 const formSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
   lastName: z.string().min(2, "Last name must be at least 2 characters"),
   username: z.string().min(3, "Username must be at least 3 characters"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.nativeEnum(USER_ROLES),
+  role: z.enum(creatableRoles as [string, ...string[]]),
 });
 
 export function UserRegistrationForm() {
@@ -163,7 +166,7 @@ export function UserRegistrationForm() {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {Object.values(USER_ROLES).map((role) => (
+                  {creatableRoles.map((role) => (
                     <SelectItem key={role} value={role}>
                       {role}
                     </SelectItem>

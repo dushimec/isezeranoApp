@@ -14,11 +14,10 @@ import { UserTable } from './user-table';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { USER_ROLES } from '@/lib/user-roles';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { User } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useMemoFirebase } from '@/firebase/provider';
 
 export default function UsersPage() {
   const { user, userProfile, loading } = useAuth();
@@ -63,6 +62,9 @@ export default function UsersPage() {
 
   const handleDeleteUser = async (userToDelete: User) => {
     if (!firestore) return;
+    // Note: This only deletes the Firestore record.
+    // For a full user deletion, you'd also need to delete the user from Firebase Auth,
+    // which requires admin privileges and is best handled via a backend function.
     const userDocRef = doc(firestore, 'users', userToDelete.id);
     try {
       await deleteDoc(userDocRef);
@@ -80,7 +82,7 @@ export default function UsersPage() {
   };
 
   if (loading || usersLoading) {
-    return <p>Loading...</p>;
+    return <div className="flex items-center justify-center min-h-screen"><div className="loader">Loading...</div></div>;
   }
   
   if (!user || userProfile?.role !== USER_ROLES.ADMIN) {
@@ -103,7 +105,7 @@ export default function UsersPage() {
             <CardHeader>
               <CardTitle>Register New User</CardTitle>
               <CardDescription>
-                This form is for creating Firestore user profiles. Firebase Auth user creation is handled separately for security.
+                Create a new user account and assign them a role. A temporary password will be set.
               </CardDescription>
             </CardHeader>
             <CardContent>

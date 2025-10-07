@@ -53,18 +53,18 @@ export default function DashboardLayout({
   };
 
   const allNavItems = [
-    { href: "/dashboard", label: "Dashboard", icon: Home, roles: ['Singer', 'Secretary', 'Disciplinarian', 'Admin'] },
-    { href: "/dashboard/announcements", label: "Announcements", icon: Megaphone, roles: ['Secretary', 'Admin'] },
-    { href: "/dashboard/schedule", label: "Schedule", icon: Calendar, roles: ['Secretary', 'Admin'] },
-    { href: "/dashboard/attendance", label: "Attendance", icon: ClipboardCheck, roles: ['Disciplinarian', 'Admin'] },
-    { href: "/dashboard/reports", label: "Reports", icon: BarChart, roles: ['Secretary', 'Disciplinarian', 'Admin'] },
+    { href: "/dashboard", label: "Dashboard", icon: Home, roles: ['Admin', 'Secretary', 'Disciplinarian', 'Singer'] },
+    { href: "/dashboard/announcements", label: "Announcements", icon: Megaphone, roles: ['Admin', 'Secretary'] },
+    { href: "/dashboard/schedule", label: "Schedule", icon: Calendar, roles: ['Admin', 'Secretary'] },
+    { href: "/dashboard/attendance", label: "Attendance", icon: ClipboardCheck, roles: ['Admin', 'Disciplinarian'] },
+    { href: "/dashboard/reports", label: "Reports", icon: BarChart, roles: ['Admin', 'Secretary', 'Disciplinarian'] },
     { href: "/dashboard/users", label: "User Management", icon: Users, roles: ['Admin'] },
   ];
 
   const navItems = allNavItems.filter(item => userProfile?.role && item.roles.includes(userProfile.role));
 
 
-  if (loading || !user) {
+  if (loading || !user || !userProfile) {
     return (
         <div className="flex items-center justify-center min-h-screen">
             <div className="loader">Loading...</div>

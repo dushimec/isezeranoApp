@@ -16,13 +16,11 @@ export async function POST(req: NextRequest) {
   try {
     const db = firestore();
     
-    // Check if an admin already exists
     const adminQuery = await db.collection('users').where('role', '==', USER_ROLES.ADMIN).limit(1).get();
     if (!adminQuery.empty) {
       return NextResponse.json({ error: 'An admin account already exists. Please log in.' }, { status: 403 });
     }
     
-    // Create user in Firebase Auth
     const userRecord = await getAuth().createUser({
         email,
         password,
@@ -47,7 +45,6 @@ export async function POST(req: NextRequest) {
 
     await userRef.set(userProfile);
 
-    // No token is returned here, user must log in after registration
     return NextResponse.json({ message: "Admin user created successfully", user: userProfile });
 
   } catch (error: any) {
@@ -57,15 +54,11 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'This email is already in use.'}, { status: 409 });
     }
 
-    // This is the new, detailed error handling for Firestore permission issues.
     if (error.code === 'permission-denied' || (error.details && error.details.includes('permission-denied'))) {
-        // Construct a request object that mirrors the security rule context
         const securityRuleRequest = {
-            // In this server-side context, the write is unauthenticated from a client's perspective
-            // even though it uses the Admin SDK. For rule debugging, we show it as null.
             auth: null, 
             method: 'create',
-            path: `/databases/(default)/documents/users/${email}`, // Simplified path for clarity
+            path: `/databases/(default)/documents/users/${email}`,
             resource: {
                 data: {
                     firstName,
@@ -83,7 +76,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ 
             error: 'Firestore permission denied. You cannot create this document.',
             details: errorMessage,
-            // also returning the structured request for programmatic use if needed
             requestContext: securityRuleRequest, 
         }, { status: 403 });
     }

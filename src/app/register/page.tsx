@@ -6,8 +6,13 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { collection, getDocs, query, where, limit, setDoc, doc, serverTimestamp } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  limit,
+} from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -28,8 +33,9 @@ import {
 } from "@/components/ui/card";
 import { IsezeranoLogo } from "@/components/icons";
 import { useToast } from "@/hooks/use-toast";
-import { useFirebase, useFirestore } from "@/firebase";
+import { useFirestore } from "@/firebase";
 import { USER_ROLES } from "@/lib/user-roles";
+import Link from "next/link";
 
 const FormSchema = z.object({
   firstName: z.string().min(2, "First name is required"),
@@ -43,22 +49,25 @@ export default function RegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
-  const { auth } = useFirebase();
   const firestore = useFirestore();
 
-   React.useEffect(() => {
+  React.useEffect(() => {
     const checkAdmin = async () => {
       if (!firestore) return;
       try {
         const usersRef = collection(firestore, "users");
-        const q = query(usersRef, where("role", "==", USER_ROLES.ADMIN), limit(1));
+        const q = query(
+          usersRef,
+          where("role", "==", USER_ROLES.ADMIN),
+          limit(1)
+        );
         const querySnapshot = await getDocs(q);
         if (!querySnapshot.empty) {
           toast({
             title: "Admin Exists",
             description: "An admin account already exists. Please log in.",
           });
-          router.replace('/login');
+          router.replace("/login");
         }
       } catch (error) {
         console.error("Error checking for admin:", error);
@@ -78,49 +87,34 @@ export default function RegisterPage() {
     },
   });
 
-  async function onSubmit(data: z.infer<typeof FormSchema>) {
+  async function onSubmit(values: z.infer<typeof FormSchema>) {
     setIsLoading(true);
-    if (!auth || !firestore) {
-       toast({ variant: "destructive", title: "Firebase Error", description: "Firebase is not initialized." });
-       setIsLoading(false);
-       return;
-    }
 
     try {
-      // 1. Create user in Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-      const user = userCredential.user;
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+      });
 
-      // 2. Create user profile in Firestore
-      const userProfile = {
-        id: user.uid,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        username: data.username,
-        email: data.email,
-        role: USER_ROLES.ADMIN,
-        isActive: true,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        profileImageUrl: `https://picsum.photos/seed/${user.uid}/400/400`,
-      };
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.details || responseData.error || 'Failed to create admin user.');
+      }
       
-      await setDoc(doc(firestore, "users", user.uid), userProfile);
-
       toast({
         title: "Admin Account Created",
         description: "You have been successfully registered. Please log in.",
       });
 
-      // 3. Redirect to login page
       router.push(`/login`);
-
     } catch (error: any) {
       console.error("Error during admin registration:", error);
       toast({
         variant: "destructive",
         title: "Registration Failed",
-        description: error.message || "Could not create admin account.",
+        description: error.message,
       });
     } finally {
       setIsLoading(false);
@@ -134,7 +128,9 @@ export default function RegisterPage() {
           <div className="flex justify-center mb-4">
             <IsezeranoLogo className="w-16 h-16" />
           </div>
-          <CardTitle className="text-3xl font-headline">Admin Registration</CardTitle>
+          <CardTitle className="text-3xl font-headline">
+            Admin Registration
+          </CardTitle>
           <CardDescription>
             Create the first administrator account for Isezerano CMS.
           </CardDescription>
@@ -203,7 +199,11 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
