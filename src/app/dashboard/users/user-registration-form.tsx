@@ -26,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Role } from "@/lib/types";
 import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
+import { Label } from "@/components/ui/label";
 
 interface UserRegistrationFormProps {
   onUserCreated: () => void;
