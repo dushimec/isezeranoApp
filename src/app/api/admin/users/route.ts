@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
                 uid: 'ADMIN_UID_UNKNOWN_IN_THIS_CONTEXT',
             },
             method: 'create',
-            path: `/databases/(default)/documents/users/${email}`, // Simplified path
+            path: `/databases/(default)/documents/users/${userRecord.uid}`, // Using uid for path
             resource: {
                 data: {
                     fullName,
