@@ -125,7 +125,9 @@ export default {
       presentMembers: "Abitabiriye (Bose)",
       presentMembersDesc: "Muri byose",
       announcements: "Amatangazo",
-      announcementsDesc: "Ayatangajwe vuba"
+      announcementsDesc: "Ayatangajwe vuba",
+      manageSingers: "Cunga Abaririmbyi",
+      manageSingersDesc: "Ongeraho, hindura, kandi ucunge konti z'abaririmbyi"
     },
     disciplinarian: {
       avgAttendance: "Impuzandengo yo Kwitabira",

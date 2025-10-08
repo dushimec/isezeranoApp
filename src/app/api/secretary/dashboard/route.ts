@@ -22,12 +22,13 @@ export async function GET(req: NextRequest) {
         .slice(0, 5);
     
     const recentAnnouncements = await db.collection('announcements').find({}).sort({ createdAt: 'desc' }).limit(5).toArray();
-
+    const totalSingers = await db.collection('users').countDocuments({ role: 'SINGER' });
 
     return NextResponse.json({
       attendanceSummary: formattedSummary,
       upcomingEvents: upcomingEvents.map(e => ({...e, id: e._id.toHexString()})),
-      recentAnnouncements: recentAnnouncements.map(a => ({...a, id: a._id.toHexString()}))
+      recentAnnouncements: recentAnnouncements.map(a => ({...a, id: a._id.toHexString()})),
+      totalSingers,
     });
   } catch (error) {
     console.error(error);

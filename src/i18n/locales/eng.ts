@@ -1,3 +1,4 @@
+
 export default {
   dashboard: "Dashboard",
   announcements: "Announcements",
@@ -125,7 +126,9 @@ export default {
       presentMembers: "Present Members (Total)",
       presentMembersDesc: "Across all events",
       announcements: "Announcements",
-      announcementsDesc: "Recently published"
+      announcementsDesc: "Recently published",
+      manageSingers: "Manage Singers",
+      manageSingersDesc: "Add, edit, and manage singer accounts"
     },
     disciplinarian: {
       avgAttendance: "Avg. Attendance",

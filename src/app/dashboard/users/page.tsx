@@ -24,11 +24,13 @@ export default function UsersPage() {
   const [usersLoading, setUsersLoading] = React.useState(true);
   const [usersError, setUsersError] = React.useState<string | null>(null);
 
+  const API_BASE_PATH = user?.role === 'ADMIN' ? '/api/admin/users' : '/api/secretary/users';
+
   const fetchUsers = React.useCallback(async () => {
     if (!token) return;
     setUsersLoading(true);
     try {
-      const response = await fetch('/api/admin/users', {
+      const response = await fetch(API_BASE_PATH, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) {
@@ -47,11 +49,11 @@ export default function UsersPage() {
     } finally {
       setUsersLoading(false);
     }
-  }, [token, toast]);
+  }, [token, toast, API_BASE_PATH]);
 
   React.useEffect(() => {
     if (!loading) {
-      if (!user || user.role !== 'ADMIN') {
+      if (!user || !['ADMIN', 'SECRETARY'].includes(user.role)) {
         router.push('/unauthorized');
       } else {
         fetchUsers();
@@ -69,7 +71,7 @@ export default function UsersPage() {
       return;
     }
     try {
-      const response = await fetch(`/api/admin/users/${userId}`, {
+      const response = await fetch(`${API_BASE_PATH}/${userId}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -102,7 +104,7 @@ export default function UsersPage() {
       return;
     }
     try {
-      const response = await fetch(`/api/admin/users/${userToDelete.id}`, {
+      const response = await fetch(`${API_BASE_PATH}/${userToDelete.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -129,7 +131,7 @@ export default function UsersPage() {
     return <div className="flex items-center justify-center min-h-screen"><div className="loader">{t("usersPage.loading")}</div></div>;
   }
   
-  if (!user || user.role !== 'ADMIN') {
+  if (!user || !['ADMIN', 'SECRETARY'].includes(user.role)) {
     return null;
   }
 

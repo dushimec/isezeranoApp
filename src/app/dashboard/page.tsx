@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Announcement } from '@/lib/types';
 import { t } from "@/utils/i18n";
+import Link from 'next/link';
 
 // Define a unified event type for the dashboard
 type DashboardEvent = {
@@ -32,6 +33,7 @@ type DashboardData = {
     recentAnnouncements?: Announcement[];
     attendanceSummary?: {status: string, _count: { status: number }}[];
     notifications?: any[];
+    totalSingers?: number;
 }
 
 
@@ -82,7 +84,7 @@ const AdminDashboard = ({ data }: { data: DashboardData }) => (
 
 const SecretaryDashboard = ({ data }: { data: DashboardData }) => {
     return (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">{t('dashboardPage.secretary.upcomingEvents')}</CardTitle>
@@ -113,6 +115,18 @@ const SecretaryDashboard = ({ data }: { data: DashboardData }) => {
                     <p className="text-xs text-muted-foreground">{t('dashboardPage.secretary.announcementsDesc')}</p>
                 </CardContent>
             </Card>
+             <Link href="/dashboard/users">
+                <Card className="hover:bg-muted/50 transition-colors">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">{t('dashboardPage.secretary.manageSingers')}</CardTitle>
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{data.totalSingers || 0}</div>
+                        <p className="text-xs text-muted-foreground">{t('dashboardPage.secretary.manageSingersDesc')}</p>
+                    </CardContent>
+                </Card>
+            </Link>
         </div>
     )
 }
