@@ -155,7 +155,7 @@ export default function UsersPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <UserRegistrationForm onUserCreated={handleUserCreated} />
+              <UserRegistrationForm onUserCreated={handleUserCreated} apiPath={API_BASE_PATH} />
             </CardContent>
           </Card>
         </div>

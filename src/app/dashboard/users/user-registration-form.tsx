@@ -30,6 +30,7 @@ import { t } from "@/utils/i18n";
 
 interface UserRegistrationFormProps {
   onUserCreated: () => void;
+  apiPath: string;
 }
 
 const creatableRoles: Role[] = ['SECRETARY', 'DISCIPLINARIAN', 'SINGER'];
@@ -44,7 +45,7 @@ const formSchema = z.object({
   profileImage: z.string().optional(),
 });
 
-export function UserRegistrationForm({ onUserCreated }: UserRegistrationFormProps) {
+export function UserRegistrationForm({ onUserCreated, apiPath }: UserRegistrationFormProps) {
   const { toast } = useToast();
   const { token } = useAuth();
   const [isLoading, setIsLoading] = React.useState(false);
@@ -80,7 +81,7 @@ export function UserRegistrationForm({ onUserCreated }: UserRegistrationFormProp
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/admin/users', {
+      const response = await fetch(apiPath, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
