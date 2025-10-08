@@ -2,125 +2,54 @@
 import { NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { NextApiRequest } from 'next';
-import { Role } from '@prisma/client';
-import { prisma } from '@/lib/prisma';
+// import { Role } from '@prisma/client'; // Removed Prisma import
 import { TUser } from '@/lib/types';
 
-async function getAdminDashboardData() {
-    const totalUsers = await prisma.user.count();
-    const userCounts = await prisma.user.groupBy({
-        by: ['role'],
-        _count: {
-            role: true,
-        },
-    });
-    const upcomingEvents = await prisma.event.findMany({
-        where: {
-            date: {
-                gte: new Date(),
-            },
-        },
-        orderBy: {
-            date: 'asc',
-        },
-        take: 5,
-    });
-    const recentAnnouncements = await prisma.announcement.findMany({
-        orderBy: {
-            createdAt: 'desc',
-        },
-        take: 5,
-    });
+// Placeholder for the Role enum that was previously imported from @prisma/client
+// The user will need to define this according to their application's needs.
+enum Role {
+    ADMIN = "ADMIN",
+    SECRETARY = "SECRETARY",
+    DISCIPLINARIAN = "DISCIPLINARIAN",
+    SINGER = "SINGER",
+}
 
+async function getAdminDashboardData() {
+    // TODO: Implement MongoDB queries
+    console.log("Fetching admin dashboard data...");
     return {
-        totalUsers,
-        userCounts: userCounts.reduce((acc, curr) => {
-            acc[curr.role] = curr._count.role;
-            return acc;
-        }, {} as Record<Role, number>),
-        upcomingEvents,
-        recentAnnouncements,
+        totalUsers: 0,
+        userCounts: {},
+        upcomingEvents: [],
+        recentAnnouncements: [],
     };
 }
 
 async function getSecretaryDashboardData() {
-    const upcomingEvents = await prisma.event.findMany({
-        where: {
-            date: {
-                gte: new Date(),
-            },
-        },
-        orderBy: {
-            date: 'asc',
-        },
-    });
-    const attendanceSummary = await prisma.attendance.groupBy({
-        by: ['status'],
-        _count: {
-            status: true,
-        },
-    });
-    const recentAnnouncements = await prisma.announcement.findMany({
-        orderBy: {
-            createdAt: 'desc',
-        },
-        take: 5,
-    });
-
+    // TODO: Implement MongoDB queries
+    console.log("Fetching secretary dashboard data...");
     return {
-        upcomingEvents,
-        attendanceSummary: attendanceSummary.map(s => ({ status: s.status, count: s._count.status })),
-        recentAnnouncements,
+        upcomingEvents: [],
+        attendanceSummary: [],
+        recentAnnouncements: [],
     };
 }
 
 async function getDisciplinarianDashboardData() {
-    const attendanceSummary = await prisma.attendance.groupBy({
-        by: ['status'],
-        _count: {
-            status: true,
-        },
-    });
-
+    // TODO: Implement MongoDB queries
+    console.log("Fetching disciplinarian dashboard data...");
     return {
-        attendanceSummary: attendanceSummary.map(s => ({ status: s.status, count: s._count.status })),
+        attendanceSummary: [],
     };
 }
 
 async function getSingerDashboardData(userId: string) {
-    const upcomingEvents = await prisma.event.findMany({
-        where: {
-            date: {
-                gte: new Date(),
-            },
-        },
-        orderBy: {
-            date: 'asc',
-        },
-        take: 1,
-    });
-
-    const announcements = await prisma.announcement.findMany({
-        orderBy: {
-            createdAt: 'desc',
-        },
-        take: 1,
-    });
-
-    const attendanceSummary = await prisma.attendance.groupBy({
-        where: {
-            userId: userId,
-        },
-        by: ['status'],
-        _count: {
-            status: true,
-        },
-    });
-
+    // TODO: Implement MongoDB queries
+    console.log(`Fetching singer dashboard data for user ${userId}...`);
     return {
-        upcomingEvents,
-        announcements,
-        attendanceSummary: attendanceSummary.map(s => ({ status: s.status, count: s._count.status })),
+        upcomingEvents: [],
+        announcements: [],
+        attendanceSummary: [],
     };
 }
 

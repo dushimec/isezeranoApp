@@ -4,15 +4,56 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import UserRegistrationForm from './user-registration-form';
-import UserTable from '@/app/dashboard/users/user-table';
+import { UserRegistrationForm } from '@/app/dashboard/users/user-registration-form';
+import { UserTable } from '@/app/dashboard/users/user-table';
 import EventsView from './events-view';
 import AnnouncementsView from './announcements-view';
 import AttendanceView from './attendance-view';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { User } from '@/lib/types';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function AdminDashboardPage() {
   const [isCreateUserDialogOpen, setIsCreateUserDialogOpen] = React.useState(false);
+  const [users, setUsers] = React.useState<User[]>([]);
+  const { token, user, loading } = useAuth();
+
+  const fetchUsers = async () => {
+    if (token) {
+      const res = await fetch('/api/admin/users', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      setUsers(data);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchUsers();
+  }, [token]);
+
+  const handleUserCreated = () => {
+    setIsCreateUserDialogOpen(false);
+    fetchUsers();
+  };
+
+  const handleEditUser = (id: string, data: Partial<User>) => {
+    console.log('Editing user:', id, data);
+  };
+
+  const handleDeleteUser = (user: User) => {
+    console.log('Deleting user:', user);
+  };
+
+  if (loading) {
+    return <div>Loading...</div>
+  }
+
+  if (!user) {
+    return <div>Please log in to view this page.</div>
+  }
 
   return (
     <div className="container mx-auto py-10">
@@ -26,7 +67,7 @@ export default function AdminDashboardPage() {
             <DialogHeader>
               <DialogTitle>Create a New User</DialogTitle>
             </DialogHeader>
-            <UserRegistrationForm onSuccess={() => setIsCreateUserDialogOpen(false)} />
+            <UserRegistrationForm onUserCreated={handleUserCreated} />
           </DialogContent>
         </Dialog>
       </header>
@@ -41,7 +82,7 @@ export default function AdminDashboardPage() {
 
         <TabsContent value="users">
           <div className="p-4 bg-card rounded-lg shadow-md">
-            <UserTable />
+            <UserTable users={users} currentUser={user} onEdit={handleEditUser} onDelete={handleDeleteUser} />
           </div>
         </TabsContent>
         <TabsContent value="events">

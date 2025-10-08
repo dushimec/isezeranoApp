@@ -1,6 +1,5 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
@@ -17,20 +16,15 @@ export async function GET(req: NextRequest) {
     if (!sectionLeaderId) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
+    
+    // TODO: Implement MongoDB queries
+    console.log(`Fetching members for section leader ${sectionLeaderId}...`);
 
-    const user = await prisma.user.findUnique({
-      where: { id: sectionLeaderId },
-      select: { section: true },
-    });
-
-    if (!user || !user.section) {
-        return NextResponse.json({ error: 'Section not found for this leader' }, { status: 404 });
-    }
-
-    const members = await prisma.user.findMany({
-        where: { section: user.section },
-        select: { id: true, fullName: true },
-    });
+    // Placeholder data
+    const members = [
+        { id: '1', fullName: 'John Doe' },
+        { id: '2', fullName: 'Jane Smith' },
+    ];
 
     return NextResponse.json(members);
   } catch (error) {
