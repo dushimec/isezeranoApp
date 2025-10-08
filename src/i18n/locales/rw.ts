@@ -89,7 +89,7 @@ export default {
     noAdminTitle: "Murakaza neza",
     noAdminDescription: "Nta konti ya admin irabaho. Iyandikishe kugira utangire.",
     registerAdmin: "Iyandikishe nka Admin",
-    welcomeBack: "Garuka neza",
+    welcomeBack: "Murakaza neza",
     description: "Injira kugira ukomeze gukoresha Isezerano CMS",
     adminTab: "Admin",
     memberTab: "Umunyamuryango",
@@ -108,16 +108,16 @@ export default {
   dashboardPage: {
     title: "Dashibodi",
     welcome: "Murakaza neza, {name}! Dore ishusho rusange.",
-    loading: "Iri kubika...",
+    loading: "Tegereza gato...",
     admin: {
-      totalUsers: "Abakoresha Bose",
+      totalUsers: "Abari kuri sisitemu Bose",
       totalUsersDesc: "Harimo bose",
       singers: "Abaririmbyi",
       singersDesc: "Abaririmbyi bose bakora",
       upcomingEvents: "Ibikorwa biri imbere",
       upcomingEventsDesc: "Mu minsi 30 iri imbere",
       recentAnnouncements: "Amatangazo Mashya",
-      recentAnnouncementsDesc: "Yatangajwe vuba"
+      recentAnnouncementsDesc: "Ayatangajwe vuba"
     },
     secretary: {
       upcomingEvents: "Ibikorwa biri imbere",
@@ -125,7 +125,7 @@ export default {
       presentMembers: "Abitabiriye (Bose)",
       presentMembersDesc: "Muri byose",
       announcements: "Amatangazo",
-      announcementsDesc: "Yatangajwe vuba"
+      announcementsDesc: "Ayatangajwe vuba"
     },
     disciplinarian: {
       avgAttendance: "Impuzandengo yo Kwitabira",
@@ -152,8 +152,8 @@ export default {
     default: "Murakaza neza kuri dashibodi yawe."
   },
   usersPage: {
-    title: "Kuyobora Abakoresha",
-    description: "Hanga no kuyobora abakoresha ba CMS.",
+    title: "Kugenzura Akoresha sisteme",
+    description: "Kwandika abakoresha sisteme bashya.",
     registerTitle: "Iyandikishe Umukoresha Mushya",
     registerDescription: "Hanga konti nshya y'umukoresha kandi umuhe inshingano. Ijambo ry'ibanga ry'agateganyo rizashyirwaho.",
     existingTitle: "Abakoresha Bahari",
@@ -182,9 +182,9 @@ export default {
     registering: "Iri kwiyandikisha...",
     registerUser: "Iyandikishe Umukoresha",
     placeholder: {
-      firstName: "Jean",
+      firstName: "Elie",
       lastName: "Ndayisenga",
-      username: "jeanndayisenga",
+      username: "eliendayisenga",
       email: "umukoresha@urugero.com",
       password: "••••••••"
     }
