@@ -1,5 +1,5 @@
 export default {
-  dashboard: "Dashibodi",
+  dashboard: "Ahabanza",
   announcements: "Itangazo",
   schedule: "Igenamigambi",
   attendance: "Kwandika Abitabiriye",
