@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Announcement } from '@/lib/types';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { t } from "@/utils/i18n";
 
 export default function SingerAnnouncementsPage() {
   const { token } = useAuth();
@@ -56,21 +57,21 @@ export default function SingerAnnouncementsPage() {
   return (
     <div className="flex flex-col gap-6">
         <div>
-            <h1 className="text-3xl font-headline">Announcements</h1>
+            <h1 className="text-3xl font-headline">{t("announcementsPage.title")}</h1>
             <p className="text-muted-foreground">
-                View all choir announcements.
+                {t("announcementsPage.subtitle")}
             </p>
         </div>
         <Card>
             <CardHeader>
-                <CardTitle>All Announcements</CardTitle>
+                <CardTitle>{t("announcementsPage.cardTitle")}</CardTitle>
                 <CardDescription>
-                Here is a list of all past and present announcements.
+                {t("announcementsPage.cardDescription")}
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 {announcements.length === 0 ? (
-                <p className="text-muted-foreground">No announcements found.</p>
+                <p className="text-muted-foreground">{t("announcementsPage.noAnnouncements")}</p>
                 ) : (
                 <Accordion type="single" collapsible className="w-full">
                     {announcements.map((announcement) => (
@@ -79,15 +80,15 @@ export default function SingerAnnouncementsPage() {
                             <div className="flex items-center gap-4">
                                 <span>{announcement.title}</span>
                                 <Badge variant={announcement.priority === 'HIGH' ? 'destructive' : announcement.priority === 'LOW' ? 'outline' : 'secondary'}>
-                                    {announcement.priority}
+                                    {t(`announcementsPage.priority.${announcement.priority}`)}
                                 </Badge>
                             </div>
                         </AccordionTrigger>
                         <AccordionContent>
                         <p>{announcement.message}</p>
                         <div className="text-sm text-muted-foreground mt-2">
-                            <p>By: {announcement.createdBy.firstName} {announcement.createdBy.lastName}</p>
-                            <p>Created: {format(new Date(announcement.createdAt), 'PPP p')}</p>
+                            <p>{t("announcementsPage.by")}: {announcement.createdBy.firstName} {announcement.createdBy.lastName}</p>
+                            <p>{t("announcementsPage.created")}: {format(new Date(announcement.createdAt), 'PPP p')}</p>
                         </div>
                         </AccordionContent>
                     </AccordionItem>

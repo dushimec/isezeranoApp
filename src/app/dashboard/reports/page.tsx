@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -22,6 +21,7 @@ import { format, subMonths, getMonth, getYear } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
+import { t } from "@/utils/i18n";
 
 const chartConfig = {
   attendance: {
@@ -161,7 +161,7 @@ export default function ReportsPage() {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-[calc(100vh-8rem)]"><div className="loader">Loading...</div></div>;
+    return <div className="flex items-center justify-center min-h-[calc(100vh-8rem)]"><div className="loader">{t("reportsPage.loading")}</div></div>;
   }
   
   const attendanceChartData = processAttendanceData();
@@ -169,51 +169,51 @@ export default function ReportsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-headline">Reports</h1>
+        <h1 className="text-3xl font-headline">{t("reportsPage.title")}</h1>
         <p className="text-muted-foreground">
-          View reports on attendance, participation, and user activity.
+          {t("reportsPage.description")}
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Members</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("reportsPage.totalMembers")}</CardTitle>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" className="h-4 w-4 text-muted-foreground"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalUsers}</div>
-            <p className="text-xs text-muted-foreground">{singers} singers</p>
+            <p className="text-xs text-muted-foreground">{t("reportsPage.singers").replace("{count}", singers.toString())}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Attendance</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("reportsPage.avgAttendance")}</CardTitle>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" className="h-4 w-4 text-muted-foreground"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{averageAttendance.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">Across all recorded events</p>
+            <p className="text-xs text-muted-foreground">{t("reportsPage.avgAttendanceDesc")}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Upcoming Events</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("reportsPage.upcomingEvents")}</CardTitle>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" className="h-4 w-4 text-muted-foreground"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect><line x1="16" x2="16" y1="2" y2="6"></line><line x1="8" x2="8" y1="2" y2="6"></line><line x1="3" x2="21" y1="10" y2="10"></line></svg>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{upcomingEvents}</div>
-            <p className="text-xs text-muted-foreground">Rehearsals & Services</p>
+            <p className="text-xs text-muted-foreground">{t("reportsPage.upcomingEventsDesc")}</p>
           </CardContent>
         </Card>
       </div>
 
-       <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         <Card>
             <CardHeader>
-            <CardTitle>Attendance Overview</CardTitle>
+            <CardTitle>{t("reportsPage.attendanceOverview")}</CardTitle>
             <CardDescription>
-                Monthly attendance percentage for the last 6 months.
+                {t("reportsPage.attendanceOverviewDesc")}
             </CardDescription>
             </CardHeader>
             <CardContent>
@@ -241,29 +241,29 @@ export default function ReportsPage() {
         </Card>
         <Card>
             <CardHeader>
-                <CardTitle>Attendance Report</CardTitle>
+                <CardTitle>{t("reportsPage.attendanceReport")}</CardTitle>
                 <CardDescription>
-                    Download a detailed attendance report for a specific period.
+                    {t("reportsPage.attendanceReportDesc")}
                 </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
                  <div>
-                    <label htmlFor="report-period" className="text-sm font-medium">Select Period</label>
+                    <label htmlFor="report-period" className="text-sm font-medium">{t("reportsPage.selectPeriod")}</label>
                     <Select value={reportPeriod} onValueChange={(value) => setReportPeriod(value as ReportPeriod)}>
                         <SelectTrigger id="report-period">
-                            <SelectValue placeholder="Select a period" />
+                            <SelectValue placeholder={t("reportsPage.selectPeriodPlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="this-month">This Month</SelectItem>
-                            <SelectItem value="last-3-months">Last 3 Months</SelectItem>
-                            <SelectItem value="last-6-months">Last 6 Months</SelectItem>
-                            <SelectItem value="this-year">This Year</SelectItem>
+                            <SelectItem value="this-month">{t("reportsPage.periods.thisMonth")}</SelectItem>
+                            <SelectItem value="last-3-months">{t("reportsPage.periods.last3Months")}</SelectItem>
+                            <SelectItem value="last-6-months">{t("reportsPage.periods.last6Months")}</SelectItem>
+                            <SelectItem value="this-year">{t("reportsPage.periods.thisYear")}</SelectItem>
                         </SelectContent>
                     </Select>
                  </div>
                  <Button onClick={handleDownloadReport} disabled={isDownloading}>
                     <Download className="mr-2 h-4 w-4" />
-                    {isDownloading ? 'Generating...' : 'Download Excel Report'}
+                    {isDownloading ? t("reportsPage.generating") : t("reportsPage.downloadExcel")}
                  </Button>
             </CardContent>
         </Card>

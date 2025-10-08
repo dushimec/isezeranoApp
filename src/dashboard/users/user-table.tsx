@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -13,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { MoreHorizontal } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
+import { t } from "../../utils/i18n";
 
 interface UserTableProps {
     users: User[];
@@ -46,14 +46,14 @@ export function UserTable({ users, currentUser, onEdit, onDelete }: UserTablePro
     <>
         <Table>
             <TableHeader>
-            <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
+              <TableRow>
+                <TableHead>{t("userTable.name")}</TableHead>
+                <TableHead>{t("userTable.role")}</TableHead>
+                <TableHead>{t("userTable.status")}</TableHead>
                 <TableHead>
-                    <span className="sr-only">Actions</span>
+                  <span className="sr-only">{t("userTable.actions")}</span>
                 </TableHead>
-            </TableRow>
+              </TableRow>
             </TableHeader>
             <TableBody>
             {users.map((user) => (
@@ -75,24 +75,24 @@ export function UserTable({ users, currentUser, onEdit, onDelete }: UserTablePro
                 </TableCell>
                 <TableCell>{user.role}</TableCell>
                 <TableCell>
-                     <Badge variant={user.isActive ? 'default' : 'secondary'}>
-                        {user.isActive ? 'Active' : 'Inactive'}
+                    <Badge variant={user.isActive ? 'default' : 'secondary'}>
+                      {user.isActive ? t("userTable.active") : t("userTable.inactive")}
                     </Badge>
                 </TableCell>
                 <TableCell>
                     {user.id !== currentUser.id && (
                     <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                      <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">{t("userTable.actions")}</span>
+                          <MoreHorizontal className="h-4 w-4" />
                         </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => handleEditClick(user)}>Edit</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onDelete(user)} className="text-destructive">Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>{t("userTable.actions")}</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => handleEditClick(user)}>{t("userTable.edit")}</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onDelete(user)} className="text-destructive">{t("userTable.delete")}</DropdownMenuItem>
+                      </DropdownMenuContent>
                     </DropdownMenu>
                     )}
                 </TableCell>
@@ -104,7 +104,7 @@ export function UserTable({ users, currentUser, onEdit, onDelete }: UserTablePro
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Edit User</DialogTitle>
+                    <DialogTitle>{t("userTable.editUser")}</DialogTitle>
                 </DialogHeader>
                 {selectedUser && (
                     <div className="space-y-4 py-4">
@@ -112,30 +112,30 @@ export function UserTable({ users, currentUser, onEdit, onDelete }: UserTablePro
                             <Input 
                                 defaultValue={selectedUser.firstName}
                                 onChange={(e) => setSelectedUser({...selectedUser, firstName: e.target.value})}
-                                placeholder="First Name"
+                                placeholder={t("userTable.firstName")}
                             />
                             <Input 
                                 defaultValue={selectedUser.lastName}
                                 onChange={(e) => setSelectedUser({...selectedUser, lastName: e.target.value})}
-                                placeholder="Last Name"
+                                placeholder={t("userTable.lastName")}
                             />
                         </div>
                         <Input 
                             defaultValue={selectedUser.email || ''}
                             onChange={(e) => setSelectedUser({...selectedUser, email: e.target.value})}
-                            placeholder="Email"
+                            placeholder={t("userTable.email")}
                         />
                         <Input 
                             defaultValue={selectedUser.username || ''}
                             onChange={(e) => setSelectedUser({...selectedUser, username: e.target.value})}
-                            placeholder="Username"
+                            placeholder={t("userTable.username")}
                         />
                        <Select 
                             value={selectedUser.role} 
                             onValueChange={(value) => setSelectedUser({...selectedUser, role: value as Role})}
                         >
                             <SelectTrigger>
-                                <SelectValue placeholder="Select a role" />
+                                <SelectValue placeholder={t("userTable.selectRole")} />
                             </SelectTrigger>
                             <SelectContent>
                             {creatableRoles.map((role) => (
@@ -151,10 +151,10 @@ export function UserTable({ users, currentUser, onEdit, onDelete }: UserTablePro
                                 checked={selectedUser.isActive}
                                 onCheckedChange={(checked) => setSelectedUser({...selectedUser, isActive: checked})}
                             />
-                            <label htmlFor="user-status">{selectedUser.isActive ? 'Active' : 'Inactive'}</label>
+                            <label htmlFor="user-status">{selectedUser.isActive ? t("userTable.active") : t("userTable.inactive")}</label>
                         </div>
 
-                        <Button onClick={handleUpdateUser} className="w-full">Save Changes</Button>
+                        <Button onClick={handleUpdateUser} className="w-full">{t("userTable.saveChanges")}</Button>
                     </div>
                 )}
             </DialogContent>

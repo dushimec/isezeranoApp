@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -30,6 +29,7 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
 import { Label } from "@/components/ui/label";
+import { t } from "@/utils/i18n";
 
 const FormSchema = z.object({
   firstName: z.string().min(2, "First name is required"),
@@ -138,7 +138,7 @@ export default function RegisterPage() {
   if (isLoading || adminExists === null) {
      return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="loader">Verifying system status...</div>
+        <div className="loader">{t("registerPage.verifying")}</div>
       </div>
     );
   }
@@ -151,10 +151,10 @@ export default function RegisterPage() {
             <IsezeranoLogo className="w-16 h-16" />
           </div>
           <CardTitle className="text-3xl font-headline">
-            Admin Registration
+            {t("registerPage.title")}
           </CardTitle>
           <CardDescription>
-            Create the first administrator account for Isezerano CMS.
+            {t("registerPage.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -169,7 +169,7 @@ export default function RegisterPage() {
                   className="rounded-full object-cover"
                 />
                 <div className="grid w-full max-w-sm items-center gap-1.5">
-                  <Label htmlFor="picture">Profile Picture</Label>
+                  <Label htmlFor="picture">{t("registerPage.profilePicture")}</Label>
                   <Input id="picture" type="file" onChange={handleImageChange} accept="image/*" />
                 </div>
               </div>
@@ -179,9 +179,9 @@ export default function RegisterPage() {
                   name="firstName"
                   render={({ field }) => (
                     <FormItem className="flex-1">
-                      <FormLabel>First Name</FormLabel>
+                      <FormLabel>{t("registerPage.firstName")}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Jane" {...field} />
+                        <Input placeholder={t("registerPage.placeholder.firstName")} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -192,9 +192,9 @@ export default function RegisterPage() {
                   name="lastName"
                   render={({ field }) => (
                     <FormItem className="flex-1">
-                      <FormLabel>Last Name</FormLabel>
+                      <FormLabel>{t("registerPage.lastName")}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Doe" {...field} />
+                        <Input placeholder={t("registerPage.placeholder.lastName")} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -206,9 +206,9 @@ export default function RegisterPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>{t("registerPage.email")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="admin@example.com" {...field} />
+                      <Input placeholder={t("registerPage.placeholder.email")} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -219,11 +219,11 @@ export default function RegisterPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t("registerPage.password")}</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
-                        placeholder="••••••••"
+                        placeholder={t("registerPage.placeholder.password")}
                         {...field}
                       />
                     </FormControl>
@@ -232,14 +232,14 @@ export default function RegisterPage() {
                 )}
               />
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Registering..." : "Register"}
+                {isLoading ? t("registerPage.registering") : t("registerPage.register")}
               </Button>
             </form>
           </Form>
            <p className="text-center text-sm text-muted-foreground mt-6">
-            Already have an account?{" "}
+            {t("registerPage.alreadyHaveAccount")}{" "}
             <Link href="/login" className="underline underline-offset-4 hover:text-primary">
-              Sign In
+              {t("registerPage.signIn")}
             </Link>
           </p>
         </CardContent>

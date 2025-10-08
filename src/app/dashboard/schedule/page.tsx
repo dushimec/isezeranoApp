@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -56,6 +55,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { cn } from '@/lib/utils';
 import { useForm, FormProvider } from 'react-hook-form';
+import { t } from "@/utils/i18n";
 
 
 type TEvent = (Rehearsal | Service) & { type: 'rehearsal' | 'service' };
@@ -90,12 +90,12 @@ const EventForm = ({ type, event }: EventFormProps) => {
             <form id={`event-form-${type}`} onSubmit={(e) => e.preventDefault()} className="space-y-4">
                 <input type="hidden" {...methods.register('date')} value={date?.toISOString()} />
                 <div>
-                    <Label htmlFor="title">Title</Label>
+                    <Label htmlFor="title">{t("eventForm.title")}</Label>
                     <Input id="title" {...methods.register('title')} required />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                    <Label>Date</Label>
+                    <Label>{t("eventForm.date")}</Label>
                     <Popover>
                         <PopoverTrigger asChild>
                         <Button
@@ -106,7 +106,7 @@ const EventForm = ({ type, event }: EventFormProps) => {
                             )}
                         >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {date ? format(date, "PPP") : <span>Pick a date</span>}
+                            {date ? format(date, "PPP") : <span>{t("eventForm.pickDate")}</span>}
                         </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
@@ -120,22 +120,22 @@ const EventForm = ({ type, event }: EventFormProps) => {
                     </Popover>
                     </div>
                     <div>
-                    <Label htmlFor="time">Time</Label>
+                    <Label htmlFor="time">{t("eventForm.time")}</Label>
                     <Input id="time" type="time" {...methods.register('time')} required />
                     </div>
                 </div>
                 <div>
-                    <Label htmlFor="location">{type === 'rehearsal' ? 'Location' : 'Church Location'}</Label>
+                    <Label htmlFor="location">{type === 'rehearsal' ? t("eventForm.location") : t("eventForm.churchLocation")}</Label>
                     <Input id="location" {...methods.register(type === 'rehearsal' ? 'location' : 'churchLocation')} required />
                 </div>
                 {type === 'service' && (
                     <div>
-                    <Label htmlFor="attire">Attire</Label>
+                    <Label htmlFor="attire">{t("eventForm.attire")}</Label>
                     <Input id="attire" {...methods.register('attire')} />
                     </div>
                 )}
                 <div>
-                    <Label htmlFor="notes">Notes</Label>
+                    <Label htmlFor="notes">{t("eventForm.notes")}</Label>
                     <Textarea id="notes" {...methods.register('notes')} />
                 </div>
             </form>
@@ -247,27 +247,27 @@ export default function SchedulePage() {
       <div className="lg:col-span-2 flex flex-col gap-6">
         <div className="flex items-center">
           <div className="flex-1">
-            <h1 className="text-3xl font-headline">Schedule</h1>
+            <h1 className="text-3xl font-headline">{t("schedulePage.title")}</h1>
             <p className="text-muted-foreground">
-              Manage rehearsal and service schedules.
+              {t("schedulePage.description")}
             </p>
           </div>
           {user?.role === 'SECRETARY' && (
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
                 <Button>
-                  <PlusCircle className="mr-2 h-4 w-4" /> Create Event
+                  <PlusCircle className="mr-2 h-4 w-4" /> {t("schedulePage.createEvent")}
                 </Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Create New Event</DialogTitle>
-                    <DialogDescription>Select the event type and fill in the details.</DialogDescription>
+                    <DialogTitle>{t("schedulePage.createDialogTitle")}</DialogTitle>
+                    <DialogDescription>{t("schedulePage.createDialogDesc")}</DialogDescription>
                 </DialogHeader>
                 <Tabs defaultValue="rehearsal" className="w-full" onValueChange={(value) => setActiveTab(value as 'rehearsal' | 'service')}>
                     <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="rehearsal">Rehearsal</TabsTrigger>
-                        <TabsTrigger value="service">Service</TabsTrigger>
+                        <TabsTrigger value="rehearsal">{t("eventForm.location")}</TabsTrigger>
+                        <TabsTrigger value="service">{t("eventForm.churchLocation")}</TabsTrigger>
                     </TabsList>
                     <TabsContent value="rehearsal">
                         <ScrollArea className="h-[60vh] pr-4">
@@ -281,18 +281,17 @@ export default function SchedulePage() {
                     </TabsContent>
                 </Tabs>
                 <DialogFooter>
-                    <Button type="button" variant="ghost" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
+                    <Button type="button" variant="ghost" onClick={() => setIsCreateOpen(false)}>{t("schedulePage.cancel")}</Button>
                     <Button type="submit" form={`event-form-${activeTab}`} onClick={(e) => {
                         e.preventDefault();
                         const form = document.getElementById(`event-form-${activeTab}`) as HTMLFormElement;
                         const methods = useForm().control._formValues;
-                        // a bit of a hacky way to get date from the form but it works
                         const date = (form.querySelector('input[name="date"]') as HTMLInputElement)?.value;
                         const formData = new FormData(form);
                         const data = Object.fromEntries(formData.entries());
                         data.date = date;
                         handleEventSubmit(data);
-                    }}>Save Event</Button>
+                    }}>{t("schedulePage.saveEvent")}</Button>
                 </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -302,19 +301,23 @@ export default function SchedulePage() {
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <div>
-                        <CardTitle>{selectedDate ? `Events on ${format(selectedDate, 'PPP')}` : 'Upcoming Events'}</CardTitle>
+                        <CardTitle>
+                          {selectedDate 
+                            ? t("schedulePage.eventsOn").replace("{date}", format(selectedDate, 'PPP')) 
+                            : t("schedulePage.upcomingEvents")}
+                        </CardTitle>
                     </div>
                     {selectedDate && (
                         <Button variant="ghost" size="sm" onClick={() => setSelectedDate(undefined)}>
                             <X className="mr-2 h-4 w-4" />
-                            Clear Filter
+                            {t("schedulePage.clearFilter")}
                         </Button>
                     )}
                 </div>
             </CardHeader>
           <CardContent className="space-y-6">
-             {isLoading && <p>Loading schedule...</p>}
-            {!isLoading && filteredEvents.length === 0 && <p className="text-muted-foreground">{selectedDate ? 'No events scheduled for this day.' : 'No upcoming events.'}</p>}
+             {isLoading && <p>{t("schedulePage.loading")}</p>}
+            {!isLoading && filteredEvents.length === 0 && <p className="text-muted-foreground">{selectedDate ? t("schedulePage.noEventsDay") : t("schedulePage.noUpcomingEvents")}</p>}
             {filteredEvents.map((event, index) => (
               <div key={event.id}>
                 <div className="flex items-start gap-4">
@@ -338,15 +341,15 @@ export default function SchedulePage() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuLabel>{t("schedulePage.actions")}</DropdownMenuLabel>
                             <DropdownMenuItem onClick={() => { setSelectedEvent(event); setIsEditOpen(true); }}>
                                 <Edit className="mr-2 h-4 w-4" />
-                                <span>Edit</span>
+                                <span>{t("schedulePage.edit")}</span>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                              <DropdownMenuItem className="text-destructive" onClick={() => { setSelectedEvent(event); setIsDeleteOpen(true); }}>
                                 <Trash className="mr-2 h-4 w-4" />
-                                <span>Delete</span>
+                                <span>{t("schedulePage.delete")}</span>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -371,19 +374,19 @@ export default function SchedulePage() {
         </Card>
         <Card>
             <CardHeader>
-                <CardTitle>Quick Stats</CardTitle>
+                <CardTitle>{t("schedulePage.quickStats")}</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4">
                 <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Total Events</span>
+                    <span className="text-muted-foreground">{t("schedulePage.totalEvents")}</span>
                     <span className="font-bold text-2xl text-primary">{events.length}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Rehearsals</span>
+                    <span className="text-muted-foreground">{t("schedulePage.rehearsals")}</span>
                     <span className="font-bold">{events.filter(e => e.type === 'rehearsal').length}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Services</span>
+                    <span className="text-muted-foreground">{t("schedulePage.services")}</span>
                     <span className="font-bold">{events.filter(e => e.type === 'service').length}</span>
                 </div>
             </CardContent>
@@ -394,8 +397,10 @@ export default function SchedulePage() {
        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Edit {selectedEvent?.type}</DialogTitle>
-                <DialogDescription>Update the details for this event.</DialogDescription>
+                <DialogTitle>
+                  {t("schedulePage.editDialogTitle").replace("{type}", selectedEvent?.type || "")}
+                </DialogTitle>
+                <DialogDescription>{t("schedulePage.editDialogDesc")}</DialogDescription>
               </DialogHeader>
                 <ScrollArea className="h-[60vh] pr-4">
                     {selectedEvent && (
@@ -406,7 +411,7 @@ export default function SchedulePage() {
                     )}
                 </ScrollArea>
                 <DialogFooter>
-                    <Button type="button" variant="ghost" onClick={() => { setIsEditOpen(false); setSelectedEvent(null); }}>Cancel</Button>
+                    <Button type="button" variant="ghost" onClick={() => { setIsEditOpen(false); setSelectedEvent(null); }}>{t("schedulePage.cancel")}</Button>
                      <Button type="submit" form={`event-form-${selectedEvent?.type}`} onClick={(e) => {
                         e.preventDefault();
                         const form = document.getElementById(`event-form-${selectedEvent?.type}`) as HTMLFormElement;
@@ -415,7 +420,7 @@ export default function SchedulePage() {
                         const data = Object.fromEntries(formData.entries());
                         data.date = date;
                         handleEventSubmit(data);
-                    }}>Save Changes</Button>
+                    }}>{t("schedulePage.saveChanges")}</Button>
                 </DialogFooter>
             </DialogContent>
        </Dialog>
@@ -424,15 +429,14 @@ export default function SchedulePage() {
         <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogTitle>{t("schedulePage.areYouSure")}</AlertDialogTitle>
                     <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete the event
-                        and all associated data.
+                        {t("schedulePage.deleteDesc")}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel onClick={() => setSelectedEvent(null)}>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteEvent}>Delete</AlertDialogAction>
+                    <AlertDialogCancel onClick={() => setSelectedEvent(null)}>{t("schedulePage.cancel")}</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteEvent}>{t("schedulePage.deleteConfirm")}</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -18,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { PlusCircle } from 'lucide-react';
 import { useForm, SubmitHandler } from 'react-hook-form';
+import { t } from "@/utils/i18n";
 
 const getStatusBadgeVariant = (status: ClaimStatus) => {
     switch (status) {
@@ -124,55 +124,55 @@ export default function MyClaimsPage() {
         <div className="flex flex-col gap-6">
             <div className="flex items-center">
                 <div className="flex-1">
-                    <h1 className="text-3xl font-headline">My Submitted Claims</h1>
+                    <h1 className="text-3xl font-headline">{t("myClaimsPage.title")}</h1>
                     <p className="text-muted-foreground">
-                        Track the status of your submitted claims or file a new one.
+                        {t("myClaimsPage.description")}
                     </p>
                 </div>
                 <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                     <DialogTrigger asChild>
                         <Button>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Submit a New Claim
+                            <PlusCircle className="mr-2 h-4 w-4" /> {t("myClaimsPage.submitClaim")}
                         </Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Submit a New Claim</DialogTitle>
+                            <DialogTitle>{t("myClaimsPage.submitDialogTitle")}</DialogTitle>
                             <DialogDescription>
-                                Describe the issue you are facing. It will be reviewed by a disciplinarian.
+                                {t("myClaimsPage.submitDialogDesc")}
                             </DialogDescription>
                         </DialogHeader>
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                             <div>
-                                <Label htmlFor="title">Title</Label>
+                                <Label htmlFor="title">{t("myClaimsPage.claimTitle")}</Label>
                                 <Input id="title" {...register('title', { required: true })} />
-                                {errors.title && <p className="text-destructive text-sm mt-1">Title is required.</p>}
+                                {errors.title && <p className="text-destructive text-sm mt-1">{t("myClaimsPage.claimTitleRequired")}</p>}
                             </div>
-                             <div>
-                                <Label htmlFor="description">Description</Label>
+                            <div>
+                                <Label htmlFor="description">{t("myClaimsPage.claimDescription")}</Label>
                                 <Textarea id="description" {...register('description', { required: true })} />
-                                {errors.description && <p className="text-destructive text-sm mt-1">Description is required.</p>}
+                                {errors.description && <p className="text-destructive text-sm mt-1">{t("myClaimsPage.claimDescriptionRequired")}</p>}
                             </div>
-                             <div>
-                                <Label htmlFor="severity">Severity</Label>
+                            <div>
+                                <Label htmlFor="severity">{t("myClaimsPage.severity")}</Label>
                                 <select id="severity" {...register('severity')} className="w-full h-10 border rounded-md px-3">
-                                    <option value="LOW">Low</option>
-                                    <option value="MEDIUM">Medium</option>
-                                    <option value="HIGH">High</option>
+                                    <option value="LOW">{t("myClaimsPage.severityLow")}</option>
+                                    <option value="MEDIUM">{t("myClaimsPage.severityMedium")}</option>
+                                    <option value="HIGH">{t("myClaimsPage.severityHigh")}</option>
                                 </select>
                             </div>
                             <div>
-                                <Label htmlFor="attachment">Attachment (Optional)</Label>
+                                <Label htmlFor="attachment">{t("myClaimsPage.attachment")}</Label>
                                 <Input id="attachment" type="file" {...register('attachment')} />
                             </div>
                             <div className="flex items-center space-x-2">
                                 <Checkbox id="isAnonymous" {...register('isAnonymous')} />
-                                <Label htmlFor="isAnonymous">Submit Anonymously</Label>
+                                <Label htmlFor="isAnonymous">{t("myClaimsPage.anonymous")}</Label>
                             </div>
                             <DialogFooter>
-                                <Button variant="ghost" type="button" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
+                                <Button variant="ghost" type="button" onClick={() => setIsCreateOpen(false)}>{t("myClaimsPage.cancel")}</Button>
                                 <Button type="submit" disabled={isSubmitting}>
-                                    {isSubmitting ? 'Submitting...' : 'Submit Claim'}
+                                    {isSubmitting ? t("myClaimsPage.submitting") : t("myClaimsPage.submit")}
                                 </Button>
                             </DialogFooter>
                         </form>
@@ -181,28 +181,28 @@ export default function MyClaimsPage() {
             </div>
             <Card>
                 <CardHeader>
-                    <CardTitle>Your Claim History</CardTitle>
+                    <CardTitle>{t("myClaimsPage.historyTitle")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Title</TableHead>
-                                <TableHead>Severity</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Submitted</TableHead>
+                                <TableHead>{t("myClaimsPage.claimTitle")}</TableHead>
+                                <TableHead>{t("myClaimsPage.severity")}</TableHead>
+                                <TableHead>{t("myClaimsPage.status")}</TableHead>
+                                <TableHead>{t("myClaimsPage.submitted")}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {loading ? (
-                                <TableRow><TableCell colSpan={4} className="text-center">Loading your claims...</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={4} className="text-center">{t("myClaimsPage.loadingClaims")}</TableCell></TableRow>
                             ) : myClaims.length === 0 ? (
-                                <TableRow><TableCell colSpan={4} className="text-center">You have not submitted any claims.</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={4} className="text-center">{t("myClaimsPage.noClaims")}</TableCell></TableRow>
                             ) : (
                                 myClaims.map(claim => (
                                     <TableRow key={claim.id}>
                                         <TableCell className="font-medium">{claim.title}</TableCell>
-                                        <TableCell><Badge variant={getSeverityBadgeVariant(claim.severity)}>{claim.severity}</Badge></TableCell>
+                                        <TableCell><Badge variant={getSeverityBadgeVariant(claim.severity)}>{t(`myClaimsPage.severity${claim.severity.charAt(0) + claim.severity.slice(1).toLowerCase()}`)}</Badge></TableCell>
                                         <TableCell><Badge variant={getStatusBadgeVariant(claim.status)}>{claim.status}</Badge></TableCell>
                                         <TableCell>{formatDistanceToNow(new Date(claim.createdAt), { addSuffix: true })}</TableCell>
                                     </TableRow>

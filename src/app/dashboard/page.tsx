@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -15,6 +14,7 @@ import React, { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Announcement } from '@/lib/types';
+import { t } from "@/utils/i18n";
 
 // Define a unified event type for the dashboard
 type DashboardEvent = {
@@ -35,52 +35,50 @@ type DashboardData = {
 }
 
 
-const AdminDashboard = ({ data }: { data: DashboardData }) => {
-    return (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">{data.totalUsers || 0}</div>
-                    <p className="text-xs text-muted-foreground">All roles included</p>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Singers</CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">{data.userCounts?.SINGER || 0}</div>
-                    <p className="text-xs text-muted-foreground">Total active singers</p>
-                </CardContent>
-            </Card>
-             <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Upcoming Events</CardTitle>
-                    <CalendarCheck className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">{data.upcomingEvents?.length || 0}</div>
-                    <p className="text-xs text-muted-foreground">In the next 30 days</p>
-                </CardContent>
-            </Card>
-             <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Recent Announcements</CardTitle>
-                    <Megaphone className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">{data.recentAnnouncements?.length || 0}</div>
-                    <p className="text-xs text-muted-foreground">Published recently</p>
-                </CardContent>
-            </Card>
-        </div>
-    );
-}
+const AdminDashboard = ({ data }: { data: DashboardData }) => (
+  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{t("dashboardPage.admin.totalUsers")}</CardTitle>
+        <Users className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{data.totalUsers || 0}</div>
+        <p className="text-xs text-muted-foreground">{t("dashboardPage.admin.totalUsersDesc")}</p>
+      </CardContent>
+    </Card>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{t("dashboardPage.admin.singers")}</CardTitle>
+        <Users className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{data.userCounts?.SINGER || 0}</div>
+        <p className="text-xs text-muted-foreground">{t("dashboardPage.admin.singersDesc")}</p>
+      </CardContent>
+    </Card>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{t("dashboardPage.admin.upcomingEvents")}</CardTitle>
+        <CalendarCheck className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{data.upcomingEvents?.length || 0}</div>
+        <p className="text-xs text-muted-foreground">{t("dashboardPage.admin.upcomingEventsDesc")}</p>
+      </CardContent>
+    </Card>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{t("dashboardPage.admin.recentAnnouncements")}</CardTitle>
+        <Megaphone className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{data.recentAnnouncements?.length || 0}</div>
+        <p className="text-xs text-muted-foreground">{t("dashboardPage.admin.recentAnnouncementsDesc")}</p>
+      </CardContent>
+    </Card>
+  </div>
+);
 
 const SecretaryDashboard = ({ data }: { data: DashboardData }) => {
     return (
@@ -286,15 +284,15 @@ export default function DashboardPage() {
   };
 
   if(loading || dataLoading) {
-    return <div className="flex items-center justify-center min-h-[calc(100vh-8rem)]"><div className="loader">Loading...</div></div>;
+    return <div className="flex items-center justify-center min-h-[calc(100vh-8rem)]"><div className="loader">{t("dashboardPage.loading")}</div></div>;
   }
 
   return (
     <div className="flex flex-col gap-6">
         <div>
-            <h1 className="text-3xl font-headline">Dashboard</h1>
+            <h1 className="text-3xl font-headline">{t("dashboardPage.title")}</h1>
             <p className="text-muted-foreground">
-                Welcome back, {user?.firstName}! Here's your overview.
+                {t("dashboardPage.welcome").replace("{name}", user?.firstName || "")}
             </p>
         </div>
         {renderDashboard()}

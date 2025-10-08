@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -24,6 +23,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Check, Mail } from 'lucide-react';
 import { Notification } from '@/lib/types';
+import { t } from "@/utils/i18n";
 
 export default function NotificationsPage() {
   const { token, loading: authLoading } = useAuth();
@@ -70,38 +70,38 @@ export default function NotificationsPage() {
   };
 
   if (authLoading || loading) {
-    return <div className="flex items-center justify-center min-h-[calc(100vh-8rem)]"><div className="loader">Loading...</div></div>;
+    return <div className="flex items-center justify-center min-h-[calc(100vh-8rem)]"><div className="loader">{t("notificationsPage.loading")}</div></div>;
   }
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-headline">Notifications</h1>
+        <h1 className="text-3xl font-headline">{t("notificationsPage.title")}</h1>
         <p className="text-muted-foreground">
-          Stay updated with the latest choir announcements and schedules.
+          {t("notificationsPage.description")}
         </p>
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Your Inbox</CardTitle>
+          <CardTitle>{t("notificationsPage.inboxTitle")}</CardTitle>
           <CardDescription>
-            Here are all the notifications you have received.
+            {t("notificationsPage.inboxDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Message</TableHead>
-                <TableHead>Received</TableHead>
-                <TableHead className="text-right">Action</TableHead>
+                <TableHead>{t("notificationsPage.message")}</TableHead>
+                <TableHead>{t("notificationsPage.received")}</TableHead>
+                <TableHead className="text-right">{t("notificationsPage.action")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {notifications.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={3} className="text-center h-24">
-                    You have no notifications.
+                    {t("notificationsPage.noNotifications")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -127,9 +127,9 @@ export default function NotificationsPage() {
                         disabled={notification.isRead}
                       >
                         {notification.isRead ? (
-                          <><Check className="mr-2 h-4 w-4" /> Read</>
+                          <><Check className="mr-2 h-4 w-4" /> {t("notificationsPage.read")}</>
                         ) : (
-                          <><Mail className="mr-2 h-4 w-4" /> Mark as read</>
+                          <><Mail className="mr-2 h-4 w-4" /> {t("notificationsPage.markAsRead")}</>
                         )}
                       </Button>
                     </TableCell>

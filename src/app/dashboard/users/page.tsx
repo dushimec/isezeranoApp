@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -15,6 +14,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { Role, User } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { t } from "@/utils/i18n";
 
 export default function UsersPage() {
   const { user, loading, token } = useAuth();
@@ -32,7 +32,7 @@ export default function UsersPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) {
-        throw new Error('Failed to fetch users');
+        throw new Error(t("usersPage.error"));
       }
       const data = await response.json();
       setUsers(data);
@@ -41,7 +41,7 @@ export default function UsersPage() {
       setUsersError(error.message);
       toast({
         variant: 'destructive',
-        title: 'Error',
+        title: t("usersPage.error"),
         description: error.message,
       });
     } finally {
@@ -64,8 +64,8 @@ export default function UsersPage() {
   };
   
   const handleEditUser = async (userId: string, data: Partial<User>) => {
-     if (!token) {
-      toast({ variant: 'destructive', title: 'Authentication Error', description: 'No auth token found.' });
+    if (!token) {
+      toast({ variant: 'destructive', title: t("usersPage.authError"), description: t("usersPage.noToken") });
       return;
     }
     try {
@@ -80,28 +80,28 @@ export default function UsersPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update user');
+        throw new Error(errorData.error || t("usersPage.updateFailed"));
       }
       toast({
-        title: 'User Updated',
-        description: 'User details have been successfully updated.',
+        title: t("usersPage.userUpdated"),
+        description: t("usersPage.userUpdatedDesc"),
       });
       fetchUsers();
     } catch (error: any) {
-       toast({
+      toast({
         variant: 'destructive',
-        title: 'Update Failed',
+        title: t("usersPage.updateFailed"),
         description: error.message,
       });
     }
   };
 
   const handleDeleteUser = async (userToDelete: User) => {
-     if (!token) {
-      toast({ variant: 'destructive', title: 'Authentication Error', description: 'No auth token found.' });
+    if (!token) {
+      toast({ variant: 'destructive', title: t("usersPage.authError"), description: t("usersPage.noToken") });
       return;
     }
-     try {
+    try {
       const response = await fetch(`/api/admin/users/${userToDelete.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
@@ -109,24 +109,24 @@ export default function UsersPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete user');
+        throw new Error(errorData.error || t("usersPage.deletionFailed"));
       }
       toast({
-        title: 'User Deleted',
-        description: `${userToDelete.firstName} ${userToDelete.lastName} has been removed.`,
+        title: t("usersPage.userDeleted"),
+        description: t("usersPage.userDeletedDesc").replace("{name}", `${userToDelete.firstName} ${userToDelete.lastName}`),
       });
       fetchUsers();
     } catch (error: any) {
-       toast({
+      toast({
         variant: 'destructive',
-        title: 'Deletion Failed',
+        title: t("usersPage.deletionFailed"),
         description: error.message,
       });
     }
   };
 
   if (loading || (!user && !usersLoading)) {
-    return <div className="flex items-center justify-center min-h-screen"><div className="loader">Loading...</div></div>;
+    return <div className="flex items-center justify-center min-h-screen"><div className="loader">{t("usersPage.loading")}</div></div>;
   }
   
   if (!user || user.role !== 'ADMIN') {
@@ -137,9 +137,9 @@ export default function UsersPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center">
         <div className="flex-1">
-          <h1 className="text-3xl font-headline">User Management</h1>
+          <h1 className="text-3xl font-headline">{t("usersPage.title")}</h1>
           <p className="text-muted-foreground">
-            Create and manage users for the CMS.
+            {t("usersPage.description")}
           </p>
         </div>
       </div>
@@ -147,9 +147,9 @@ export default function UsersPage() {
         <div className="md:col-span-1">
           <Card>
             <CardHeader>
-              <CardTitle>Register New User</CardTitle>
+              <CardTitle>{t("usersPage.registerTitle")}</CardTitle>
               <CardDescription>
-                Create a new user account and assign them a role. A temporary password will be set.
+                {t("usersPage.registerDescription")}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -160,15 +160,15 @@ export default function UsersPage() {
         <div className="md:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle>Existing Users</CardTitle>
+              <CardTitle>{t("usersPage.existingTitle")}</CardTitle>
               <CardDescription>
-                View, edit, or delete existing users.
+                {t("usersPage.existingDescription")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {usersError && <p className="text-destructive">{usersError}</p>}
               {usersLoading ? (
-                <p>Loading users...</p>
+                <p>{t("usersPage.loadingUsers")}</p>
               ) : (
                 <UserTable
                   users={users}

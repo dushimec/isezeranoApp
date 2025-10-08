@@ -21,6 +21,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { AttendanceStatus } from '@/lib/types';
+import { t } from "@/utils/i18n";
 
 type AttendanceRecord = {
   id: string;
@@ -76,38 +77,38 @@ export default function MyAttendancePage() {
   };
 
   if (loading || authLoading) {
-     return <div className="flex items-center justify-center min-h-[calc(100vh-8rem)]"><div className="loader">Loading...</div></div>;
+     return <div className="flex items-center justify-center min-h-[calc(100vh-8rem)]"><div className="loader">{t("myAttendancePage.loading")}</div></div>;
   }
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-headline">My Attendance</h1>
+        <h1 className="text-3xl font-headline">{t("myAttendancePage.title")}</h1>
         <p className="text-muted-foreground">
-          View your attendance history for all events.
+          {t("myAttendancePage.description")}
         </p>
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Attendance History</CardTitle>
+          <CardTitle>{t("myAttendancePage.historyTitle")}</CardTitle>
           <CardDescription>
-            A complete log of your participation in rehearsals and services.
+            {t("myAttendancePage.historyDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Event</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Status</TableHead>
+                <TableHead>{t("myAttendancePage.event")}</TableHead>
+                <TableHead>{t("myAttendancePage.date")}</TableHead>
+                <TableHead className="text-right">{t("myAttendancePage.status")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {attendance.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={3} className="text-center">
-                    No attendance records found.
+                    {t("myAttendancePage.noRecords")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -117,7 +118,7 @@ export default function MyAttendancePage() {
                     <TableCell>{format(new Date(record.event.date), 'MMMM d, yyyy')}</TableCell>
                     <TableCell className="text-right">
                       <Badge variant={getBadgeVariant(record.status)}>
-                        {record.status}
+                        {t(`myAttendancePage.${record.status}`)}
                       </Badge>
                     </TableCell>
                   </TableRow>

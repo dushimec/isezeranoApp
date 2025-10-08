@@ -19,6 +19,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { t } from "@/utils/i18n";
 
 const profileSchema = z.object({
   firstName: z.string().min(2, "First name is required"),
@@ -172,23 +173,23 @@ export default function ProfilePage() {
   
 
   if (loading || !user) {
-    return <div className="flex items-center justify-center min-h-screen"><div className="loader">Loading...</div></div>;
+    return <div className="flex items-center justify-center min-h-screen"><div className="loader">{t("profilePage.saving")}</div></div>;
   }
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-headline">Profile</h1>
+        <h1 className="text-3xl font-headline">{t("profilePage.title")}</h1>
         <p className="text-muted-foreground">
-          Manage your personal information and settings.
+          {t("profilePage.description")}
         </p>
       </div>
       
       <Card>
         <CardHeader>
-          <CardTitle>Personal Information</CardTitle>
+          <CardTitle>{t("profilePage.personalInfo")}</CardTitle>
           <CardDescription>
-            Update your photo and personal details here.
+            {t("profilePage.personalInfoDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
@@ -202,17 +203,17 @@ export default function ProfilePage() {
               data-ai-hint="person portrait"
             />
             <div className="grid gap-2 items-center">
-              <Label htmlFor="picture">Profile Picture</Label>
+              <Label htmlFor="picture">{t("profilePage.profilePicture")}</Label>
               <div className="flex gap-2">
                 <Input id="picture" type="file" className="w-full max-w-sm" onChange={handleImageChange} accept="image/*" />
                 {selectedImageDataUri && (
                   <Button onClick={handleImageUpload} disabled={isUploadingImage}>
-                    {isUploadingImage ? 'Uploading...' : 'Upload Picture'}
+                    {isUploadingImage ? t("profilePage.uploading") : t("profilePage.uploadPicture")}
                   </Button>
                 )}
               </div>
               <p className="text-sm text-muted-foreground">
-                PNG, JPG, GIF up to 10MB.
+                {t("profilePage.imageHint")}
               </p>
             </div>
           </div>
@@ -227,7 +228,7 @@ export default function ProfilePage() {
                   name="firstName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>First Name</FormLabel>
+                      <FormLabel>{t("profilePage.firstName")}</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -240,7 +241,7 @@ export default function ProfilePage() {
                   name="lastName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Last Name</FormLabel>
+                      <FormLabel>{t("profilePage.lastName")}</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -253,7 +254,7 @@ export default function ProfilePage() {
                   name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Username</FormLabel>
+                      <FormLabel>{t("profilePage.username")}</FormLabel>
                       <FormControl>
                         <Input {...field} disabled={user.role !== 'ADMIN'} />
                       </FormControl>
@@ -266,7 +267,7 @@ export default function ProfilePage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>{t("profilePage.email")}</FormLabel>
                       <FormControl>
                         <Input {...field} disabled={user.role !== 'ADMIN'} />
                       </FormControl>
@@ -275,13 +276,13 @@ export default function ProfilePage() {
                   )}
                 />
                  <div className="grid gap-2">
-                  <Label htmlFor="role">Role</Label>
+                  <Label htmlFor="role">{t("profilePage.role")}</Label>
                   <Input id="role" defaultValue={user.role} disabled />
                 </div>
               </div>
               <div className="flex justify-end">
                 <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Saving...' : 'Save Changes'}
+                  {isSubmitting ? t("profilePage.saving") : t("profilePage.saveChanges")}
                 </Button>
               </div>
             </form>
@@ -293,9 +294,9 @@ export default function ProfilePage() {
         <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}>
           <Card>
             <CardHeader>
-              <CardTitle>Security</CardTitle>
+              <CardTitle>{t("profilePage.security")}</CardTitle>
               <CardDescription>
-                Change your password here.
+                {t("profilePage.securityDesc")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -304,7 +305,7 @@ export default function ProfilePage() {
                 name="currentPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Current Password</FormLabel>
+                    <FormLabel>{t("profilePage.currentPassword")}</FormLabel>
                     <FormControl>
                       <Input type="password" {...field} />
                     </FormControl>
@@ -318,7 +319,7 @@ export default function ProfilePage() {
                   name="newPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>New Password</FormLabel>
+                      <FormLabel>{t("profilePage.newPassword")}</FormLabel>
                       <FormControl>
                         <Input type="password" {...field} />
                       </FormControl>
@@ -331,7 +332,7 @@ export default function ProfilePage() {
                   name="confirmPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Confirm New Password</FormLabel>
+                      <FormLabel>{t("profilePage.confirmNewPassword")}</FormLabel>
                       <FormControl>
                         <Input type="password" {...field} />
                       </FormControl>
@@ -344,7 +345,7 @@ export default function ProfilePage() {
             <CardContent>
               <div className="flex justify-end">
                 <Button type="submit" disabled={isPasswordSubmitting}>
-                  {isPasswordSubmitting ? 'Saving...' : 'Update Password'}
+                  {isPasswordSubmitting ? t("profilePage.passwordSaving") : t("profilePage.updatePassword")}
                 </Button>
               </div>
             </CardContent>

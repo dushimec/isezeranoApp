@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -27,6 +26,7 @@ import { Role } from "@/lib/types";
 import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
 import { Label } from "@/components/ui/label";
+import { t } from "@/utils/i18n";
 
 interface UserRegistrationFormProps {
   onUserCreated: () => void;
@@ -125,7 +125,7 @@ export function UserRegistrationForm({ onUserCreated }: UserRegistrationFormProp
             className="rounded-full object-cover"
           />
           <div className="grid w-full max-w-sm items-center gap-1.5">
-            <Label htmlFor="picture">Profile Picture</Label>
+            <Label htmlFor="picture">{t("userRegistrationForm.profilePicture")}</Label>
             <Input id="picture" type="file" onChange={handleImageChange} accept="image/*" />
           </div>
         </div>
@@ -136,9 +136,9 @@ export function UserRegistrationForm({ onUserCreated }: UserRegistrationFormProp
           name="firstName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>First Name</FormLabel>
+              <FormLabel>{t("userRegistrationForm.firstName")}</FormLabel>
               <FormControl>
-                <Input placeholder="John" {...field} />
+                <Input placeholder={t("userRegistrationForm.placeholder.firstName")} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -149,9 +149,9 @@ export function UserRegistrationForm({ onUserCreated }: UserRegistrationFormProp
           name="lastName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Last Name</FormLabel>
+              <FormLabel>{t("userRegistrationForm.lastName")}</FormLabel>
               <FormControl>
-                <Input placeholder="Doe" {...field} />
+                <Input placeholder={t("userRegistrationForm.placeholder.lastName")} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -163,9 +163,9 @@ export function UserRegistrationForm({ onUserCreated }: UserRegistrationFormProp
           name="username"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Username</FormLabel>
+              <FormLabel>{t("userRegistrationForm.username")}</FormLabel>
               <FormControl>
-                <Input placeholder="johndoe" {...field} />
+                <Input placeholder={t("userRegistrationForm.placeholder.username")} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -176,9 +176,9 @@ export function UserRegistrationForm({ onUserCreated }: UserRegistrationFormProp
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email (Optional)</FormLabel>
+              <FormLabel>{t("userRegistrationForm.email")}</FormLabel>
               <FormControl>
-                <Input placeholder="user@example.com" {...field} />
+                <Input placeholder={t("userRegistrationForm.placeholder.email")} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -189,9 +189,9 @@ export function UserRegistrationForm({ onUserCreated }: UserRegistrationFormProp
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Temporary Password</FormLabel>
+              <FormLabel>{t("userRegistrationForm.password")}</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
+                <Input type="password" placeholder={t("userRegistrationForm.placeholder.password")} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -202,11 +202,11 @@ export function UserRegistrationForm({ onUserCreated }: UserRegistrationFormProp
           name="role"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Role</FormLabel>
+              <FormLabel>{t("userRegistrationForm.role")}</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a role" />
+                    <SelectValue placeholder={t("userRegistrationForm.selectRole")} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -222,7 +222,7 @@ export function UserRegistrationForm({ onUserCreated }: UserRegistrationFormProp
           )}
         />
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? 'Registering...' : 'Register User'}
+          {isLoading ? t("userRegistrationForm.registering") : t("userRegistrationForm.registerUser")}
         </Button>
       </form>
     </Form>

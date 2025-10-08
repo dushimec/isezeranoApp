@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -16,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
+import { t } from "@/utils/i18n";
 
 const getStatusBadgeVariant = (status: ClaimStatus) => {
     switch (status) {
@@ -117,35 +117,35 @@ export default function ClaimsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-headline">Manage Claims</h1>
+        <h1 className="text-3xl font-headline">{t("claimsPage.title")}</h1>
         <p className="text-muted-foreground">
-          Review and resolve claims submitted by choir members.
+          {t("claimsPage.description")}
         </p>
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>All Submitted Claims</CardTitle>
+          <CardTitle>{t("claimsPage.tableTitle")}</CardTitle>
           <CardDescription>
-            Here is a list of all claims. Click on a row to view details and take action.
+            {t("claimsPage.tableDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Submitted By</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>Severity</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Submitted</TableHead>
-                <TableHead className="text-right">Action</TableHead>
+                <TableHead>{t("claimsPage.submittedBy")}</TableHead>
+                <TableHead>{t("claimsPage.claimTitle")}</TableHead>
+                <TableHead>{t("claimsPage.severity")}</TableHead>
+                <TableHead>{t("claimsPage.status")}</TableHead>
+                <TableHead>{t("claimsPage.submitted")}</TableHead>
+                <TableHead className="text-right">{t("claimsPage.action")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={6} className="text-center">Loading claims...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center">{t("claimsPage.loading")}</TableCell></TableRow>
               ) : claims.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center">No claims have been submitted.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center">{t("claimsPage.noClaims")}</TableCell></TableRow>
               ) : (
                 claims.map((claim) => (
                   <TableRow key={claim.id}>
@@ -155,20 +155,20 @@ export default function ClaimsPage() {
                               src={claim.submittedBy.profileImage || `https://picsum.photos/seed/${claim.submittedById}/40/40`}
                               width={40}
                               height={40}
-                              alt={claim.isAnonymous ? 'Anonymous' : `${claim.submittedBy.firstName} ${claim.submittedBy.lastName}`}
+                              alt={claim.isAnonymous ? t("claimsPage.anonymous") : `${claim.submittedBy.firstName} ${claim.submittedBy.lastName}`}
                               className="rounded-full object-cover"
                           />
                           <div>
-                            <p className="font-medium">{claim.isAnonymous ? 'Anonymous' : `${claim.submittedBy.firstName} ${claim.submittedBy.lastName}`}</p>
+                            <p className="font-medium">{claim.isAnonymous ? t("claimsPage.anonymous") : `${claim.submittedBy.firstName} ${claim.submittedBy.lastName}`}</p>
                           </div>
                       </div>
                     </TableCell>
                     <TableCell className="font-medium">{claim.title}</TableCell>
-                    <TableCell><Badge variant={getSeverityBadgeVariant(claim.severity)}>{claim.severity}</Badge></TableCell>
-                    <TableCell><Badge variant={getStatusBadgeVariant(claim.status)}>{claim.status}</Badge></TableCell>
+                    <TableCell><Badge variant={getSeverityBadgeVariant(claim.severity)}>{t(`myClaimsPage.severity${claim.severity.charAt(0) + claim.severity.slice(1).toLowerCase()}`)}</Badge></TableCell>
+                    <TableCell><Badge variant={getStatusBadgeVariant(claim.status)}>{t(`claimsPage.details.${claim.status.toLowerCase()}`)}</Badge></TableCell>
                     <TableCell>{formatDistanceToNow(new Date(claim.createdAt), { addSuffix: true })}</TableCell>
                     <TableCell className="text-right">
-                        <Button variant="outline" size="sm" onClick={() => handleViewDetails(claim.id)}>View Details</Button>
+                        <Button variant="outline" size="sm" onClick={() => handleViewDetails(claim.id)}>{t("claimsPage.viewDetails")}</Button>
                     </TableCell>
                   </TableRow>
                 ))
@@ -181,43 +181,43 @@ export default function ClaimsPage() {
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Claim Details</DialogTitle>
+            <DialogTitle>{t("claimsPage.detailsTitle")}</DialogTitle>
             <DialogDescription>
-              Review the claim and update its status or add resolution notes.
+              {t("claimsPage.detailsDesc")}
             </DialogDescription>
           </DialogHeader>
           {selectedClaim && (
             <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-4">
-              <p><strong>Title:</strong> {selectedClaim.title}</p>
-              <p><strong>Description:</strong> {selectedClaim.description}</p>
-              <p><strong>Severity:</strong> <Badge variant={getSeverityBadgeVariant(selectedClaim.severity)}>{selectedClaim.severity}</Badge></p>
-              <p><strong>Submitted:</strong> {format(new Date(selectedClaim.createdAt), 'PPP p')}</p>
+              <p><strong>{t("claimsPage.details.title")}:</strong> {selectedClaim.title}</p>
+              <p><strong>{t("claimsPage.details.description")}:</strong> {selectedClaim.description}</p>
+              <p><strong>{t("claimsPage.details.severity")}:</strong> <Badge variant={getSeverityBadgeVariant(selectedClaim.severity)}>{t(`myClaimsPage.severity${selectedClaim.severity.charAt(0) + selectedClaim.severity.slice(1).toLowerCase()}`)}</Badge></p>
+              <p><strong>{t("claimsPage.details.submitted")}:</strong> {format(new Date(selectedClaim.createdAt), 'PPP p')}</p>
               {selectedClaim.attachment && (
-                  <p><strong>Attachment:</strong> <Button asChild variant="link"><Link href={selectedClaim.attachment} target="_blank">View Attachment</Link></Button></p>
+                  <p><strong>{t("claimsPage.details.attachment")}:</strong> <Button asChild variant="link"><Link href={selectedClaim.attachment} target="_blank">{t("claimsPage.details.attachment")}</Link></Button></p>
               )}
               <div className="space-y-2">
-                <Label htmlFor="status">Update Status</Label>
+                <Label htmlFor="status">{t("claimsPage.details.updateStatus")}</Label>
                 <Select value={updatedStatus || selectedClaim.status} onValueChange={(value) => setUpdatedStatus(value as ClaimStatus)}>
                     <SelectTrigger>
-                        <SelectValue placeholder="Select a status" />
+                        <SelectValue placeholder={t("claimsPage.details.selectStatus")} />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="PENDING">Pending</SelectItem>
-                        <SelectItem value="IN_REVIEW">In Review</SelectItem>
-                        <SelectItem value="RESOLVED">Resolved</SelectItem>
-                        <SelectItem value="REJECTED">Rejected</SelectItem>
+                        <SelectItem value="PENDING">{t("claimsPage.details.pending")}</SelectItem>
+                        <SelectItem value="IN_REVIEW">{t("claimsPage.details.inReview")}</SelectItem>
+                        <SelectItem value="RESOLVED">{t("claimsPage.details.resolved")}</SelectItem>
+                        <SelectItem value="REJECTED">{t("claimsPage.details.rejected")}</SelectItem>
                     </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                  <Label htmlFor="resolutionNote">Resolution Note</Label>
-                  <Textarea id="resolutionNote" value={resolutionNote} onChange={(e) => setResolutionNote(e.target.value)} placeholder="Add your notes here..."/>
+                  <Label htmlFor="resolutionNote">{t("claimsPage.details.resolutionNote")}</Label>
+                  <Textarea id="resolutionNote" value={resolutionNote} onChange={(e) => setResolutionNote(e.target.value)} placeholder={t("claimsPage.details.notePlaceholder")}/>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setIsDetailsOpen(false)}>Cancel</Button>
-            <Button onClick={handleUpdateClaim} disabled={isUpdating}>{isUpdating ? 'Updating...' : 'Save Changes'}</Button>
+            <Button variant="ghost" onClick={() => setIsDetailsOpen(false)}>{t("claimsPage.cancel")}</Button>
+            <Button onClick={handleUpdateClaim} disabled={isUpdating}>{isUpdating ? t("claimsPage.updating") : t("claimsPage.saveChanges")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

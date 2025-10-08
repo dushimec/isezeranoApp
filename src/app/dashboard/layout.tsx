@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -31,6 +30,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Image from "next/image";
 import { IsezeranoLogo } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
+import { t } from "../../utils/i18n";
 
 export default function DashboardLayout({
   children,
@@ -56,15 +56,15 @@ export default function DashboardLayout({
   };
 
   const allNavItems = [
-    { href: "/dashboard", label: "Dashboard", icon: Home, roles: ['ADMIN', 'SECRETARY', 'DISCIPLINARIAN', 'SINGER'] },
-    { href: "/dashboard/announcements", label: "Announcements", icon: Megaphone, roles: ['ADMIN', 'SECRETARY', 'SINGER'] },
-    { href: "/dashboard/schedule", label: "Schedule", icon: Calendar, roles: ['ADMIN', 'SECRETARY', 'DISCIPLINARIAN', 'SINGER'] },
-    { href: "/dashboard/attendance", label: "Take Attendance", icon: ClipboardCheck, roles: ['ADMIN', 'DISCIPLINARIAN'] },
-    { href: "/dashboard/claims", label: "Claims", icon: ShieldAlert, roles: ['ADMIN', 'DISCIPLINARIAN'] },
-    { href: "/dashboard/my-attendance", label: "My Attendance", icon: ClipboardCheck, roles: ['SINGER'] },
-    { href: "/dashboard/my-claims", label: "My Claims", icon: ShieldAlert, roles: ['SINGER'] },
-    { href: "/dashboard/reports", label: "Reports", icon: BarChart, roles: ['ADMIN', 'SECRETARY'] },
-    { href: "/dashboard/users", label: "User Management", icon: Users, roles: ['ADMIN'] },
+    { href: "/dashboard", label: t("dashboard"), icon: Home, roles: ['ADMIN', 'SECRETARY', 'DISCIPLINARIAN', 'SINGER'] },
+    { href: "/dashboard/announcements", label: t("announcements"), icon: Megaphone, roles: ['ADMIN', 'SECRETARY', 'SINGER'] },
+    { href: "/dashboard/schedule", label: t("schedule"), icon: Calendar, roles: ['ADMIN', 'SECRETARY', 'DISCIPLINARIAN', 'SINGER'] },
+    { href: "/dashboard/attendance", label: t("attendance"), icon: ClipboardCheck, roles: ['ADMIN', 'DISCIPLINARIAN'] },
+    { href: "/dashboard/claims", label: t("claims"), icon: ShieldAlert, roles: ['ADMIN', 'DISCIPLINARIAN'] },
+    { href: "/dashboard/my-attendance", label: t("myAttendance"), icon: ClipboardCheck, roles: ['SINGER'] },
+    { href: "/dashboard/my-claims", label: t("myClaims"), icon: ShieldAlert, roles: ['SINGER'] },
+    { href: "/dashboard/reports", label: t("reports"), icon: BarChart, roles: ['ADMIN', 'SECRETARY'] },
+    { href: "/dashboard/users", label: t("users"), icon: Users, roles: ['ADMIN'] },
   ];
 
   const navItems = allNavItems.filter(item => user?.role && item.roles.includes(user.role));
