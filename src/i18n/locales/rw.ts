@@ -106,7 +106,7 @@ export default {
     loginFailed: "Kwinjira byanze"
   },
   dashboardPage: {
-    title: "Dashibodi",
+    title: "Ahabanza",
     welcome: "Murakaza neza, {name}! Dore ishusho rusange.",
     loading: "Tegereza gato...",
     admin: {
