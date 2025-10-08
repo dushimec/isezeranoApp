@@ -85,32 +85,32 @@ const SecretaryDashboard = ({ data }: { data: DashboardData }) => {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Upcoming Events</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t('dashboardPage.secretary.upcomingEvents')}</CardTitle>
                     <CalendarCheck className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{data.upcomingEvents?.length || 0}</div>
-                    <p className="text-xs text-muted-foreground">Rehearsals & Services</p>
+                    <p className="text-xs text-muted-foreground">{t('dashboardPage.secretary.upcomingEventsDesc')}</p>
                 </CardContent>
             </Card>
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Present Members (Total)</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t('dashboardPage.secretary.presentMembers')}</CardTitle>
                     <CheckCircle className="h-4 w-4 text-green-500" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{data.attendanceSummary?.find(s => s.status === 'PRESENT')?._count.status || 0}</div>
-                    <p className="text-xs text-muted-foreground">Across all events</p>
+                    <p className="text-xs text-muted-foreground">{t('dashboardPage.secretary.presentMembersDesc')}</p>
                 </CardContent>
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Announcements</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t('dashboardPage.secretary.announcements')}</CardTitle>
                     <Megaphone className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{data.recentAnnouncements?.length || 0}</div>
-                    <p className="text-xs text-muted-foreground">Recently published</p>
+                    <p className="text-xs text-muted-foreground">{t('dashboardPage.secretary.announcementsDesc')}</p>
                 </CardContent>
             </Card>
         </div>
@@ -128,42 +128,42 @@ const DisciplinarianDashboard = ({ data }: { data: DashboardData }) => {
          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Avg. Attendance</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t('dashboardPage.disciplinarian.avgAttendance')}</CardTitle>
                     <BarChart className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{avgAttendance.toFixed(0)}%</div>
-                    <p className="text-xs text-muted-foreground">Across all events</p>
+                    <p className="text-xs text-muted-foreground">{t('dashboardPage.disciplinarian.avgAttendanceDesc')}</p>
                 </CardContent>
             </Card>
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Present</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t('dashboardPage.disciplinarian.totalPresent')}</CardTitle>
                     <CheckCircle className="h-4 w-4 text-green-500" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{present}</div>
-                    <p className="text-xs text-muted-foreground">In all recorded events</p>
+                    <p className="text-xs text-muted-foreground">{t('dashboardPage.disciplinarian.totalPresentDesc')}</p>
                 </CardContent>
             </Card>
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Late</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t('dashboardPage.disciplinarian.totalLate')}</CardTitle>
                     <Clock className="h-4 w-4 text-yellow-500" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{late}</div>
-                     <p className="text-xs text-muted-foreground">In all recorded events</p>
+                     <p className="text-xs text-muted-foreground">{t('dashboardPage.disciplinarian.totalLateDesc')}</p>
                 </CardContent>
             </Card>
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Absent</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t('dashboardPage.disciplinarian.totalAbsent')}</CardTitle>
                     <XCircle className="h-4 w-4 text-red-500" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{absent}</div>
-                     <p className="text-xs text-muted-foreground">In all recorded events</p>
+                     <p className="text-xs text-muted-foreground">{t('dashboardPage.disciplinarian.totalAbsentDesc')}</p>
                 </CardContent>
             </Card>
         </div>
@@ -183,21 +183,21 @@ const SingerDashboard = ({ data }: { data: DashboardData }) => {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <Card>
                 <CardHeader>
-                    <CardTitle>Next Event</CardTitle>
+                    <CardTitle>{t('dashboardPage.singer.nextEvent')}</CardTitle>
                      <CardDescription>
-                        {nextEvent ? `${nextEvent.type === 'REHEARSAL' ? 'Rehearsal' : 'Service'} on ${format(new Date(nextEvent.date), 'MMMM d')}` : 'No upcoming events'}
+                        {nextEvent ? t('dashboardPage.singer.nextEventDesc', { type: nextEvent.type === 'REHEARSAL' ? 'Rehearsal' : 'Service', date: format(new Date(nextEvent.date), 'MMMM d') }) : t('dashboardPage.singer.noUpcomingEvents')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <p className="text-lg font-semibold">{nextEvent?.title}</p>
-                    <p className="text-muted-foreground">{nextEvent ? `${format(new Date(nextEvent.date), 'p')} at ${nextEvent.location}` : 'Check back later'}</p>
+                    <p className="text-muted-foreground">{nextEvent ? `${format(new Date(nextEvent.date), 'p')} at ${nextEvent.location}` : t('dashboardPage.singer.checkBackLater')}</p>
                 </CardContent>
             </Card>
             <Card>
                 <CardHeader>
-                    <CardTitle>Latest Announcement</CardTitle>
+                    <CardTitle>{t('dashboardPage.singer.latestAnnouncement')}</CardTitle>
                      <CardDescription>
-                        {latestAnnouncement ? `from ${format(new Date(latestAnnouncement.createdAt), 'MMMM d')}` : 'No new announcements'}
+                        {latestAnnouncement ? t('dashboardPage.singer.latestAnnouncementDesc', { date: format(new Date(latestAnnouncement.createdAt), 'MMMM d') }) : t('dashboardPage.singer.noNewAnnouncements')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -207,12 +207,12 @@ const SingerDashboard = ({ data }: { data: DashboardData }) => {
             </Card>
             <Card>
                 <CardHeader>
-                    <CardTitle>Your Attendance</CardTitle>
-                    <CardDescription>Your overall participation rate.</CardDescription>
+                    <CardTitle>{t('dashboardPage.singer.yourAttendance')}</CardTitle>
+                    <CardDescription>{t('dashboardPage.singer.yourAttendanceDesc')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{attendancePercentage.toFixed(0)}%</div>
-                    <p className="text-xs text-muted-foreground">{present} Present, {late} Late, {absent} Absent</p>
+                    <p className="text-xs text-muted-foreground">{t('dashboardPage.singer.attendanceStats', { present, late, absent })}</p>
                 </CardContent>
             </Card>
         </div>
@@ -279,7 +279,7 @@ export default function DashboardPage() {
       case 'SINGER':
         return <SingerDashboard data={data} />;
       default:
-        return <p>Welcome to your dashboard.</p>;
+        return <p>{t('dashboardPage.default')}</p>;
     }
   };
 

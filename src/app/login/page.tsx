@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { t } from "@/utils/i18n";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -81,7 +82,7 @@ export default function LoginPage() {
             const data = await response.json();
             setAdminExists(data.exists);
         } catch (error) {
-            toast({ variant: "destructive", title: "Error", description: "Could not verify system status." });
+            toast({ variant: "destructive", title: t('loginPage.error'), description: t('loginPage.verifying') });
         } finally {
             setIsLoading(false);
         }
@@ -102,20 +103,20 @@ export default function LoginPage() {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.error || 'Login failed');
+            throw new Error(data.error || t('loginPage.loginFailed'));
         }
         
         login(data.token, data.user);
 
         toast({
-            title: "Login Successful",
-            description: `Welcome back, ${data.user.firstName}!`,
+            title: t('loginPage.loginSuccess'),
+            description: t('loginPage.loginSuccessDesc', { name: data.user.firstName }),
         });
         router.push('/dashboard');
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Login Failed",
+        title: t('loginPage.loginFailed'),
         description: error.message,
       });
     } finally {
@@ -126,7 +127,7 @@ export default function LoginPage() {
   if (adminExists === null) {
      return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="loader">Verifying system status...</div>
+        <div className="loader">{t('loginPage.verifying')}</div>
       </div>
     );
   }
@@ -139,14 +140,14 @@ export default function LoginPage() {
                 <div className="flex justify-center mb-4">
                     <IsezeranoLogo className="w-16 h-16" />
                 </div>
-                <CardTitle className="text-3xl font-headline">Welcome</CardTitle>
+                <CardTitle className="text-3xl font-headline">{t('loginPage.noAdminTitle')}</CardTitle>
                 <CardDescription>
-                    No administrator account exists. Please register to begin.
+                    {t('loginPage.noAdminDescription')}
                 </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Button className="w-full" asChild>
-                        <Link href="/register">Register Admin Account</Link>
+                        <Link href="/register">{t('loginPage.registerAdmin')}</Link>
                     </Button>
                 </CardContent>
             </Card>
@@ -162,16 +163,16 @@ export default function LoginPage() {
           <div className="flex justify-center mb-4">
             <IsezeranoLogo className="w-16 h-16" />
           </div>
-          <CardTitle className="text-3xl font-headline">Welcome Back</CardTitle>
+          <CardTitle className="text-3xl font-headline">{t('loginPage.welcomeBack')}</CardTitle>
           <CardDescription>
-            Sign in to continue to Isezerano CMS
+            {t('loginPage.description')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs value={loginType} onValueChange={(value) => setLoginType(value as "email" | "username")} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="email">Admin</TabsTrigger>
-              <TabsTrigger value="username">Member</TabsTrigger>
+              <TabsTrigger value="email">{t('loginPage.adminTab')}</TabsTrigger>
+              <TabsTrigger value="username">{t('loginPage.memberTab')}</TabsTrigger>
             </TabsList>
             <TabsContent value="email">
                  <Form {...form}>
@@ -181,10 +182,10 @@ export default function LoginPage() {
                             name="identifier"
                             render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Email</FormLabel>
+                                <FormLabel>{t('loginPage.email')}</FormLabel>
                                 <FormControl>
                                 <Input 
-                                    placeholder='admin@example.com'
+                                    placeholder={t('loginPage.emailPlaceholder')}
                                     {...field} />
                                 </FormControl>
                                 <FormMessage />
@@ -196,16 +197,16 @@ export default function LoginPage() {
                             name="password"
                             render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Password</FormLabel>
+                                <FormLabel>{t('loginPage.password')}</FormLabel>
                                 <FormControl>
-                                <Input type="password" placeholder="••••••••" {...field} />
+                                <Input type="password" placeholder={t('loginPage.passwordPlaceholder')} {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                             )}
                         />
                         <Button type="submit" className="w-full" disabled={isLoading}>
-                            {isLoading ? "Signing in..." : "Sign In"}
+                            {isLoading ? t('loginPage.signingIn') : t('loginPage.signIn')}
                         </Button>
                     </form>
                 </Form>
@@ -218,10 +219,10 @@ export default function LoginPage() {
                             name="identifier"
                             render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Username</FormLabel>
+                                <FormLabel>{t('loginPage.username')}</FormLabel>
                                 <FormControl>
                                 <Input 
-                                    placeholder='your.username'
+                                    placeholder={t('loginPage.usernamePlaceholder')}
                                     {...field} />
                                 </FormControl>
                                 <FormMessage />
@@ -233,16 +234,16 @@ export default function LoginPage() {
                             name="password"
                             render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Password</FormLabel>
+                                <FormLabel>{t('loginPage.password')}</FormLabel>
                                 <FormControl>
-                                <Input type="password" placeholder="••••••••" {...field} />
+                                <Input type="password" placeholder={t('loginPage.passwordPlaceholder')} {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                             )}
                         />
                         <Button type="submit" className="w-full" disabled={isLoading}>
-                            {isLoading ? "Signing in..." : "Sign In"}
+                            {isLoading ? t('loginPage.signingIn') : t('loginPage.signIn')}
                         </Button>
                     </form>
                 </Form>

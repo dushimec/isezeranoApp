@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { t } from "@/utils/i18n";
 
 import { Button } from '@/components/ui/button';
 import {
@@ -27,11 +28,11 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
-const passwordSchema = z.object({
-  newPassword: z.string().min(8, 'Password must be at least 8 characters long'),
+const getPasswordSchema = (t: (key: string) => string) => z.object({
+  newPassword: z.string().min(8, t('changePasswordPage.newPasswordLength')),
   confirmPassword: z.string(),
 }).refine(data => data.newPassword === data.confirmPassword, {
-  message: 'Passwords do not match',
+  message: t('changePasswordPage.passwordsDoNotMatch'),
   path: ['confirmPassword'],
 });
 
@@ -40,6 +41,8 @@ export default function ChangePasswordPage() {
   const { toast } = useToast();
   const { token, logout } = useAuth();
   const [isLoading, setIsLoading] = React.useState(false);
+
+  const passwordSchema = getPasswordSchema(t);
 
   const form = useForm<z.infer<typeof passwordSchema>>({
     resolver: zodResolver(passwordSchema),
@@ -63,22 +66,21 @@ export default function ChangePasswordPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to change password.');
+        throw new Error(errorData.error || t('changePasswordPage.updateFailed'));
       }
 
       toast({
-        title: 'Password Changed Successfully',
-        description: 'Please log in again with your new password.',
+        title: t('changePasswordPage.success'),
+        description: t('changePasswordPage.passwordUpdated'),
       });
 
-      // Log the user out and redirect to login
       logout();
       router.push('/login');
 
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Update Failed',
+        title: t('changePasswordPage.error'),
         description: error.message,
       });
     } finally {
@@ -90,10 +92,9 @@ export default function ChangePasswordPage() {
     <div className="flex min-h-screen items-center justify-center bg-background">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Change Your Password</CardTitle>
+          <CardTitle>{t('changePasswordPage.title')}</CardTitle>
           <CardDescription>
-            For your security, you must change the temporary password provided by
-            the administrator.
+            {t('changePasswordPage.description')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -104,7 +105,7 @@ export default function ChangePasswordPage() {
                 name="newPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>New Password</FormLabel>
+                    <FormLabel>{t('changePasswordPage.newPassword')}</FormLabel>
                     <FormControl>
                       <Input type="password" placeholder="••••••••" {...field} />
                     </FormControl>
@@ -117,7 +118,7 @@ export default function ChangePasswordPage() {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Confirm New Password</FormLabel>
+                    <FormLabel>{t('changePasswordPage.confirmNewPassword')}</FormLabel>
                     <FormControl>
                       <Input type="password" placeholder="••••••••" {...field} />
                     </FormControl>
@@ -126,7 +127,7 @@ export default function ChangePasswordPage() {
                 )}
               />
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Saving...' : 'Save New Password'}
+                {isLoading ? t('changePasswordPage.updating') : t('changePasswordPage.updatePassword')}
               </Button>
             </form>
           </Form>

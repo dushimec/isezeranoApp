@@ -42,6 +42,26 @@ export default {
       HIGH: "High",
       MEDIUM: "Medium",
       LOW: "Low"
+    },
+    manageTitle: "Manage Announcements",
+    manageDescription: "View, edit, or delete existing announcements.",
+    createTitle: "Create Announcement",
+    createDescription: "Create and manage announcements for all singers.",
+    newAnnouncement: "Create a New Announcement",
+    newAnnouncementDescription: "Fill in the details below. This will send a notification to all singers.",
+    form: {
+      title: "Title",
+      message: "Message",
+      priority: "Priority",
+      selectPriority: "Select priority",
+      publish: "Publish"
+    },
+    table: {
+      title: "Title",
+      priority: "Priority",
+      author: "Author",
+      createdAt: "Created At",
+      actions: "Actions"
     }
   },
   registerPage: {
@@ -80,7 +100,10 @@ export default {
     usernamePlaceholder: "your.username",
     passwordPlaceholder: "••••••••",
     signingIn: "Signing in...",
-    signIn: "Sign In"
+    signIn: "Sign In",
+    loginSuccess: "Login Successful",
+    loginSuccessDesc: "Welcome back, {name}!",
+    loginFailed: "Login Failed"
   },
   dashboardPage: {
     title: "Dashboard",
@@ -364,4 +387,22 @@ export default {
     ABSENT: "Absent",
     loading: "Loading..."
   },
+  changePasswordPage: {
+    title: "Change Password",
+    description: "Update your password for better security.",
+    currentPassword: "Current Password",
+    newPassword: "New Password",
+    confirmNewPassword: "Confirm New Password",
+    updating: "Updating...",
+    updatePassword: "Update Password",
+    success: "Success",
+    passwordUpdated: "Your password has been updated.",
+    error: "Error",
+    updateFailed: "Failed to update password.",
+    currentPasswordRequired: "Current password is required.",
+    newPasswordRequired: "New password is required.",
+    newPasswordLength: "New password must be at least 8 characters.",
+    confirmNewPasswordRequired: "Please confirm your new password.",
+    passwordsDoNotMatch: "Passwords do not match."
+  }
 }

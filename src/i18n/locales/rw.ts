@@ -31,17 +31,37 @@ export default {
     openMenu: "Fungura menu"
   },
   announcementsPage: {
-    title: "Itangazo",
+    title: "Amatangazo",
     subtitle: "Reba amatangazo yose ya korali.",
     cardTitle: "Amatangazo Yose",
     cardDescription: "Urutonde rw'amatangazo yose yabaye n'ariho ubu.",
     noAnnouncements: "Nta tangazo ribonetse.",
-    by: "Byakozwe na",
+    by: "Byakozwe Na",
     created: "Yashyizweho",
     priority: {
-      HIGH: "Hejuru",
+      HIGH: "Hejuru Cyane",
       MEDIUM: "Hagati",
       LOW: "Hasi"
+    },
+    manageTitle: "Cunga Amatangazo",
+    manageDescription: "Reba, hindura, cyangwa usibe amatangazo ariho.",
+    createTitle: "Shyiraho Itangazo",
+    createDescription: "Shyiraho kandi ucunge amatangazo y'abaririmbyi bose.",
+    newAnnouncement: "Shyiraho Itangazo Rishya",
+    newAnnouncementDescription: "Uzuza ibisobanuro hano hepfo. Bizahita byohereza ubutumwa ku baririmbyi bose.",
+    form: {
+      title: "Umutwe",
+      message: "Ubutumwa",
+      priority: "Agaciro",
+      selectPriority: "Hitamo agaciro",
+      publish: "Tangaza"
+    },
+    table: {
+      title: "Umutwe",
+      priority: "Agaciro",
+      author: "Uwatangaje",
+      createdAt: "Igihe Ryatangarijwe",
+      actions: "Ibikorwa"
     }
   },
   registerPage: {
@@ -80,7 +100,10 @@ export default {
     usernamePlaceholder: "izina.ukoreshwa",
     passwordPlaceholder: "••••••••",
     signingIn: "Iri kwinjira...",
-    signIn: "Injira"
+    signIn: "Injira",
+    loginSuccess: "Wabashije kwinjira",
+    loginSuccessDesc: "Murakaza neza, {name}!",
+    loginFailed: "Kwinjira byanze"
   },
   dashboardPage: {
     title: "Dashibodi",
@@ -363,6 +386,23 @@ export default {
     LATE: "Yatinze",
     ABSENT: "Yabayeho",
     loading: "Iri kubika..."
+  },
+  changePasswordPage: {
+    title: "Hindura Ijambo ry'ibanga",
+    description: "Hindura ijambo ry'ibanga ryawe kugirango umutekano ube mwiza.",
+    currentPassword: "Ijambo ry'ibanga rya none",
+    newPassword: "Ijambo ry'ibanga rishya",
+    confirmNewPassword: "Emeza ijambo ry'ibanga rishya",
+    updating: "Biri guhindurwa...",
+    updatePassword: "Hindura Ijambo ry'ibanga",
+    success: "Byagenze neza",
+    passwordUpdated: "Ijambo ry'ibanga ryawe ryahinduwe.",
+    error: "Ikosa",
+    updateFailed: "Kunanirwa guhindura ijambo ry'ibanga.",
+    currentPasswordRequired: "Ijambo ry'ibanga rya none rirakenewe.",
+    newPasswordRequired: "Ijambo ry'ibanga rishya rirakenewe.",
+    newPasswordLength: "Ijambo ry'ibanga rishya rigomba kuba nibura inyuguti 8.",
+    confirmNewPasswordRequired: "Nyamuneka emeza ijambo ry'ibanga ryawe rishya.",
+    passwordsDoNotMatch: "Amagambo y'ibanga ntabwo ahura."
   }
-  // ...add more keys as needed
 }

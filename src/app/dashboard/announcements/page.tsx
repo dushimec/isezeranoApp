@@ -49,6 +49,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import SingerAnnouncementsPage from '@/app/singer/announcements/page';
+import { t } from '@/utils/i18n';
 
 export default function AnnouncementsPage() {
   const { user, token } = useAuth();
@@ -112,48 +113,48 @@ export default function AnnouncementsPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center">
         <div className="flex-1">
-          <h1 className="text-3xl font-headline">Announcements</h1>
+          <h1 className="text-3xl font-headline">{t('announcementsPage.title')}</h1>
           <p className="text-muted-foreground">
-            Create and manage announcements for all singers.
+            {t('announcementsPage.createDescription')}
           </p>
         </div>
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
           <DialogTrigger asChild>
             <Button>
-              <PlusCircle className="mr-2 h-4 w-4" /> Create Announcement
+              <PlusCircle className="mr-2 h-4 w-4" /> {t('announcementsPage.createTitle')}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Create a New Announcement</DialogTitle>
+              <DialogTitle>{t('announcementsPage.newAnnouncement')}</DialogTitle>
               <DialogDescription>
-                Fill in the details below. This will send a notification to all singers.
+                {t('announcementsPage.newAnnouncementDescription')}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleCreateAnnouncement} className="space-y-4">
               <div>
-                <Label htmlFor="title">Title</Label>
+                <Label htmlFor="title">{t('announcementsPage.form.title')}</Label>
                 <Input id="title" name="title" required />
               </div>
               <div>
-                <Label htmlFor="message">Message</Label>
+                <Label htmlFor="message">{t('announcementsPage.form.message')}</Label>
                 <Textarea id="message" name="message" required />
               </div>
               <div>
-                <Label htmlFor="priority">Priority</Label>
+                <Label htmlFor="priority">{t('announcementsPage.form.priority')}</Label>
                 <Select name="priority" defaultValue="MEDIUM">
                   <SelectTrigger>
-                    <SelectValue placeholder="Select priority" />
+                    <SelectValue placeholder={t('announcementsPage.form.selectPriority')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="LOW">Low</SelectItem>
-                    <SelectItem value="MEDIUM">Medium</SelectItem>
-                    <SelectItem value="HIGH">High</SelectItem>
+                    <SelectItem value="LOW">{t('announcementsPage.priority.LOW')}</SelectItem>
+                    <SelectItem value="MEDIUM">{t('announcementsPage.priority.MEDIUM')}</SelectItem>
+                    <SelectItem value="HIGH">{t('announcementsPage.priority.HIGH')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex justify-end">
-                <Button type="submit">Publish</Button>
+                <Button type="submit">{t('announcementsPage.form.publish')}</Button>
               </div>
             </form>
           </DialogContent>
@@ -162,27 +163,27 @@ export default function AnnouncementsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Manage Announcements</CardTitle>
+          <CardTitle>{t('announcementsPage.manageTitle')}</CardTitle>
           <CardDescription>
-            View, edit, or delete existing announcements.
+            {t('announcementsPage.manageDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Priority</TableHead>
-                <TableHead>Author</TableHead>
-                <TableHead>Created At</TableHead>
+                <TableHead>{t('announcementsPage.table.title')}</TableHead>
+                <TableHead>{t('announcementsPage.table.priority')}</TableHead>
+                <TableHead>{t('announcementsPage.table.author')}</TableHead>
+                <TableHead>{t('announcementsPage.table.createdAt')}</TableHead>
                 <TableHead>
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">{t('announcementsPage.table.actions')}</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading && <TableRow><TableCell colSpan={5} className="text-center">Loading...</TableCell></TableRow>}
-              {!isLoading && announcements.length === 0 && <TableRow><TableCell colSpan={5} className="text-center">No announcements found.</TableCell></TableRow>}
+              {isLoading && <TableRow><TableCell colSpan={5} className="text-center">{t('loading')}</TableCell></TableRow>}
+              {!isLoading && announcements.length === 0 && <TableRow><TableCell colSpan={5} className="text-center">{t('announcementsPage.noAnnouncements')}</TableCell></TableRow>}
               {announcements.map((ann) => (
                 <TableRow key={ann.id}>
                   <TableCell className="font-medium">{ann.title}</TableCell>
@@ -204,13 +205,13 @@ export default function AnnouncementsPage() {
                           variant="ghost"
                         >
                           <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
+                          <span className="sr-only">{t('userTable.openMenu')}</span>
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                        <DropdownMenuLabel>{t('userTable.actions')}</DropdownMenuLabel>
+                        <DropdownMenuItem>{t('userTable.edit')}</DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive">{t('userTable.delete')}</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
