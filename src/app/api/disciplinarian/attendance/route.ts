@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
             eventType: a.eventType,
             eventDate: event?.date ?? a.createdAt,
             eventTitle: event?.title ?? 'Deleted Event',
+            session: a.session,
         }
     })
 
@@ -41,7 +42,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
-        const { eventId, eventType, attendanceData, markedById } = await req.json();
+        const { eventId, eventType, attendanceData, markedById, session } = await req.json();
         const lang = req.headers.get('accept-language')?.split(',')?.[0];
 
         if (!eventId || !eventType || !Array.isArray(attendanceData) || !markedById) {
@@ -72,6 +73,7 @@ export async function POST(req: NextRequest) {
                         status,
                         markedById: new ObjectId(markedById),
                         eventDate: event.date, 
+                        session: eventType === 'SERVICE' ? session : undefined,
                         createdAt: new Date(),
                     }
                 },
@@ -87,10 +89,10 @@ export async function POST(req: NextRequest) {
         for (const { userId, status } of attendanceData) {
             const userObjectId = new ObjectId(userId);
             if (status === 'ABSENT') {
-                await checkAbsencePunishment(userObjectId, lang);
+                await checkAbsencePunishment(userObjectId, lang, eventType, session);
             }
             if (status === 'LATE') {
-                await checkLateness(userObjectId, lang);
+                await checkLateness(userObjectId, lang, eventType, session);
             }
         }
 

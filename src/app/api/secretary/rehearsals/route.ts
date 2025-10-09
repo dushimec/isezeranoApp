@@ -21,12 +21,16 @@ export async function POST(req: NextRequest) {
     const client = await clientPromise;
     const db = client.db();
 
+    const singers = await db.collection<UserDocument>('users').find({ role: 'SINGER', isActive: true }).project({ _id: 1 }).toArray();
+    const attendeeIds = singers.map(s => s._id);
+
     const newRehearsal = {
       title,
       date: new Date(date),
       time,
       location,
       notes,
+      attendees: attendeeIds,
       createdById: new ObjectId(userId),
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -36,12 +40,11 @@ export async function POST(req: NextRequest) {
     const rehearsalId = result.insertedId;
 
     // Create notifications for all singers
-    const singers = await db.collection<UserDocument>('users').find({ role: 'SINGER' }).project({ _id: 1 }).toArray();
     const creator = await db.collection<UserDocument>('users').findOne({_id: new ObjectId(userId)});
     
-    if (singers.length > 0 && creator) {
-      const notifications = singers.map(singer => ({
-        userId: singer._id,
+    if (attendeeIds.length > 0 && creator) {
+      const notifications = attendeeIds.map(singerId => ({
+        userId: singerId,
         rehearsalId: rehearsalId,
         title: 'New Rehearsal Scheduled',
         message: `A new rehearsal has been scheduled: ${title} on ${new Date(date).toLocaleDateString()}`,

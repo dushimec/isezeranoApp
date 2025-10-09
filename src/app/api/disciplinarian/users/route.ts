@@ -7,9 +7,15 @@ export async function GET(req: NextRequest) {
   try {
     const client = await clientPromise;
     const db = client.db();
+    const session = req.nextUrl.searchParams.get('session');
+
+    const query: any = { role: { $in: ['SINGER', 'DISCIPLINARIAN', 'SECRETARY'] as Role[] } };
+    if (session) {
+        query.session = session;
+    }
 
     const users = await db.collection('users').find(
-      { role: { $in: ['SINGER', 'DISCIPLINARIAN', 'SECRETARY'] as Role[] } },
+      query,
       { 
           projection: { 
             _id: 1, 

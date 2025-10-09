@@ -1,133 +1,102 @@
+import { ObjectId } from "mongodb";
 
-import type { ObjectId, WithId } from 'mongodb';
+/**
+ * @description Defines the roles within the choir management system.
+ *
+ * @property SINGER - A choir member who attends rehearsals and services.
+ * Responsibilities:
+ * - View rehearsal and service schedules.
+ * - Track personal attendance history.
+ * - Receive notifications about events, warnings, or disciplinary actions.
+ *
+ * @property SECRETARY - Manages the choir's schedule and communication.
+ * Responsibilities:
+ * - Create, edit, and delete rehearsals and services.
+ * - Notify singers of any schedule changes.
+ * - Manage the choir roster by adding new singers or deactivating existing ones.
+ * - Set the default rehearsal day (e.g., Thursday).
+ *
+ * @property DISCIPLINARIAN - Enforces attendance and punctuality rules.
+ * Responsibilities:
+ * - Mark attendance for each singer at rehearsals (Present, Absent, Late).
+ * - Monitor absenteeism and lateness patterns.
+ * - Issue warnings and apply disciplinary actions based on established rules (e.g., absence from 4 consecutive rehearsals).
+ * - Manage user accounts and assign roles.
+ *
+ * @property PRESIDENT - Oversees all choir activities and has full system access.
+ * Responsibilities:
+ * - View all schedules, attendance records, and disciplinary reports.
+ * - Hold administrative privileges to manage all aspects of the system.
+ * - Make final decisions on disciplinary matters.
+ */
+export type Role = 'SINGER' | 'SECRETARY' | 'DISCIPLINARIAN' | 'PRESIDENT';
 
-export type Role = 'ADMIN' | 'SECRETARY' | 'DISCIPLINARIAN' | 'SINGER'
-export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE';
-export type EventType = 'REHEARSAL' | 'SERVICE';
-export type ClaimStatus = 'PENDING' | 'IN_REVIEW' | 'RESOLVED' | 'REJECTED';
-export type ClaimSeverity = 'LOW' | 'MEDIUM' | 'HIGH';
-export type ServiceType = 'Amateraniro ya 1' | 'Amateraniro ya 2' | 'Amateraniro ya 3';
+export interface User {
+    id: string;
+    fullName: string;
+    email: string;
+    role: Role;
+    registrationNumber: string;
+    isActive: boolean;
+}
 
-export type User = {
+export interface UserDocument extends Document {
   _id: ObjectId;
-  id: string; // string version of _id
-  firstName: string;
-  lastName: string;
-  username?: string;
-  email?: string;
-  profileImage?: string;
+  fullName: string;
+  email: string;
+  password?: string; 
   role: Role;
-  password?: string; // Will be excluded in most queries
+  registrationNumber: string;
   isActive: boolean;
-  forcePasswordChange: boolean;
   createdAt: Date;
   updatedAt: Date;
-};
+}
 
-export type Announcement = {
-  _id: ObjectId;
-  id: string;
-  title: string;
-  message: string;
-  attachment?: string;
-  priority?: 'LOW' | 'MEDIUM' | 'HIGH';
-  createdById: ObjectId;
-  createdBy: { // Populated field
-    firstName: string;
-    lastName: string;
-  };
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-export type Notification = {
-    _id: ObjectId;
+export interface Rehearsal {
     id: string;
     title: string;
-    message: string;
-    senderRole: Role;
-    userId: ObjectId;
-    isRead: boolean;
-    createdAt: Date;
-};
+    date: string;
+    time: string;
+    location: string;
+    notes?: string;
+    attendees: ObjectId[];
+    createdById: ObjectId;
+}
 
-export type Rehearsal = {
+export interface RehearsalDocument extends Document {
     _id: ObjectId;
-    id: string;
     title: string;
     date: Date;
     time: string;
     location: string;
     notes?: string;
+    attendees: ObjectId[];
     createdById: ObjectId;
     createdAt: Date;
     updatedAt: Date;
 }
 
-export type Service = {
-    _id: ObjectId;
+export type ServiceType = 'Amateraniro ya 1' | 'Amateraniro ya 2' | 'Amateraniro ya 3';
+
+export interface Service {
     id: string;
     title: string;
-    date: Date;
+    date: string;
     time: string;
-    serviceType: ServiceType;
     churchLocation: string;
+    serviceType: ServiceType;
     attire?: string;
     notes?: string;
     createdById: ObjectId;
-    createdAt: Date;
-    updatedAt: Date;
 }
 
-export type Claim = {
-    _id: ObjectId;
+export interface Notification {
     id: string;
+    userId: ObjectId;
+    rehearsalId?: ObjectId;
+    serviceId?: ObjectId;
     title: string;
-    description: string;
-    submittedById: ObjectId;
-    submittedBy: { // Populated field
-        firstName: string;
-        lastName: string;
-        profileImage?: string;
-    };
-    isAnonymous: boolean;
-    status: ClaimStatus;
-    severity: ClaimSeverity;
-    attachment?: string;
-    resolutionNote?: string;
+    message: string;
+    isRead: boolean;
     createdAt: Date;
-    updatedAt: Date;
 }
-
-
-// A simplified, combined type for displaying events
-export type Event = {
-  id: string;
-  title: string;
-  date: string;
-  location: string;
-  attendees: {userId: string}[];
-  type: EventType;
-};
-
-
-export type Attendance = {
-    id: string;
-    status: AttendanceStatus;
-    user: {
-        firstName: string;
-        lastName: string;
-    };
-    event: {
-        title: string;
-        date: string;
-    };
-};
-
-// Raw MongoDB document types
-export type UserDocument = WithId<Omit<User, 'id'>>;
-export type AnnouncementDocument = WithId<Omit<Announcement, 'id' | 'createdBy'>>;
-export type RehearsalDocument = WithId<Omit<Rehearsal, 'id'>>;
-export type ServiceDocument = WithId<Omit<Service, 'id'>>;
-export type AttendanceDocument = WithId<Omit<Attendance, 'id' | 'user' | 'event'>>;
-export type ClaimDocument = WithId<Omit<Claim, 'id' | 'submittedBy'>>;

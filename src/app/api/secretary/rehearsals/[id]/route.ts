@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/db';
 import { ObjectId } from 'mongodb';
 import { getUserIdFromToken } from '@/lib/auth';
-import { UserDocument } from '@/lib/types';
+import { RehearsalDocument, UserDocument } from '@/lib/types';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -62,8 +62,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       return NextResponse.json({ error: 'Rehearsal not found' }, { status: 404 });
     }
 
-    // Notify singers of the update
-    const singers = await db.collection<UserDocument>('users').find({ role: 'SINGER' }).project({ _id: 1 }).toArray();
+    // Notify all singers of the update
+    const singers = await db.collection<UserDocument>('users').find({ role: 'SINGER', isActive: true }).project({ _id: 1 }).toArray();
     const creator = await db.collection<UserDocument>('users').findOne({_id: new ObjectId(userId)});
     
     if (singers.length > 0 && creator) {

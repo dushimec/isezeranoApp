@@ -37,6 +37,7 @@ type TEvent = {
   title: string;
   date: string;
   type: 'REHEARSAL' | 'SERVICE';
+  session?: string;
 };
 
 type User = {
@@ -51,6 +52,7 @@ export default function AttendancePage() {
   const [events, setEvents] = useState<TEvent[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<TEvent | null>(null);
+  const [selectedSession, setSelectedSession] = useState<string | undefined>(undefined);
   const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>({});
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -66,16 +68,23 @@ export default function AttendancePage() {
       setEvents(data);
       if (data.length > 0) {
         setSelectedEvent(data[0]);
+        if (data[0].type === 'SERVICE') {
+          setSelectedSession('Amateraniro ya 1');
+        }
       }
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch events.' });
     }
   }, [token, toast]);
 
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = useCallback(async (session?: string) => {
      if (!token) return;
     try {
-      const response = await fetch('/api/disciplinarian/users', {
+      let url = '/api/disciplinarian/users';
+      if (session) {
+        url += `?session=${encodeURIComponent(session)}`;
+      }
+      const response = await fetch(url, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -93,8 +102,19 @@ export default function AttendancePage() {
 
   useEffect(() => {
     fetchEvents();
-    fetchUsers();
-  }, [fetchEvents, fetchUsers]);
+  }, [fetchEvents]);
+
+  useEffect(() => {
+    if (selectedEvent) {
+      if (selectedEvent.type === 'SERVICE') {
+        if (selectedSession) {
+          fetchUsers(selectedSession);
+        }
+      } else {
+        fetchUsers();
+      }
+    }
+  }, [selectedEvent, selectedSession, fetchUsers]);
 
   const handleStatusChange = (userId: string, status: AttendanceStatus) => {
     setAttendance(prev => ({ ...prev, [userId]: status }));
@@ -120,7 +140,8 @@ export default function AttendancePage() {
           eventId: selectedEvent.id,
           eventType: selectedEvent.type,
           attendanceData,
-          markedById: user.id
+          markedById: user.id,
+          session: selectedEvent.type === 'SERVICE' ? selectedSession : undefined,
         })
       });
 
@@ -162,7 +183,15 @@ export default function AttendancePage() {
             <div className="w-full md:w-72">
                <Select 
                 value={selectedEvent?.id} 
-                onValueChange={(eventId) => setSelectedEvent(events.find(e => e.id === eventId) || null)}
+                onValueChange={(eventId) => {
+                  const event = events.find(e => e.id === eventId) || null;
+                  setSelectedEvent(event);
+                  if (event?.type === 'SERVICE') {
+                    setSelectedSession('Amateraniro ya 1');
+                  } else {
+                    setSelectedSession(undefined);
+                  }
+                }}
                >
                 <SelectTrigger>
                   <SelectValue placeholder="Select an event" />
@@ -175,6 +204,20 @@ export default function AttendancePage() {
                   ))}
                 </SelectContent>
               </Select>
+              {selectedEvent?.type === 'SERVICE' && (
+                <div className="mt-4">
+                  <Select value={selectedSession} onValueChange={setSelectedSession}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a session" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Amateraniro ya 1">Amateraniro ya 1</SelectItem>
+                      <SelectItem value="Amateraniro ya 2">Amateraniro ya 2</SelectItem>
+                      <SelectItem value="Amateraniro ya 3">Amateraniro ya 3</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           </div>
         </CardHeader>

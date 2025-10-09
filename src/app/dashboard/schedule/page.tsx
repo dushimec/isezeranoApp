@@ -89,7 +89,7 @@ const EventForm = ({ type, event }: EventFormProps) => {
 
     return (
         <FormProvider {...methods}>
-            <form id={`event-form-${type}`} onSubmit={(e) => e.preventDefault()} className="space-y-4">
+            <form id={`event-form-${type}`} onSubmit={methods.handleSubmit(() => {})} className="space-y-4">
                 <input type="hidden" {...methods.register('date')} value={date?.toISOString()} />
                 <div>
                     <Label htmlFor="title">{t("eventForm.title")}</Label>
@@ -180,8 +180,8 @@ export default function SchedulePage() {
     setIsLoading(true);
     try {
       const [rehearsalsRes, servicesRes] = await Promise.all([
-        fetch('/api/rehearsals', { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch('/api/services', { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch('/api/secretary/rehearsals', { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch('/api/secretary/services', { headers: { 'Authorization': `Bearer ${token}` } }),
       ]);
       const rehearsals = await rehearsalsRes.json();
       const services = await servicesRes.json();
@@ -198,6 +198,7 @@ export default function SchedulePage() {
       setIsLoading(false);
     }
   }, [token, toast]);
+
 
   useEffect(() => {
     fetchEvents();
@@ -283,8 +284,8 @@ export default function SchedulePage() {
                 </DialogHeader>
                 <Tabs defaultValue="rehearsal" className="w-full" onValueChange={(value) => setActiveTab(value as 'rehearsal' | 'service')}>
                     <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="rehearsal">{t("eventForm.location")}</TabsTrigger>
-                        <TabsTrigger value="service">{t("eventForm.churchLocation")}</TabsTrigger>
+                        <TabsTrigger value="rehearsal">{t("eventForm.rehearsal")}</TabsTrigger>
+                        <TabsTrigger value="service">{t("eventForm.service")}</TabsTrigger>
                     </TabsList>
                     <TabsContent value="rehearsal">
                         <ScrollArea className="h-[60vh] pr-4">
@@ -299,16 +300,17 @@ export default function SchedulePage() {
                 </Tabs>
                 <DialogFooter>
                     <Button type="button" variant="ghost" onClick={() => setIsCreateOpen(false)}>{t("schedulePage.cancel")}</Button>
-                    <Button type="submit" form={`event-form-${activeTab}`} onClick={(e) => {
-                        e.preventDefault();
-                        const form = document.getElementById(`event-form-${activeTab}`) as HTMLFormElement;
-                        const methods = useForm().control._formValues;
-                        const date = (form.querySelector('input[name="date"]') as HTMLInputElement)?.value;
-                        const formData = new FormData(form);
-                        const data = Object.fromEntries(formData.entries());
-                        data.date = date;
-                        handleEventSubmit(data);
-                    }}>{t("schedulePage.saveEvent")}</Button>
+                    <Button 
+                        type="button"
+                        onClick={async () => {
+                            const form = document.getElementById(`event-form-${activeTab}`) as HTMLFormElement;
+                            const formMethods = useForm().control._formValues;
+                            const isValid = await (formMethods.trigger && formMethods.trigger());
+                            if (isValid) {
+                                handleEventSubmit(formMethods.getValues());
+                            }
+                        }}
+                    >{t("schedulePage.saveEvent")}</Button>
                 </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -430,15 +432,17 @@ export default function SchedulePage() {
                 </ScrollArea>
                 <DialogFooter>
                     <Button type="button" variant="ghost" onClick={() => { setIsEditOpen(false); setSelectedEvent(null); }}>{t("schedulePage.cancel")}</Button>
-                     <Button type="submit" form={`event-form-${selectedEvent?.type}`} onClick={(e) => {
-                        e.preventDefault();
-                        const form = document.getElementById(`event-form-${selectedEvent?.type}`) as HTMLFormElement;
-                        const date = (form.querySelector('input[name="date"]') as HTMLInputElement)?.value;
-                        const formData = new FormData(form);
-                        const data = Object.fromEntries(formData.entries());
-                        data.date = date;
-                        handleEventSubmit(data);
-                    }}>{t("schedulePage.saveChanges")}</Button>
+                     <Button 
+                        type="button" 
+                        onClick={async () => {
+                            const form = document.getElementById(`event-form-${selectedEvent?.type}`) as HTMLFormElement;
+                            const formMethods = useForm().control._formValues;
+                            const isValid = await (formMethods.trigger && formMethods.trigger());
+                            if (isValid) {
+                                handleEventSubmit(formMethods.getValues());
+                            }
+                        }}
+                     >{t("schedulePage.saveChanges")}</Button>
                 </DialogFooter>
             </DialogContent>
        </Dialog>
