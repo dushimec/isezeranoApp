@@ -6,6 +6,7 @@ export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE';
 export type EventType = 'REHEARSAL' | 'SERVICE';
 export type ClaimStatus = 'PENDING' | 'IN_REVIEW' | 'RESOLVED' | 'REJECTED';
 export type ClaimSeverity = 'LOW' | 'MEDIUM' | 'HIGH';
+export type ServiceType = 'Amateraniro ya 1' | 'Amateraniro ya 2' | 'Amateraniro ya 3';
 
 export type User = {
   _id: ObjectId;
@@ -69,6 +70,7 @@ export type Service = {
     title: string;
     date: Date;
     time: string;
+    serviceType: ServiceType;
     churchLocation: string;
     attire?: string;
     notes?: string;

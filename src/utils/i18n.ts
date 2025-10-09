@@ -11,9 +11,20 @@ export function setLocale(locale: Locale) {
 
 // Helper to get nested value by dot notation
 function getNested(obj: any, path: string) {
-  return path.split('.').reduce((o, k) => (o ? o[k] : undefined), obj);
+  return path.split(".").reduce((o, k) => (o ? o[k] : undefined), obj);
 }
 
-export function t(key: string) {
-  return getNested(translations[currentLocale], key) || key;
+// Updated translation function with variable support
+export function t(key: string, vars: Record<string, any> = {}) {
+  let text = getNested(translations[currentLocale], key) || key;
+
+  // Replace {variable} placeholders with actual values
+  if (typeof text === "string") {
+    Object.entries(vars).forEach(([k, v]) => {
+      const regex = new RegExp(`\\{${k}\\}`, "g");
+      text = text.replace(regex, String(v));
+    });
+  }
+
+  return text;
 }

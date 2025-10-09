@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/db';
 import { EventType } from '@/lib/types';
 import { ObjectId } from 'mongodb';
+import { checkAbsencePunishment, checkLateness } from '@/lib/punishments';
 
 export async function GET(req: NextRequest) {
   try {
@@ -41,6 +42,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const { eventId, eventType, attendanceData, markedById } = await req.json();
+        const lang = req.headers.get('accept-language')?.split(',')?.[0];
 
         if (!eventId || !eventType || !Array.isArray(attendanceData) || !markedById) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -48,6 +50,13 @@ export async function POST(req: NextRequest) {
         
         const client = await clientPromise;
         const db = client.db();
+
+        const collectionName = eventType.toLowerCase() + 's';
+        const event = await db.collection(collectionName).findOne({ _id: new ObjectId(eventId) });
+
+        if (!event) {
+            return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+        }
 
         const operations = attendanceData.map(({ userId, status }) => ({
             updateOne: {
@@ -62,7 +71,8 @@ export async function POST(req: NextRequest) {
                         eventType,
                         status,
                         markedById: new ObjectId(markedById),
-                        createdAt: new Date(), // or updatedAt
+                        eventDate: event.date, 
+                        createdAt: new Date(),
                     }
                 },
                 upsert: true
@@ -71,6 +81,17 @@ export async function POST(req: NextRequest) {
 
         if (operations.length > 0) {
             await db.collection('attendance').bulkWrite(operations);
+        }
+
+        // Check for punishments and warnings
+        for (const { userId, status } of attendanceData) {
+            const userObjectId = new ObjectId(userId);
+            if (status === 'ABSENT') {
+                await checkAbsencePunishment(userObjectId, lang);
+            }
+            if (status === 'LATE') {
+                await checkLateness(userObjectId, lang);
+            }
         }
 
         return NextResponse.json({ message: 'Attendance recorded successfully' }, { status: 201 });

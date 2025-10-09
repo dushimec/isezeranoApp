@@ -39,7 +39,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       return NextResponse.json({ error: 'Invalid service ID' }, { status: 400 });
     }
 
-    const { title, date, time, churchLocation, attire, notes } = await req.json();
+    const { title, date, time, churchLocation, attire, notes, serviceType } = await req.json();
     
     const client = await clientPromise;
     const db = client.db();
@@ -51,6 +51,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (churchLocation) updateData.churchLocation = churchLocation;
     if (attire) updateData.attire = attire;
     if (notes) updateData.notes = notes;
+    if (serviceType) updateData.serviceType = serviceType;
     updateData.updatedAt = new Date();
 
     const result = await db.collection('services').findOneAndUpdate(

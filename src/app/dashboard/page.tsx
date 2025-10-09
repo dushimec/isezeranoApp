@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { BarChart, Users, Megaphone, CalendarCheck, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { BarChart, Users, Megaphone, CalendarCheck, CheckCircle, XCircle, Clock, ShieldAlert } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -36,6 +36,13 @@ type DashboardData = {
     totalSingers?: number;
     sectionName?: string;
     memberCount?: number;
+    punishmentStatus?: {
+        consecutiveAbsences: number;
+        absenceThreshold: number;
+        latenessCount: number;
+        lateWarningThreshold: number;
+        latePunishmentThreshold: number;
+    };
 }
 
 
@@ -229,7 +236,7 @@ const SingerDashboard = ({ data }: { data: DashboardData }) => {
     const attendancePercentage = total > 0 ? ((present + late) / total) * 100 : 0;
     
     return (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <Card>
                 <CardHeader>
                     <CardTitle>{t('dashboardPage.singer.nextEvent')}</CardTitle>
@@ -262,6 +269,18 @@ const SingerDashboard = ({ data }: { data: DashboardData }) => {
                 <CardContent>
                     <div className="text-2xl font-bold">{attendancePercentage.toFixed(0)}%</div>
                     <p className="text-xs text-muted-foreground">{t('dashboardPage.singer.attendanceStats', { present, late, absent })}</p>
+                </CardContent>
+            </Card>
+             <Card className="border-yellow-500/50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">{t('dashboardPage.singer.punishmentStatus')}</CardTitle>
+                     <ShieldAlert className="h-4 w-4 text-yellow-500" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-lg font-bold">{t('dashboardPage.singer.absences', { count: data.punishmentStatus?.consecutiveAbsences || 0, total: data.punishmentStatus?.absenceThreshold || 0})}</div>
+                    <p className="text-xs text-muted-foreground">
+                        {t('dashboardPage.singer.lateness', { count: data.punishmentStatus?.latenessCount || 0, warning: data.punishmentStatus?.lateWarningThreshold || 0, punishment: data.punishmentStatus?.latePunishmentThreshold || 0})}
+                    </p>
                 </CardContent>
             </Card>
         </div>

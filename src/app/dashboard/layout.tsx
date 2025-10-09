@@ -26,7 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import Image from "next/image";
 import { IsezeranoLogo } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
@@ -40,15 +40,21 @@ export default function DashboardLayout({
   const { user, logout, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [isMounted, setIsMounted] = React.useState(false);
 
   React.useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login");
-    }
-    if (!loading && user?.forcePasswordChange && pathname !== '/dashboard/change-password') {
+    setIsMounted(true);
+  }, []);
+
+  React.useEffect(() => {
+    if (isMounted && !loading) {
+      if (!user) {
+        router.push("/login");
+      } else if (user.forcePasswordChange && pathname !== '/dashboard/change-password') {
         router.push('/dashboard/change-password');
+      }
     }
-  }, [loading, user, router, pathname]);
+  }, [loading, user, router, pathname, isMounted]);
 
   const handleLogout = async () => {
     logout();
@@ -69,8 +75,7 @@ export default function DashboardLayout({
 
   const navItems = allNavItems.filter(item => user?.role && item.roles.includes(user.role));
 
-
-  if (loading || !user) {
+  if (!isMounted || loading || !user) {
     return (
         <div className="flex items-center justify-center min-h-screen">
             <div className="loader">Loading...</div>
@@ -95,7 +100,6 @@ export default function DashboardLayout({
     }
     return "text-muted-foreground";
   };
-
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
@@ -140,6 +144,12 @@ export default function DashboardLayout({
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col">
+              <SheetHeader className="sr-only">
+                <SheetTitle>Navigation Menu</SheetTitle>
+                <SheetDescription>
+                  A list of links to navigate the dashboard.
+                </SheetDescription>
+              </SheetHeader>
               <nav className="grid gap-2 text-lg font-medium">
                 <Link
                   href="/dashboard"

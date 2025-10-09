@@ -149,7 +149,10 @@ export default {
       noNewAnnouncements: "Nta tangazo rishya",
       yourAttendance: "Kwitabira Kwawe",
       yourAttendanceDesc: "Imibare rusange yo kwitabira.",
-      attendanceStats: "{present} Bitabiriye, {late} Batinze, {absent} Batabaye"
+      attendanceStats: "{present} Bitabiriye, {late} Batinze, {absent} Batabaye",
+      punishmentStatus: "Imiterere y'Ibihano",
+      absences: "Gusiba bikurikirana: {count}/{total}",
+      lateness: "Gucyererwa: {count} (Umuburo: {warning}, Igihano: {punishment})"
     },
     default: "Murakaza neza kuri dashibodi yawe."
   },
@@ -227,7 +230,9 @@ export default {
     location: "Aho bizabera",
     churchLocation: "Aho bizabera (Kiliziya)",
     attire: "Imyambaro",
-    notes: "Ibisobanuro"
+    notes: "Ibisobanuro",
+    serviceType: "Ubwoko bw'Amateraniro",
+    selectServiceType: "Hitamo ubwoko bw'amateraniro"
   },
   reportsPage: {
     title: "Raporo",
@@ -406,5 +411,12 @@ export default {
     newPasswordLength: "Ijambo ry'ibanga rishya rigomba kuba nibura inyuguti 8.",
     confirmNewPasswordRequired: "Nyamuneka emeza ijambo ry'ibanga ryawe rishya.",
     passwordsDoNotMatch: "Amagambo y'ibanga ntabwo ahura."
+  },
+  punishments: {
+    punishment_alert_title: "Gutanga Igihano",
+    lateness_warning_title: "Umuburo wo Gucyererwa",
+    absence_punishment_message: "Umuririmbyi ufite ID {singerId} amaze kubura inshuro {count} zikurikirana.",
+    lateness_warning_message: "Umaze gucyererwa inshuro {count}. Witonde, uraza guhanwa vuba.",
+    lateness_punishment_message: "Umuririmbyi ufite ID {singerId} amaze gucyererwa inshuro {count}."
   }
 }

@@ -3,6 +3,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/db';
 import { getUserIdFromToken } from '@/lib/auth';
 import { ObjectId } from 'mongodb';
+import { EventType } from '@/lib/types';
+
+const ABSENCE_PUNISHMENT_THRESHOLD = 4;
+const LATE_WARNING_THRESHOLD = 3;
+const LATE_PUNISHMENT_THRESHOLD = 4;
 
 export async function GET(req: NextRequest) {
   try {
@@ -47,12 +52,39 @@ export async function GET(req: NextRequest) {
     ]).toArray();
 
     const attendanceSummary = attendanceSummaryCursor.map(s => ({ status: s._id, _count: { status: s.count } }));
+    
+    const userAbsences = await db.collection('attendance').find({
+        userId: new ObjectId(userId),
+        eventType: 'SERVICE' as EventType,
+    }).sort({ createdAt: -1 }).toArray();
+
+    let consecutiveAbsences = 0;
+    for (const record of userAbsences) {
+        if (record.status === 'ABSENT') {
+            consecutiveAbsences++;
+        } else {
+            break;
+        }
+    }
+
+    const latenessCount = await db.collection('attendance').countDocuments({
+        userId: new ObjectId(userId),
+        status: 'LATE'
+    });
+
 
     return NextResponse.json({
       upcomingEvents: upcomingEvents.map(e => ({...e, id: e._id.toHexString()})),
       recentAnnouncements: announcements.map(a => ({...a, id: a._id.toHexString()})),
       notifications: notifications.map(n => ({...n, id: n._id.toHexString()})),
       attendanceSummary,
+      punishmentStatus: {
+          consecutiveAbsences,
+          absenceThreshold: ABSENCE_PUNISHMENT_THRESHOLD,
+          latenessCount,
+          lateWarningThreshold: LATE_WARNING_THRESHOLD,
+          latePunishmentThreshold: LATE_PUNISHMENT_THRESHOLD,
+      }
     });
   } catch (error: any) {
     console.error(error);

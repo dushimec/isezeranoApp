@@ -15,7 +15,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Rehearsal, Service } from '@/lib/types';
+import { Rehearsal, Service, ServiceType } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -56,6 +56,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useForm, FormProvider } from 'react-hook-form';
 import { t } from "@/utils/i18n";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 type TEvent = (Rehearsal | Service) & { type: 'rehearsal' | 'service' };
@@ -75,6 +76,7 @@ const EventForm = ({ type, event }: EventFormProps) => {
             churchLocation: type === 'service' ? (event as Service)?.churchLocation : '',
             attire: (event as Service)?.attire || '',
             notes: event?.notes || '',
+            serviceType: type === 'service' ? (event as Service)?.serviceType : undefined,
         }
     });
     const [date, setDate] = useState<Date | undefined>(event ? new Date(event.date) : new Date());
@@ -129,10 +131,25 @@ const EventForm = ({ type, event }: EventFormProps) => {
                     <Input id="location" {...methods.register(type === 'rehearsal' ? 'location' : 'churchLocation')} required />
                 </div>
                 {type === 'service' && (
-                    <div>
-                    <Label htmlFor="attire">{t("eventForm.attire")}</Label>
-                    <Input id="attire" {...methods.register('attire')} />
-                    </div>
+                    <>
+                        <div>
+                            <Label htmlFor="serviceType">{t("eventForm.serviceType")}</Label>
+                            <Select onValueChange={(value) => methods.setValue('serviceType', value as ServiceType)} defaultValue={methods.getValues('serviceType')}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder={t("eventForm.selectServiceType")} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Amateraniro ya 1">Amateraniro ya 1</SelectItem>
+                                    <SelectItem value="Amateraniro ya 2">Amateraniro ya 2</SelectItem>
+                                    <SelectItem value="Amateraniro ya 3">Amateraniro ya 3</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div>
+                            <Label htmlFor="attire">{t("eventForm.attire")}</Label>
+                            <Input id="attire" {...methods.register('attire')} />
+                        </div>
+                    </>
                 )}
                 <div>
                     <Label htmlFor="notes">{t("eventForm.notes")}</Label>
@@ -331,6 +348,7 @@ export default function SchedulePage() {
                       <p className="flex items-center gap-2"><Watch className="h-4 w-4"/> {event.time}</p>
                       <p className="flex items-center gap-2"><MapPin className="h-4 w-4"/> {event.type === 'rehearsal' ? (event as Rehearsal).location : (event as Service).churchLocation}</p>
                       {event.type === 'service' && (event as Service).attire && <p className="flex items-center gap-2"><Shirt className="h-4 w-4"/> {(event as Service).attire}</p>}
+                      {event.type === 'service' && (event as Service).serviceType && <p>{(event as Service).serviceType}</p>}
                     </div>
                   </div>
                   {user?.role === 'SECRETARY' && (

@@ -1,4 +1,3 @@
-
 export default {
   dashboard: "Dashboard",
   announcements: "Announcements",
@@ -407,5 +406,12 @@ export default {
     newPasswordLength: "New password must be at least 8 characters.",
     confirmNewPasswordRequired: "Please confirm your new password.",
     passwordsDoNotMatch: "Passwords do not match."
+  },
+  punishments: {
+    punishment_alert_title: "Punishment Alert",
+    lateness_warning_title: "Lateness Warning",
+    absence_punishment_message: "The singer with ID {singerId} has been absent for {count} consecutive events.",
+    lateness_warning_message: "You have been late {count} times. Please be aware that further lateness may result in punishment.",
+    lateness_punishment_message: "The singer with ID {singerId} has been late {count} times."
   }
 }

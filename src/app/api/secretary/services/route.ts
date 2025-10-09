@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const { title, date, time, churchLocation, attire, notes } = await req.json();
+    const { title, date, time, churchLocation, attire, notes, serviceType } = await req.json();
 
     if (!title || !date || !time || !churchLocation) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
         churchLocation,
         attire,
         notes,
+        serviceType,
         createdById: new ObjectId(userId),
         createdAt: new Date(),
         updatedAt: new Date(),
