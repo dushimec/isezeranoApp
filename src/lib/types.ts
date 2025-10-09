@@ -1,7 +1,7 @@
 
 import type { ObjectId, WithId } from 'mongodb';
 
-export type Role = 'ADMIN' | 'SECRETARY' | 'DISCIPLINARIAN' | 'SINGER';
+export type Role = 'ADMIN' | 'SECRETARY' | 'DISCIPLINARIAN' | 'SINGER'
 export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE';
 export type EventType = 'REHEARSAL' | 'SERVICE';
 export type ClaimStatus = 'PENDING' | 'IN_REVIEW' | 'RESOLVED' | 'REJECTED';

@@ -8,7 +8,7 @@ import cloudinary from '@/lib/cloudinary';
 // Create a new singer (Secretary only)
 export async function POST(req: NextRequest) {
   try {
-    const { firstName, lastName, email, password, username, profileImage } = await req.json();
+    const { firstName, lastName, email, role, password, username, profileImage } = await req.json();
 
     if (!firstName || !lastName || !password || !username) {
       return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
         email,
         username,
         password: hashedPassword,
-        role: 'singer' as Role, // Enforce singer role
+        role: role as Role,
         isActive: true,
         forcePasswordChange: true,
         profileImage: finalProfileImage,
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
         lastName,
         email,
         username,
-        role: 'singer',
+        role: role,
         profileImage: finalProfileImage,
         createdAt: new Date(),
         isActive: true,

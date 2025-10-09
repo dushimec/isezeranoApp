@@ -34,6 +34,8 @@ type DashboardData = {
     attendanceSummary?: {status: string, _count: { status: number }}[];
     notifications?: any[];
     totalSingers?: number;
+    sectionName?: string;
+    memberCount?: number;
 }
 
 
@@ -184,6 +186,39 @@ const DisciplinarianDashboard = ({ data }: { data: DashboardData }) => {
     )
 }
 
+const SectionLeaderDashboard = ({ data }: { data: DashboardData }) => (
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+            <CardHeader>
+                <CardTitle>{t('dashboardPage.sectionLeader.section')}: {data.sectionName}</CardTitle>
+                <CardDescription>{t('dashboardPage.sectionLeader.sectionDesc')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{data.memberCount || 0}</div>
+                <p className="text-xs text-muted-foreground">{t('dashboardPage.sectionLeader.membersDesc')}</p>
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle>{t('dashboardPage.sectionLeader.upcomingEvents')}</CardTitle>
+                <CardDescription>{t('dashboardPage.sectionLeader.upcomingEventsDesc')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{data.upcomingEvents?.length || 0}</div>
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle>{t('dashboardPage.sectionLeader.recentAnnouncements')}</CardTitle>
+                <CardDescription>{t('dashboardPage.sectionLeader.recentAnnouncementsDesc')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{data.recentAnnouncements?.length || 0}</div>
+            </CardContent>
+        </Card>
+    </div>
+);
+
 const SingerDashboard = ({ data }: { data: DashboardData }) => {
     const nextEvent = data.upcomingEvents?.[0];
     const latestAnnouncement = data.recentAnnouncements?.[0];
@@ -237,6 +272,7 @@ const API_PATHS: Record<Role, string> = {
     'ADMIN': '/api/admin/dashboard',
     'SECRETARY': '/api/secretary/dashboard',
     'DISCIPLINARIAN': '/api/disciplinarian/dashboard',
+    'SECTION_LEADER': '/api/section-leader/dashboard',
     'SINGER': '/api/singer/dashboard',
 }
 
@@ -290,6 +326,8 @@ export default function DashboardPage() {
         return <SecretaryDashboard data={data} />;
       case 'DISCIPLINARIAN':
         return <DisciplinarianDashboard data={data} />;
+      case 'SECTION_LEADER':
+        return <SectionLeaderDashboard data={data} />;
       case 'SINGER':
         return <SingerDashboard data={data} />;
       default:

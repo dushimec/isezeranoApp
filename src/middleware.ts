@@ -1,86 +1,63 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/auth';
-import { Role } from '@/lib/types';
+import { USER_ROLES } from '@/lib/user-roles';
 
-// Defines which roles can access which API prefixes.
-// More specific roles are listed first.
-const ROLE_ACCESS_HIERARCHY: { role: Role; prefix: string }[] = [
-  { role: 'SINGER', prefix: '/api/singer' },
-  { role: 'DISCIPLINARIAN', prefix: '/api/disciplinarian' },
-  { role: 'SECRETARY', prefix: '/api/secretary' },
-  { role: 'ADMIN', prefix: '/api/admin' },
-];
+const PROTECTED_ROUTES = {
+  [USER_ROLES.ADMIN]: ['/admin'],
+  [USER_ROLES.SECRETARY]: ['/secretary'],
+  [USER_ROLES.DISCIPLINARIAN]: ['/disciplinarian'],
+  [USER_ROLES.SECTION_LEADER]: ['/section-leader'],
+  [USER_ROLES.SINGER]: ['/singer'],
+};
 
-const ALL_PROTECTED_PREFIXES = [
-    ...new Set(ROLE_ACCESS_HIERARCHY.map(item => item.prefix)),
-    '/api/profile',
-    '/api/rehearsals',
-    '/api/services',
-    '/api/announcements',
-    '/api/notifications',
-];
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const userCookie = request.cookies.get('user');
+  let user = null;
+  if(userCookie){
+    try {
+      user = JSON.parse(userCookie.value);
+    } catch (error) {
+      console.error("Failed to parse user cookie:", error);
+    }
+  }
 
-export async function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+
+  // If the user is not logged in and is trying to access a protected route
+  if (!user && Object.values(PROTECTED_ROUTES).flat().some(route => pathname.startsWith(route))) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  // If the user is logged in
+  if (user) {
+    const userRole = user.role.toUpperCase();
+    const allowedRoutes = PROTECTED_ROUTES[userRole] || [];
+
+    const isAuthorized = allowedRoutes.some(route => pathname.startsWith(route));
+
+    if (!isAuthorized) {
+      // Check if the user is trying to access a route for another role
+      const isAccessingOtherRoleRoute = Object.entries(PROTECTED_ROUTES)
+        .filter(([role]) => role !== userRole)
+        .some(([, routes]) => routes.some(route => pathname.startsWith(route)));
+
+      if (isAccessingOtherRoleRoute) {
+        return NextResponse.redirect(new URL('/unauthorized', request.url));
+      }
+    }
+  }
   
-  // Check if the request path matches any of our protected API routes
-  const isProtected = ALL_PROTECTED_PREFIXES.some(prefix => pathname.startsWith(prefix));
-
-  if (!isProtected) {
-    return NextResponse.next();
-  }
-
-  // Check for authorization token
-  const token = req.headers.get('authorization')?.split(' ')[1];
-  if (!token) {
-    return NextResponse.json({ error: 'Unauthorized: No token provided' }, { status: 401 });
-  }
-
-  try {
-    const payload = await verifyToken(token);
-    
-    if (!payload || typeof payload.role !== 'string') {
-      return NextResponse.json({ error: 'Unauthorized: Invalid token payload' }, { status: 401 });
-    }
-    
-    const userRole = payload.role as Role;
-
-    // Admins can access everything
-    if (userRole === 'ADMIN') {
-         return NextResponse.next();
-    }
-
-    // Any authenticated user can access these common endpoints
-    const commonEndpoints = [
-        '/api/profile', 
-        '/api/rehearsals', 
-        '/api/services', 
-        '/api/announcements',
-        '/api/notifications'
-    ];
-    if (commonEndpoints.some(p => pathname.startsWith(p))) {
-        return NextResponse.next();
-    }
-    
-    // Check if the user's role has permission for the requested path
-    const hasPermission = ROLE_ACCESS_HIERARCHY
-        .filter(item => item.role === userRole)
-        .some(item => pathname.startsWith(item.prefix));
-
-    if (hasPermission) {
-      return NextResponse.next();
-    }
-    
-    // If no permission is found, deny access
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-
-  } catch (error) {
-    console.error("Token verification error:", error);
-    return NextResponse.json({ error: 'Unauthorized: Invalid or expired token' }, { status: 401 });
-  }
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/api/:path*'],
+  matcher: [
+    '/admin/:path*',
+    '/secretary/:path*',
+    '/disciplinarian/:path*',
+    '/section-leader/:path*',
+    '/singer/:path*',
+    '/dashboard/:path*',
+  ],
 };
+
