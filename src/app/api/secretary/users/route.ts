@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
         lastName,
         email,
         username,
-        role: 'Singer',
+        role: role,
         profileImage: finalProfileImage,
         createdAt: new Date(),
         isActive: true,
