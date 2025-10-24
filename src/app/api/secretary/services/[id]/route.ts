@@ -5,6 +5,11 @@ import { ObjectId } from 'mongodb';
 import { getUserIdFromToken } from '@/lib/auth';
 import { UserDocument } from '@/lib/types';
 
+const formatService = (service: any) => {
+    const { _id, ...rest } = service;
+    return { id: _id.toHexString(), ...rest };
+}
+
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
@@ -21,7 +26,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Service not found' }, { status: 404 });
     }
 
-    return NextResponse.json(service);
+    return NextResponse.json(formatService(service));
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -81,7 +86,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       await db.collection('notifications').insertMany(notifications);
     }
 
-    return NextResponse.json(result);
+    return NextResponse.json(formatService(result));
   } catch (error: any) {
     console.error(error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

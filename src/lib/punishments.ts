@@ -1,6 +1,5 @@
 
 import clientPromise from '@/lib/db';
-import { ObjectId } from 'mongodb';
 import { EventType, UserDocument } from '@/lib/types';
 import { t } from '@/utils/i18n';
 
@@ -8,7 +7,7 @@ const PUNISHMENT_THRESHOLD = 4;
 const LATE_WARNING_THRESHOLD = 3;
 const LATE_PUNISHMENT_THRESHOLD = 4;
 
-async function createNotification(userId: ObjectId, title: string, message: string) {
+async function createNotification(userId: string, title: string, message: string) {
     const client = await clientPromise;
     const db = client.db();
     await db.collection('notifications').insertOne({
@@ -28,7 +27,7 @@ async function getDisplinarian(){
 }
 
 
-export async function checkAbsencePunishment(userId: ObjectId, lang: string | undefined, eventType: EventType, session?: string) {
+export async function checkAbsencePunishment(userId: string, lang: string | undefined, eventType: EventType, session?: string) {
     const client = await clientPromise;
     const db = client.db();
 
@@ -45,13 +44,13 @@ export async function checkAbsencePunishment(userId: ObjectId, lang: string | un
             await createNotification(
                 disciplinarian._id,
                 t("punishments.punishment_alert_title", undefined, { lang }),
-                t("punishments.absence_punishment_message", { singerId: userId.toHexString(), count: PUNISHMENT_THRESHOLD, eventType, session }, { lang })
+                t("punishments.absence_punishment_message", { singerId: userId, count: PUNISHMENT_THRESHOLD, eventType, session }, { lang })
             );
         }
     }
 }
 
-export async function checkLateness(userId: ObjectId, lang: string | undefined, eventType: EventType, session?: string) {
+export async function checkLateness(userId: string, lang: string | undefined, eventType: EventType, session?: string) {
     const client = await clientPromise;
     const db = client.db();
 
@@ -68,7 +67,7 @@ export async function checkLateness(userId: ObjectId, lang: string | undefined, 
             await createNotification(
                 disciplinarian._id,
                 t("punishments.punishment_alert_title", undefined, { lang }),
-                t("punishments.lateness_punishment_message", { singerId: userId.toHexString(), count: latenessCount, eventType, session }, { lang })
+                t("punishments.lateness_punishment_message", { singerId: userId, count: latenessCount, eventType, session }, { lang })
             );
         }
     } else if (latenessCount >= LATE_WARNING_THRESHOLD) {

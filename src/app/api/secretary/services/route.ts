@@ -5,6 +5,22 @@ import { getUserIdFromToken } from '@/lib/auth';
 import { ObjectId } from 'mongodb';
 import { UserDocument } from '@/lib/types';
 
+export async function GET(req: NextRequest) {
+    try {
+        const client = await clientPromise;
+        const db = client.db();
+        const services = await db.collection('services').find({}).toArray();
+        const servicesWithId = services.map(service => {
+            const { _id, ...rest } = service;
+            return { id: _id.toHexString(), ...rest };
+        });
+        return NextResponse.json(servicesWithId, { status: 200 });
+    } catch (error) {
+        console.error(error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const userId = await getUserIdFromToken(req);
@@ -21,6 +37,9 @@ export async function POST(req: NextRequest) {
     const client = await clientPromise;
     const db = client.db();
 
+    const singers = await db.collection<UserDocument>('users').find({ role: 'SINGER', isActive: true }).project({ _id: 1 }).toArray();
+    const attendeeIds = singers.map(s => s._id);
+
     const newService = {
         title,
         date: new Date(date),
@@ -28,6 +47,7 @@ export async function POST(req: NextRequest) {
         churchLocation,
         attire,
         notes,
+        attendees: attendeeIds,
         serviceType,
         session,
         createdById: new ObjectId(userId),
@@ -39,7 +59,6 @@ export async function POST(req: NextRequest) {
     const serviceId = result.insertedId;
 
     // Create notifications for all singers
-    const singers = await db.collection<UserDocument>('users').find({ role: 'SINGER' }).project({ _id: 1 }).toArray();
     const creator = await db.collection<UserDocument>('users').findOne({_id: new ObjectId(userId)});
     
     if (singers.length > 0 && creator) {

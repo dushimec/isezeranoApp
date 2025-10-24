@@ -22,10 +22,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { t } from "@/utils/i18n";
 
 const profileSchema = z.object({
-  firstName: z.string().min(2, "First name is required"),
-  lastName: z.string().min(2, "Last name is required"),
-  username: z.string().optional(),
-  email: z.string().email().optional(),
+  fullName: z.string().min(2, "Full name is required"),
+  registrationNumber: z.string().min(2, "Registration number is required"),
 });
 
 const passwordSchema = z.object({
@@ -42,19 +40,12 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isPasswordSubmitting, setIsPasswordSubmitting] = React.useState(false);
-  const [isUploadingImage, setIsUploadingImage] = React.useState(false);
-
-  const [imagePreview, setImagePreview] = React.useState<string | null>(user?.profileImage || null);
-  const [selectedImageDataUri, setSelectedImageDataUri] = React.useState<string | null>(null);
-
 
   const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     values: {
-      firstName: user?.firstName || '',
-      lastName: user?.lastName || '',
-      username: user?.username || '',
-      email: user?.email || '',
+      fullName: user?.fullName || '',
+      registrationNumber: user?.registrationNumber || '',
     },
   });
   
@@ -67,50 +58,12 @@ export default function ProfilePage() {
     },
   });
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const dataUri = reader.result as string;
-        setImagePreview(dataUri);
-        setSelectedImageDataUri(dataUri);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleImageUpload = async () => {
-    if (!selectedImageDataUri) return;
-    setIsUploadingImage(true);
-    try {
-      await updateUser({ profileImage: selectedImageDataUri });
-      toast({
-        title: 'Profile Picture Updated',
-        description: 'Your new picture has been saved.',
-      });
-      setSelectedImageDataUri(null); // Reset after upload
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Upload Failed',
-        description: error.message,
-      });
-    } finally {
-      setIsUploadingImage(false);
-    }
-  };
-
-
   const onProfileSubmit = async (values: z.infer<typeof profileSchema>) => {
     setIsSubmitting(true);
     try {
-      // Create a payload with only the fields that have changed
       const changedValues: Partial<z.infer<typeof profileSchema>> = {};
-      if(values.firstName !== user?.firstName) changedValues.firstName = values.firstName;
-      if(values.lastName !== user?.lastName) changedValues.lastName = values.lastName;
-      if(values.username !== user?.username) changedValues.username = values.username;
-      if(values.email !== user?.email) changedValues.email = values.email;
+      if(values.fullName !== user?.fullName) changedValues.fullName = values.fullName;
+      if(values.registrationNumber !== user?.registrationNumber) changedValues.registrationNumber = values.registrationNumber;
 
       if(Object.keys(changedValues).length === 0) {
         toast({ title: 'No Changes', description: 'You haven\'t made any changes to your profile.' });
@@ -193,42 +146,16 @@ export default function ProfilePage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
-          <div className="flex items-center gap-6">
-            <Image
-              src={imagePreview || user.profileImage || `https://picsum.photos/seed/${user.id}/100/100`}
-              width={100}
-              height={100}
-              alt="User avatar"
-              className="rounded-full object-cover"
-              data-ai-hint="person portrait"
-            />
-            <div className="grid gap-2 items-center">
-              <Label htmlFor="picture">{t("profilePage.profilePicture")}</Label>
-              <div className="flex gap-2">
-                <Input id="picture" type="file" className="w-full max-w-sm" onChange={handleImageChange} accept="image/*" />
-                {selectedImageDataUri && (
-                  <Button onClick={handleImageUpload} disabled={isUploadingImage}>
-                    {isUploadingImage ? t("profilePage.uploading") : t("profilePage.uploadPicture")}
-                  </Button>
-                )}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {t("profilePage.imageHint")}
-              </p>
-            </div>
-          </div>
-          
-          <Separator />
           
           <Form {...profileForm}>
             <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2">
                  <FormField
                   control={profileForm.control}
-                  name="firstName"
+                  name="fullName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("profilePage.firstName")}</FormLabel>
+                      <FormLabel>{t("profilePage.fullName")}</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -238,38 +165,12 @@ export default function ProfilePage() {
                 />
                  <FormField
                   control={profileForm.control}
-                  name="lastName"
+                  name="registrationNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("profilePage.lastName")}</FormLabel>
+                      <FormLabel>{t("profilePage.registrationNumber")}</FormLabel>
                       <FormControl>
                         <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={profileForm.control}
-                  name="username"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("profilePage.username")}</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={user.role !== 'ADMIN'} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={profileForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("profilePage.email")}</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={user.role !== 'ADMIN'} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

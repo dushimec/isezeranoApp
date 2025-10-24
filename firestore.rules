@@ -50,15 +50,15 @@ service cloud.firestore {
      * @description Secures announcements, allowing Secretaries and Admins to create and manage announcements. Singers can view announcements.
      * @path /announcements/{announcementId}
      * @allow get, list: if true;
-     * @allow create: if isSignedIn() && (isSecretary() || isAdmin()) && request.resource.data.userId == request.auth.uid;
+     * @allow create: if isSignedIn() && (isSecretary() || isAdmin());
      * @allow update, delete: if isSignedIn() && (isSecretary() || isAdmin()) && resource != null && isOwner(resource.data.userId);
-     * @deny create: if !isSignedIn() || (!isSecretary() && !isAdmin()) || request.resource.data.userId != request.auth.uid;
+     * @deny create: if !isSignedIn() || (!isSecretary() && !isAdmin());
      * @deny update, delete: if !isSignedIn() || (!isSecretary() && !isAdmin()) || resource == null || !isOwner(resource.data.userId);
      * @principle Enforces role-based access control for announcements. Allows public read, owner (secretary/admin) writes.
      */
     match /announcements/{announcementId} {
       allow get, list: if true;
-      allow create: if isSignedIn() && (isSecretary() || isAdmin()) && request.resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && (isSecretary() || isAdmin());
       allow update, delete: if isSignedIn() && (isSecretary() || isAdmin()) && resource != null && isOwner(resource.data.userId);
     }
 
@@ -66,15 +66,15 @@ service cloud.firestore {
      * @description Secures rehearsal schedules, allowing Secretaries and Admins to manage schedules. Singers can view schedules.
      * @path /rehearsalSchedules/{rehearsalScheduleId}
      * @allow get, list: if true;
-     * @allow create: if isSignedIn() && (isSecretary() || isAdmin()) && request.resource.data.userId == request.auth.uid;
+     * @allow create: if isSignedIn() && (isSecretary() || isAdmin());
      * @allow update, delete: if isSignedIn() && (isSecretary() || isAdmin()) && resource != null && isOwner(resource.data.userId);
-     * @deny create: if !isSignedIn() || (!isSecretary() && !isAdmin()) || request.resource.data.userId != request.auth.uid;
+     * @deny create: if !isSignedIn() || (!isSecretary() && !isAdmin());
      * @deny update, delete: if !isSignedIn() || (!isSecretary() && !isAdmin()) || resource == null || !isOwner(resource.data.userId);
      * @principle Enforces role-based access control for rehearsal schedules. Allows public read, owner (secretary/admin) writes.
      */
     match /rehearsalSchedules/{rehearsalScheduleId} {
       allow get, list: if true;
-      allow create: if isSignedIn() && (isSecretary() || isAdmin()) && request.resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && (isSecretary() || isAdmin());
       allow update, delete: if isSignedIn() && (isSecretary() || isAdmin()) && resource != null && isOwner(resource.data.userId);
     }
 
@@ -82,15 +82,15 @@ service cloud.firestore {
      * @description Secures service schedules, allowing Secretaries and Admins to manage schedules. Singers can view schedules.
      * @path /serviceSchedules/{serviceScheduleId}
      * @allow get, list: if true;
-     * @allow create: if isSignedIn() && (isSecretary() || isAdmin()) && request.resource.data.userId == request.auth.uid;
+     * @allow create: if isSignedIn() && (isSecretary() || isAdmin());
      * @allow update, delete: if isSignedIn() && (isSecretary() || isAdmin()) && resource != null && isOwner(resource.data.userId);
-     * @deny create: if !isSignedIn() || (!isSecretary() && !isAdmin()) || request.resource.data.userId != request.auth.uid;
+     * @deny create: if !isSignedIn() || (!isSecretary() && !isAdmin());
      * @deny update, delete: if !isSignedIn() || (!isSecretary() && !isAdmin()) || resource == null || !isOwner(resource.data.userId);
      * @principle Enforces role-based access control for service schedules. Allows public read, owner (secretary/admin) writes.
      */
     match /serviceSchedules/{serviceScheduleId} {
       allow get, list: if true;
-      allow create: if isSignedIn() && (isSecretary() || isAdmin()) && request.resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && (isSecretary() || isAdmin());
       allow update, delete: if isSignedIn() && (isSecretary() || isAdmin()) && resource != null && isOwner(resource.data.userId);
     }
 

@@ -64,9 +64,11 @@ type TEvent = (Rehearsal | Service) & { type: 'rehearsal' | 'service' };
 interface EventFormProps {
     type: 'rehearsal' | 'service';
     event?: TEvent;
+    onFormSubmit: (data: any) => void;
+    formId: string;
 }
 
-const EventForm = ({ type, event }: EventFormProps) => {
+const EventForm = ({ type, event, onFormSubmit, formId }: EventFormProps) => {
     const methods = useForm({
         defaultValues: {
             title: event?.title || '',
@@ -89,7 +91,7 @@ const EventForm = ({ type, event }: EventFormProps) => {
 
     return (
         <FormProvider {...methods}>
-            <form id={`event-form-${type}`} onSubmit={methods.handleSubmit(() => {})} className="space-y-4">
+            <form id={formId} onSubmit={methods.handleSubmit(onFormSubmit)} className="space-y-4">
                 <input type="hidden" {...methods.register('date')} value={date?.toISOString()} />
                 <div>
                     <Label htmlFor="title">{t("eventForm.title")}</Label>
@@ -289,27 +291,20 @@ export default function SchedulePage() {
                     </TabsList>
                     <TabsContent value="rehearsal">
                         <ScrollArea className="h-[60vh] pr-4">
-                           <EventForm type="rehearsal" />
+                           <EventForm type="rehearsal" formId="rehearsal-create-form" onFormSubmit={handleEventSubmit} />
                         </ScrollArea>
                     </TabsContent>
                     <TabsContent value="service">
                        <ScrollArea className="h-[60vh] pr-4">
-                           <EventForm type="service" />
+                           <EventForm type="service" formId="service-create-form" onFormSubmit={handleEventSubmit} />
                        </ScrollArea>
                     </TabsContent>
                 </Tabs>
                 <DialogFooter>
                     <Button type="button" variant="ghost" onClick={() => setIsCreateOpen(false)}>{t("schedulePage.cancel")}</Button>
                     <Button 
-                        type="button"
-                        onClick={async () => {
-                            const form = document.getElementById(`event-form-${activeTab}`) as HTMLFormElement;
-                            const formMethods = useForm().control._formValues;
-                            const isValid = await (formMethods.trigger && formMethods.trigger());
-                            if (isValid) {
-                                handleEventSubmit(formMethods.getValues());
-                            }
-                        }}
+                        type="submit"
+                        form={activeTab === 'rehearsal' ? 'rehearsal-create-form' : 'service-create-form'}
                     >{t("schedulePage.saveEvent")}</Button>
                 </DialogFooter>
             </DialogContent>
@@ -427,21 +422,16 @@ export default function SchedulePage() {
                         <EventForm
                             type={selectedEvent.type}
                             event={selectedEvent}
+                            formId="event-edit-form"
+                            onFormSubmit={handleEventSubmit}
                         />
                     )}
                 </ScrollArea>
                 <DialogFooter>
                     <Button type="button" variant="ghost" onClick={() => { setIsEditOpen(false); setSelectedEvent(null); }}>{t("schedulePage.cancel")}</Button>
                      <Button 
-                        type="button" 
-                        onClick={async () => {
-                            const form = document.getElementById(`event-form-${selectedEvent?.type}`) as HTMLFormElement;
-                            const formMethods = useForm().control._formValues;
-                            const isValid = await (formMethods.trigger && formMethods.trigger());
-                            if (isValid) {
-                                handleEventSubmit(formMethods.getValues());
-                            }
-                        }}
+                        type="submit" 
+                        form="event-edit-form"
                      >{t("schedulePage.saveChanges")}</Button>
                 </DialogFooter>
             </DialogContent>

@@ -2,7 +2,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/db';
 import { EventType } from '@/lib/types';
-import { ObjectId } from 'mongodb';
 import { checkAbsencePunishment, checkLateness } from '@/lib/punishments';
 
 export async function GET(req: NextRequest) {
@@ -53,7 +52,7 @@ export async function POST(req: NextRequest) {
         const db = client.db();
 
         const collectionName = eventType.toLowerCase() + 's';
-        const event = await db.collection(collectionName).findOne({ _id: new ObjectId(eventId) });
+        const event = await db.collection(collectionName).findOne({ _id: eventId });
 
         if (!event) {
             return NextResponse.json({ error: 'Event not found' }, { status: 404 });
@@ -62,16 +61,16 @@ export async function POST(req: NextRequest) {
         const operations = attendanceData.map(({ userId, status }) => ({
             updateOne: {
                 filter: {
-                    userId: new ObjectId(userId),
-                    eventId: new ObjectId(eventId)
+                    userId: userId,
+                    eventId: eventId
                 },
                 update: {
                     $set: {
-                        userId: new ObjectId(userId),
-                        eventId: new ObjectId(eventId),
+                        userId: userId,
+                        eventId: eventId,
                         eventType,
                         status,
-                        markedById: new ObjectId(markedById),
+                        markedById: markedById,
                         eventDate: event.date, 
                         session: eventType === 'SERVICE' ? session : undefined,
                         createdAt: new Date(),
@@ -87,12 +86,11 @@ export async function POST(req: NextRequest) {
 
         // Check for punishments and warnings
         for (const { userId, status } of attendanceData) {
-            const userObjectId = new ObjectId(userId);
             if (status === 'ABSENT') {
-                await checkAbsencePunishment(userObjectId, lang, eventType, session);
+                await checkAbsencePunishment(userId, lang, eventType, session);
             }
             if (status === 'LATE') {
-                await checkLateness(userObjectId, lang, eventType, session);
+                await checkLateness(userId, lang, eventType, session);
             }
         }
 

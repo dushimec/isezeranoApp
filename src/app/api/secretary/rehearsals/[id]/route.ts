@@ -5,6 +5,11 @@ import { ObjectId } from 'mongodb';
 import { getUserIdFromToken } from '@/lib/auth';
 import { RehearsalDocument, UserDocument } from '@/lib/types';
 
+const formatRehearsal = (rehearsal: any) => {
+    const { _id, ...rest } = rehearsal;
+    return { id: _id.toHexString(), ...rest };
+}
+
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
@@ -21,7 +26,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Rehearsal not found' }, { status: 404 });
     }
 
-    return NextResponse.json(rehearsal);
+    return NextResponse.json(formatRehearsal(rehearsal));
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -80,7 +85,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
 
 
-    return NextResponse.json(result);
+    return NextResponse.json(formatRehearsal(result));
   } catch (error: any) {
     console.error(error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

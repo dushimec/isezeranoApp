@@ -5,6 +5,23 @@ import { getUserIdFromToken } from '@/lib/auth';
 import { ObjectId } from 'mongodb';
 import { UserDocument } from '@/lib/types';
 
+export async function GET(req: NextRequest) {
+    try {
+        const client = await clientPromise;
+        const db = client.db();
+        const rehearsals = await db.collection('rehearsals').find({}).toArray();
+        const rehearsalsWithId = rehearsals.map(rehearsal => {
+            const { _id, ...rest } = rehearsal;
+            return { id: _id.toHexString(), ...rest };
+        });
+        return NextResponse.json(rehearsalsWithId, { status: 200 });
+    } catch (error) {
+        console.error(error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
+}
+
+
 export async function POST(req: NextRequest) {
   try {
     const userId = await getUserIdFromToken(req);

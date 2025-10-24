@@ -9,9 +9,16 @@ export async function GET(req: NextRequest) {
     const db = client.db();
     const session = req.nextUrl.searchParams.get('session');
 
+    let userIds = [];
+
+    if (session) {
+      const attendanceRecords = await db.collection('attendance').find({ session: session }).toArray();
+      userIds = attendanceRecords.map(record => record.userId);
+    }
+
     const query: any = { role: { $in: ['SINGER', 'DISCIPLINARIAN', 'SECRETARY'] as Role[] } };
     if (session) {
-        query.session = session;
+      query._id = { $in: userIds };
     }
 
     const users = await db.collection('users').find(
@@ -31,7 +38,7 @@ export async function GET(req: NextRequest) {
     ).toArray();
     
     const formattedUsers = users.map(u => ({
-        id: u._id.toHexString(),
+        id: u._id,
         fullName: `${u.firstName} ${u.lastName}`,
         profileImage: u.profileImage,
         role: u.role
