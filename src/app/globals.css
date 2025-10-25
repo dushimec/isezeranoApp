@@ -1,11 +1,6 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-body {
-  font-family: Arial, Helvetica, sans-serif;
-}
 
 @layer base {
   :root {
@@ -77,13 +72,13 @@ body {
     --sidebar-border: 0 0% 14.9%;
     --sidebar-ring: 158 55% 55%;
   }
-}
 
-@layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
+
   body {
+    font-family: Arial, Helvetica, sans-serif;
     @apply bg-background text-foreground;
   }
 }
