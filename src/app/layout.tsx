@@ -5,11 +5,11 @@ import { Toaster } from '@/components/ui/toaster';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  title: 'Isezerano CMS',
+  title: 'Isezerano choir',
   description: 'Content Management System for Isezerano',
 };
 
-export default function RootLayout({
+export default function RootLayout({ 
   children,
 }: Readonly<{
   children: React.ReactNode;
