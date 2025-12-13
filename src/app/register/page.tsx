@@ -68,22 +68,32 @@ export default function RegisterPage() {
   
   React.useEffect(() => {
     async function checkAdmin() {
-        try {
-            const response = await fetch('/api/auth/check-admin');
-            const data = await response.json();
-            setAdminExists(data.exists);
-            if (data.exists) {
-                toast({
-                    title: "Admin Exists",
-                    description: "An admin account already exists. Please log in.",
-                });
-                router.replace("/login");
-            }
-        } catch (error) {
-            toast({ variant: "destructive", title: "Error", description: "Could not verify system status." });
-        } finally {
-            setIsLoading(false);
+      try {
+        const response = await fetch('/api/auth/check-admin');
+        const data = await response.json();
+
+        // Prefer explicit count when available. Fallback to `exists` if count is missing.
+        const count = typeof data.count === 'number' ? data.count : (data.exists ? 1 : 0);
+
+        // adminExists here will mean "registration should be blocked" (true when >= 2 admins)
+        setAdminExists(count >= 2);
+
+        // Block registration when there are already 2 or more admins
+        if (count >= 2) {
+          toast({
+            title: "Admin Limit Reached",
+            description: "There are already 2 or more admin accounts. Please log in.",
+          });
+          router.replace('/login');
+          return;
         }
+
+        // Otherwise allow registration (do not redirect). If count is 0 or 1, user may create an admin.
+      } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not verify system status.' });
+      } finally {
+        setIsLoading(false);
+      }
     }
     checkAdmin();
   }, [router, toast]);

@@ -80,7 +80,8 @@ export default function LoginPage() {
         try {
             const response = await fetch('/api/auth/check-admin');
             const data = await response.json();
-            setAdminExists(data.exists);
+      const count = typeof data.count === 'number' ? data.count : (data.exists ? 1 : 0);
+      setAdminExists(count >= 2);
         } catch (error) {
             toast({ variant: "destructive", title: t('loginPage.error'), description: t('loginPage.verifying') });
         } finally {
@@ -132,28 +133,8 @@ export default function LoginPage() {
     );
   }
 
-  if (adminExists === false) {
-    return (
-        <div className="flex min-h-screen w-full items-center justify-center">
-            <Card className="w-full max-w-md mx-4">
-                <CardHeader className="text-center">
-                <div className="flex justify-center mb-4">
-                    <IsezeranoLogo className="w-16 h-16" />
-                </div>
-                <CardTitle className="text-3xl font-headline">{t('loginPage.noAdminTitle')}</CardTitle>
-                <CardDescription>
-                    {t('loginPage.noAdminDescription')}
-                </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button className="w-full" asChild>
-                        <Link href="/register">{t('loginPage.registerAdmin')}</Link>
-                    </Button>
-                </CardContent>
-            </Card>
-        </div>
-    )
-  }
+  // If adminExists is false (meaning fewer than 2 admins), we still show the
+  // login form but expose a register button below so a second admin can be created.
 
 
   return (
@@ -249,6 +230,13 @@ export default function LoginPage() {
                 </Form>
             </TabsContent>
           </Tabs>
+          {adminExists === false && (
+            <div className="mt-4">
+              <Button className="w-full" asChild>
+                <Link href="/register">{t('loginPage.registerAdmin')}</Link>
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
