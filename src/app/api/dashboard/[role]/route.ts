@@ -1,13 +1,11 @@
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import { NextApiRequest } from 'next';
-// import { Role } from '@prisma/client'; // Removed Prisma import
-import { TUser } from '@/lib/types';
+import type { Role, User } from '@/lib/types';
 
-// Placeholder for the Role enum that was previously imported from @prisma/client
-// The user will need to define this according to their application's needs.
-enum Role {
+type TUser = User;
+
+enum RoleEnum {
     ADMIN = "ADMIN",
     SECRETARY = "SECRETARY",
     DISCIPLINARIAN = "DISCIPLINARIAN",
@@ -53,28 +51,29 @@ async function getSingerDashboardData(userId: string) {
     };
 }
 
-export async function GET(req: NextApiRequest, { params }: { params: { role: Role } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ role: string }> }) {
     const token = await getToken({ req });
     if (!token || !token.sub) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { role } = params;
-    const user = token.user as TUser;
+    const { role } = await params;
+    const user = token.user as TUser | undefined;
 
     try {
         let data;
         switch (role) {
-            case Role.ADMIN:
+            case RoleEnum.ADMIN:
                 data = await getAdminDashboardData();
                 break;
-            case Role.SECRETARY:
+            case RoleEnum.SECRETARY:
                 data = await getSecretaryDashboardData();
                 break;
-            case Role.DISCIPLINARIAN:
+            case RoleEnum.DISCIPLINARIAN:
                 data = await getDisciplinarianDashboardData();
                 break;
-            case Role.SINGER:
+            case RoleEnum.SINGER:
+                if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
                 data = await getSingerDashboardData(user.id);
                 break;
             default:

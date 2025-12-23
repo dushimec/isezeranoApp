@@ -10,9 +10,9 @@ const formatRehearsal = (rehearsal: any) => {
     return { id: _id.toHexString(), ...rest };
 }
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     if (!ObjectId.isValid(id)) {
       return NextResponse.json({ error: 'Invalid rehearsal ID' }, { status: 400 });
     }
@@ -33,18 +33,18 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const userId = await getUserIdFromToken(req);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const { id } = params;
+    const { id } = await params;
     if (!ObjectId.isValid(id)) {
       return NextResponse.json({ error: 'Invalid rehearsal ID' }, { status: 400 });
     }
 
-    const { title, date, time, location, notes } = await req.json();
+    const { title, date, time, notes } = await req.json();
     
     const client = await clientPromise;
     const db = client.db();
@@ -53,7 +53,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (title) updateData.title = title;
     if (date) updateData.date = new Date(date);
     if (time) updateData.time = time;
-    if (location) updateData.location = location;
     if (notes) updateData.notes = notes;
     updateData.updatedAt = new Date();
 
@@ -92,9 +91,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     if (!ObjectId.isValid(id)) {
       return NextResponse.json({ error: 'Invalid rehearsal ID' }, { status: 400 });
     }

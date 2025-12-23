@@ -29,9 +29,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const { title, date, time, location, notes } = await req.json();
+    const { title, date, time, notes } = await req.json();
 
-    if (!title || !date || !time || !location) {
+    if (!title || !date || !time) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -45,7 +45,6 @@ export async function POST(req: NextRequest) {
       title,
       date: new Date(date),
       time,
-      location,
       notes,
       attendees: attendeeIds,
       createdById: new ObjectId(userId),

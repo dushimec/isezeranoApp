@@ -152,14 +152,14 @@ export default function ClaimsPage() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                           <Image
-                              src={claim.submittedBy.profileImage || `https://picsum.photos/seed/${claim.submittedById}/40/40`}
+                              src={claim.submittedBy?.profileImage || `https://picsum.photos/seed/${claim.submittedById}/40/40`}
                               width={40}
                               height={40}
-                              alt={claim.isAnonymous ? t("claimsPage.anonymous") : `${claim.submittedBy.firstName} ${claim.submittedBy.lastName}`}
+                              alt={claim.isAnonymous ? t("claimsPage.anonymous") : `${claim.submittedBy?.firstName || ''} ${claim.submittedBy?.lastName || ''}`}
                               className="rounded-full object-cover"
                           />
                           <div>
-                            <p className="font-medium">{claim.isAnonymous ? t("claimsPage.anonymous") : `${claim.submittedBy.firstName} ${claim.submittedBy.lastName}`}</p>
+                            <p className="font-medium">{claim.isAnonymous ? t("claimsPage.anonymous") : `${claim.submittedBy?.firstName || ''} ${claim.submittedBy?.lastName || ''}`}</p>
                           </div>
                       </div>
                     </TableCell>

@@ -53,6 +53,7 @@ export default function AttendancePage() {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<TEvent | null>(null);
   const [selectedSession, setSelectedSession] = useState<string | undefined>(undefined);
+  const [selectedType, setSelectedType] = useState<'ALL' | 'REHEARSAL' | 'SERVICE'>('ALL');
   const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>({});
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -70,6 +71,10 @@ export default function AttendancePage() {
         setSelectedEvent(data[0]);
         if (data[0].type === 'SERVICE') {
           setSelectedSession('Amateraniro ya 1');
+          // fetchUsers will be triggered by the effect
+        } else {
+          // fetch users for the default first event
+          fetchUsers(data[0].id);
         }
       }
     } catch (error) {
@@ -77,21 +82,23 @@ export default function AttendancePage() {
     }
   }, [token, toast]);
 
-  const fetchUsers = useCallback(async (session?: string) => {
+  const fetchUsers = useCallback(async (eventId?: string, session?: string) => {
      if (!token) return;
     try {
       let url = '/api/disciplinarian/users';
-      if (session) {
-        url += `?session=${encodeURIComponent(session)}`;
-      }
+      const params: string[] = [];
+      if (eventId) params.push(`eventId=${encodeURIComponent(eventId)}`);
+      if (session) params.push(`session=${encodeURIComponent(session)}`);
+      if (params.length) url += `?${params.join('&')}`;
+
       const response = await fetch(url, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
       setUsers(data);
-      // Initialize attendance state
-      const initialAttendance = data.reduce((acc: Record<string, AttendanceStatus>, user: User) => {
-        acc[user.id] = 'PRESENT';
+      // Initialize attendance state, prefer server-provided status if present
+      const initialAttendance = data.reduce((acc: Record<string, AttendanceStatus>, user: any) => {
+        acc[user.id] = (user.status as AttendanceStatus) || 'PRESENT';
         return acc;
       }, {});
       setAttendance(initialAttendance);
@@ -105,13 +112,29 @@ export default function AttendancePage() {
   }, [fetchEvents]);
 
   useEffect(() => {
+    if (!events || events.length === 0) {
+      setSelectedEvent(null);
+      setSelectedSession(undefined);
+      return;
+    }
+    const filtered = events.filter(e => selectedType === 'ALL' || e.type === selectedType);
+    const first = filtered[0] || null;
+    setSelectedEvent(first);
+    if (first?.type === 'SERVICE') {
+      setSelectedSession('Amateraniro ya 1');
+    } else {
+      setSelectedSession(undefined);
+    }
+  }, [events, selectedType]);
+
+  useEffect(() => {
     if (selectedEvent) {
       if (selectedEvent.type === 'SERVICE') {
         if (selectedSession) {
-          fetchUsers(selectedSession);
+          fetchUsers(selectedEvent.id, selectedSession);
         }
       } else {
-        fetchUsers();
+        fetchUsers(selectedEvent.id);
       }
     }
   }, [selectedEvent, selectedSession, fetchUsers]);
@@ -142,6 +165,7 @@ export default function AttendancePage() {
           attendanceData,
           markedById: user.id,
           session: selectedEvent.type === 'SERVICE' ? selectedSession : undefined,
+          rehearsalId: selectedEvent.type === 'REHEARSAL' ? selectedEvent.id : undefined,
         })
       });
 
@@ -157,6 +181,7 @@ export default function AttendancePage() {
     }
   };
 
+  const filteredEvents = events.filter(e => selectedType === 'ALL' || e.type === selectedType);
 
   return (
     <div className="flex flex-col gap-6">
@@ -179,8 +204,31 @@ export default function AttendancePage() {
               <CardDescription>
                 Select an event and mark each singer's status.
               </CardDescription>
+              <div className="mt-2">
+                <span className="text-sm text-muted-foreground">
+                  {selectedEvent ? `${selectedEvent.title} — ${format(new Date(selectedEvent.date), 'MMM d, yyyy')} (${selectedEvent.type === 'SERVICE' ? 'Service' : 'Rehearsal'})` : 'No event selected'}
+                </span>
+                {selectedEvent && selectedEvent.type === 'REHEARSAL' && (
+                  <div className="text-xs text-muted-foreground mt-1">Rehearsal: {selectedEvent.title}</div>
+                )}
+                {selectedEvent && selectedEvent.type === 'SERVICE' && selectedSession && (
+                  <div className="text-xs text-muted-foreground mt-1">Session: {selectedSession}</div>
+                )}
+              </div>
             </div>
             <div className="w-full md:w-72">
+              <div className="mb-2">
+                <Label>Event Type</Label>
+                <Select value={selectedType} onValueChange={(v) => setSelectedType(v as 'ALL' | 'REHEARSAL' | 'SERVICE')}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="REHEARSAL">Rehearsal</SelectItem>
+                    <SelectItem value="SERVICE">Service</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
                <Select 
                 value={selectedEvent?.id} 
                 onValueChange={(eventId) => {
@@ -197,7 +245,7 @@ export default function AttendancePage() {
                   <SelectValue placeholder="Select an event" />
                 </SelectTrigger>
                 <SelectContent>
-                  {events.map(event => (
+                  {filteredEvents.map(event => (
                     <SelectItem key={event.id} value={event.id}>
                       {event.title} - {format(new Date(event.date), 'MMM d, yyyy')}
                     </SelectItem>

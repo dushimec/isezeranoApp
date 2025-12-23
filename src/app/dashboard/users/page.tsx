@@ -25,6 +25,7 @@ export default function UsersPage() {
   const [usersError, setUsersError] = React.useState<string | null>(null);
 
   const API_BASE_PATH = user?.role === 'ADMIN' ? '/api/admin/users' : '/api/secretary/users';
+  const hasAccess = user?.role === 'ADMIN' || user?.role === 'SECRETARY';
 
   const fetchUsers = React.useCallback(async () => {
     if (!token) return;
@@ -53,7 +54,7 @@ export default function UsersPage() {
 
   React.useEffect(() => {
     if (!loading) {
-      if (!user || !['ADMIN', 'SECRETARY'].includes(user.role)) {
+      if (!hasAccess) {
         router.push('/unauthorized');
       } else {
         fetchUsers();
@@ -71,6 +72,7 @@ export default function UsersPage() {
       return;
     }
     try {
+      console.log('Sending PUT to', `${API_BASE_PATH}/${userId}`, 'payload:', data);
       const response = await fetch(`${API_BASE_PATH}/${userId}`, {
         method: 'PUT',
         headers: { 
@@ -131,7 +133,7 @@ export default function UsersPage() {
     return <div className="flex items-center justify-center min-h-screen"><div className="loader">{t("usersPage.loading")}</div></div>;
   }
   
-  if (!user || !['ADMIN', 'SECRETARY'].includes(user.role)) {
+  if (!user || !hasAccess) {
     return null;
   }
 

@@ -64,11 +64,11 @@ export function UserTable({ users, currentUser, onEdit, onDelete }: UserTablePro
                       src={user.profileImage || `https://picsum.photos/seed/${user.id}/40/40`}
                       width={40}
                       height={40}
-                      alt={user.firstName}
+                      alt={user.firstName || ''}
                       className="rounded-full object-cover"
                     />
                     <div>
-                      <p className="font-medium">{`${user.firstName} ${user.lastName}`}</p>
+                      <p className="font-medium">{`${user.firstName || ''} ${user.lastName || ''}`}</p>
                       <p className="text-sm text-muted-foreground">{user.email || user.username}</p>
                     </div>
                   </div>

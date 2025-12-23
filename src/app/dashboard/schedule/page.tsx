@@ -54,7 +54,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from '@/lib/utils';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, Controller } from 'react-hook-form';
 import { t } from "@/utils/i18n";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -74,7 +74,6 @@ const EventForm = ({ type, event, onFormSubmit, formId }: EventFormProps) => {
             title: event?.title || '',
             date: event ? new Date(event.date) : new Date(),
             time: event?.time || '',
-            location: type === 'rehearsal' ? (event as Rehearsal)?.location : '',
             churchLocation: type === 'service' ? (event as Service)?.churchLocation : '',
             attire: (event as Service)?.attire || '',
             notes: event?.notes || '',
@@ -85,14 +84,22 @@ const EventForm = ({ type, event, onFormSubmit, formId }: EventFormProps) => {
 
     useEffect(() => {
         if (date) {
-            methods.setValue('date', date);
+            methods.setValue('date', date.toISOString());
+        } else {
+            methods.setValue('date', undefined);
         }
     }, [date, methods]);
 
     return (
         <FormProvider {...methods}>
             <form id={formId} onSubmit={methods.handleSubmit(onFormSubmit)} className="space-y-4">
-                <input type="hidden" {...methods.register('date')} value={date?.toISOString()} />
+                <Controller
+                    control={methods.control}
+                    name="date"
+                    render={({ field }) => (
+                        <input type="hidden" {...field} value={date ? date.toISOString() : ''} />
+                    )}
+                />
                 <div>
                     <Label htmlFor="title">{t("eventForm.title")}</Label>
                     <Input id="title" {...methods.register('title')} required />
@@ -101,7 +108,7 @@ const EventForm = ({ type, event, onFormSubmit, formId }: EventFormProps) => {
                     <div>
                     <Label>{t("eventForm.date")}</Label>
                     <Popover>
-                        <PopoverTrigger asChild>
+                                <PopoverTrigger asChild>
                         <Button
                             variant={"outline"}
                             className={cn(
@@ -110,7 +117,12 @@ const EventForm = ({ type, event, onFormSubmit, formId }: EventFormProps) => {
                             )}
                         >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {date ? format(date, "PPP") : <span>{t("eventForm.pickDate")}</span>}
+                            {date ? (
+                                <>
+                                    <span className="hidden sm:inline">{format(date, "PPP")}</span>
+                                    <span className="sm:hidden">{format(date, "P")}</span>
+                                </>
+                            ) : <span>{t("eventForm.pickDate")}</span>}
                         </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
@@ -128,10 +140,12 @@ const EventForm = ({ type, event, onFormSubmit, formId }: EventFormProps) => {
                     <Input id="time" type="time" {...methods.register('time')} required />
                     </div>
                 </div>
-                <div>
-                    <Label htmlFor="location">{type === 'rehearsal' ? t("eventForm.location") : t("eventForm.churchLocation")}</Label>
-                    <Input id="location" {...methods.register(type === 'rehearsal' ? 'location' : 'churchLocation')} required />
-                </div>
+                {type === 'service' && (
+                    <div>
+                        <Label htmlFor="churchLocation">{t("eventForm.churchLocation")}</Label>
+                        <Input id="churchLocation" {...methods.register('churchLocation')} required />
+                    </div>
+                )}
                 {type === 'service' && (
                     <>
                         <div>
@@ -303,8 +317,12 @@ export default function SchedulePage() {
                 <DialogFooter>
                     <Button type="button" variant="ghost" onClick={() => setIsCreateOpen(false)}>{t("schedulePage.cancel")}</Button>
                     <Button 
-                        type="submit"
-                        form={activeTab === 'rehearsal' ? 'rehearsal-create-form' : 'service-create-form'}
+                        type="button"
+                        onClick={() => {
+                            const formId = activeTab === 'rehearsal' ? 'rehearsal-create-form' : 'service-create-form';
+                            const form = document.getElementById(formId) as HTMLFormElement | null;
+                            if (form?.requestSubmit) form.requestSubmit(); else form?.submit();
+                        }}
                     >{t("schedulePage.saveEvent")}</Button>
                 </DialogFooter>
             </DialogContent>
@@ -335,15 +353,17 @@ export default function SchedulePage() {
             {filteredEvents.map((event, index) => (
               <div key={event.id}>
                 <div className="flex items-start gap-4">
-                  <div className="text-center w-16 shrink-0">
-                    <p className="text-sm font-bold text-primary uppercase">{format(new Date(event.date), 'MMM')}</p>
-                    <p className="text-3xl font-bold">{format(new Date(event.date), 'd')}</p>
+                  <div className="text-center w-12 sm:w-16 shrink-0">
+                    <p className="text-xs sm:text-sm font-bold text-primary uppercase">{format(new Date(event.date), 'MMM')}</p>
+                    <p className="text-2xl sm:text-3xl font-bold">{format(new Date(event.date), 'd')}</p>
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold">{event.title}</h3>
                     <div className="space-y-1 text-sm text-muted-foreground mt-1">
                       <p className="flex items-center gap-2"><Watch className="h-4 w-4"/> {event.time}</p>
-                      <p className="flex items-center gap-2"><MapPin className="h-4 w-4"/> {event.type === 'rehearsal' ? (event as Rehearsal).location : (event as Service).churchLocation}</p>
+                      {event.type === 'service' && (event as Service).churchLocation && (
+                        <p className="flex items-center gap-2"><MapPin className="h-4 w-4"/> {(event as Service).churchLocation}</p>
+                      )}
                       {event.type === 'service' && (event as Service).attire && <p className="flex items-center gap-2"><Shirt className="h-4 w-4"/> {(event as Service).attire}</p>}
                       {event.type === 'service' && (event as Service).serviceType && <p>{(event as Service).serviceType}</p>}
                     </div>
@@ -430,8 +450,11 @@ export default function SchedulePage() {
                 <DialogFooter>
                     <Button type="button" variant="ghost" onClick={() => { setIsEditOpen(false); setSelectedEvent(null); }}>{t("schedulePage.cancel")}</Button>
                      <Button 
-                        type="submit" 
-                        form="event-edit-form"
+                        type="button"
+                        onClick={() => {
+                            const form = document.getElementById('event-edit-form') as HTMLFormElement | null;
+                            if (form?.requestSubmit) form.requestSubmit(); else form?.submit();
+                        }}
                      >{t("schedulePage.saveChanges")}</Button>
                 </DialogFooter>
             </DialogContent>

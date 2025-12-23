@@ -22,8 +22,8 @@ type DashboardEvent = {
   id: string;
   title: string;
   date: string;
-  location: string;
   type: 'REHEARSAL' | 'SERVICE';
+  churchLocation?: string;
 };
 
 type DashboardData = {
@@ -246,7 +246,7 @@ const SingerDashboard = ({ data }: { data: DashboardData }) => {
                 </CardHeader>
                 <CardContent>
                     <p className="text-lg font-semibold">{nextEvent?.title}</p>
-                    <p className="text-muted-foreground">{nextEvent ? `${format(new Date(nextEvent.date), 'p')} at ${nextEvent.location}` : t('dashboardPage.singer.checkBackLater')}</p>
+                    <p className="text-muted-foreground">{nextEvent ? `${format(new Date(nextEvent.date), 'p')}${nextEvent.type === 'SERVICE' && (nextEvent as any).churchLocation ? ` at ${(nextEvent as any).churchLocation}` : ''}` : t('dashboardPage.singer.checkBackLater')}</p>
                 </CardContent>
             </Card>
             <Card>
@@ -293,6 +293,7 @@ const API_PATHS: Record<Role, string> = {
     'DISCIPLINARIAN': '/api/disciplinarian/dashboard',
     'SECTION_LEADER': '/api/section-leader/dashboard',
     'SINGER': '/api/singer/dashboard',
+    'PRESIDENT': '/api/admin/dashboard',
 }
 
 export default function DashboardPage() {
@@ -307,7 +308,7 @@ export default function DashboardPage() {
     const fetchData = async () => {
         setDataLoading(true);
         try {
-            const apiPath = API_PATHS[user.role];
+            const apiPath = user.role ? API_PATHS[user.role] : undefined;
             if (!apiPath) {
                 throw new Error('Invalid user role for dashboard.');
             }

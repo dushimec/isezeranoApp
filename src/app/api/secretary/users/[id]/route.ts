@@ -4,11 +4,11 @@ import clientPromise from '@/lib/db';
 import { ObjectId } from 'mongodb';
 
 // Get a single user by ID
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const client = await clientPromise;
         const db = client.db();
-        const { id } = params;
+        const { id } = await params; 
 
         if (!ObjectId.isValid(id)) {
             return NextResponse.json({ message: 'Invalid user ID' }, { status: 400 });
@@ -30,11 +30,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 // Update a user
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const client = await clientPromise;
         const db = client.db();
-        const { id } = params;
+        const { id } = await params;
         const { firstName, lastName, email, username, role, isActive } = await req.json();
 
         if (!ObjectId.isValid(id)) {
@@ -65,11 +65,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 // Delete a user
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const client = await clientPromise;
         const db = client.db();
-        const { id } = params;
+        const { id } = await params;
 
         if (!ObjectId.isValid(id)) {
             return NextResponse.json({ message: 'Invalid user ID' }, { status: 400 });

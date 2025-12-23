@@ -3,7 +3,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "@/lib/auth";
 import { verifyOtp } from "@/lib/otp";
-import pool from "@/lib/db";
+import clientPromise from "@/lib/db";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
@@ -21,16 +21,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const client = await pool.connect();
-    const result = await client.query("SELECT * FROM users WHERE phone_number = $1", [phoneNumber]);
-    client.release();
+    const client = await clientPromise;
+    const db = client.db();
+    const user = await db.collection('users').findOne({ phoneNumber });
 
-    if (result.rows.length === 0) {
+    if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const user = result.rows[0];
-    const token = jwt.sign({ id: user.id, phoneNumber: user.phone_number, role: user.role }, JWT_SECRET, {
+    const token = jwt.sign({ id: user._id.toHexString(), phoneNumber: user.phoneNumber || phoneNumber, role: (user.role as string) || 'SINGER' }, JWT_SECRET, {
       expiresIn: "1h",
     });
 

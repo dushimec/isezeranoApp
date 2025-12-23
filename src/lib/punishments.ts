@@ -1,17 +1,20 @@
 
 import clientPromise from '@/lib/db';
 import { EventType, UserDocument } from '@/lib/types';
-import { t } from '@/utils/i18n';
+import { t, Locale } from '@/utils/i18n';
 
 const PUNISHMENT_THRESHOLD = 4;
 const LATE_WARNING_THRESHOLD = 3;
 const LATE_PUNISHMENT_THRESHOLD = 4;
 
-async function createNotification(userId: string, title: string, message: string) {
+import { ObjectId } from 'mongodb';
+
+async function createNotification(userId: string | ObjectId, title: string, message: string) {
     const client = await clientPromise;
     const db = client.db();
+    const userIdObj = typeof userId === 'string' ? (ObjectId.isValid(userId) ? new ObjectId(userId) : userId) : userId;
     await db.collection('notifications').insertOne({
-        userId,
+        userId: userIdObj,
         title,
         message,
         isRead: false,
@@ -27,11 +30,11 @@ async function getDisplinarian(){
 }
 
 
-export async function checkAbsencePunishment(userId: string, lang: string | undefined, eventType: EventType, session?: string) {
+export async function checkAbsencePunishment(userId: string, eventType: EventType, session?: string, lang?: Locale) {
     const client = await clientPromise;
     const db = client.db();
 
-    const query: any = { userId };
+    const query: any = { userId: ObjectId.isValid(userId) ? new ObjectId(userId) : userId };
     if (eventType === 'SERVICE') {
         query.session = session;
     }
@@ -42,7 +45,7 @@ export async function checkAbsencePunishment(userId: string, lang: string | unde
         const disciplinarian = await getDisplinarian();
         if (disciplinarian) {
             await createNotification(
-                disciplinarian._id,
+                disciplinarian._id.toString(),
                 t("punishments.punishment_alert_title", undefined, { lang }),
                 t("punishments.absence_punishment_message", { singerId: userId, count: PUNISHMENT_THRESHOLD, eventType, session }, { lang })
             );
@@ -50,11 +53,11 @@ export async function checkAbsencePunishment(userId: string, lang: string | unde
     }
 }
 
-export async function checkLateness(userId: string, lang: string | undefined, eventType: EventType, session?: string) {
+export async function checkLateness(userId: string, eventType: EventType, session?: string, lang?: Locale) {
     const client = await clientPromise;
     const db = client.db();
 
-    const query: any = { userId, status: 'LATE' };
+    const query: any = { userId: ObjectId.isValid(userId) ? new ObjectId(userId) : userId, status: 'LATE' };
     if (eventType === 'SERVICE') {
         query.session = session;
     }
@@ -65,7 +68,7 @@ export async function checkLateness(userId: string, lang: string | undefined, ev
         const disciplinarian = await getDisplinarian();
         if (disciplinarian) {
             await createNotification(
-                disciplinarian._id,
+                disciplinarian._id.toString(),
                 t("punishments.punishment_alert_title", undefined, { lang }),
                 t("punishments.lateness_punishment_message", { singerId: userId, count: latenessCount, eventType, session }, { lang })
             );

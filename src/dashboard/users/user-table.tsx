@@ -39,7 +39,7 @@ export function UserTable({ users, currentUser, onEdit, onDelete }: UserTablePro
     }
   };
 
-  const creatableRoles = Object.values(Role).filter(r => r !== 'ADMIN');
+  const creatableRoles: Role[] = ['SECRETARY', 'DISCIPLINARIAN', 'SINGER'];
 
 
   return (
@@ -64,7 +64,7 @@ export function UserTable({ users, currentUser, onEdit, onDelete }: UserTablePro
                             src={user.profileImage || `https://picsum.photos/seed/${user.id}/40/40`}
                             width={40}
                             height={40}
-                            alt={user.firstName}
+                            alt={user.firstName || ''}
                             className="rounded-full object-cover"
                         />
                         <div>

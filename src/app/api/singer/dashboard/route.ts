@@ -23,8 +23,8 @@ export async function GET(req: NextRequest) {
     const upcomingRehearsals = await db.collection('rehearsals').find({ date: { $gte: new Date() } }).sort({ date: 'asc' }).limit(5).toArray();
     const upcomingServices = await db.collection('services').find({ date: { $gte: new Date() } }).sort({ date: 'asc' }).limit(5).toArray();
   
-    const upcomingEvents = [...upcomingRehearsals.map(r => ({...r, type: 'REHEARSAL', location: r.location})), ...upcomingServices.map(s => ({...s, type: 'SERVICE', location: s.churchLocation}))]
-        .sort((a,b) => a.date.getTime() - b.date.getTime())
+    const upcomingEvents = [...upcomingRehearsals.map(r => ({...r, type: 'REHEARSAL'})), ...upcomingServices.map(s => ({...s, type: 'SERVICE'}))]
+        .sort((a,b) => new Date((a as any).date).getTime() - new Date((b as any).date).getTime())
         .slice(0, 5);
 
     const announcements = await db.collection('announcements').aggregate([

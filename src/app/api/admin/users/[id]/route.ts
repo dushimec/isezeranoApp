@@ -6,12 +6,12 @@ import bcrypt from 'bcrypt';
 import { ObjectId } from 'mongodb';
 
 interface UserIdParams {
-  params: { id: string };
+  params: { id: string } | Promise<{ id: string }>;
 }
 
 // Get a single user by ID (Admin only)
 export async function GET(req: NextRequest, { params }: UserIdParams) {
-  const { id } = params;
+  const { id } = await params;
    if (!ObjectId.isValid(id)) {
       return NextResponse.json({ message: 'Invalid user ID' }, { status: 400 });
     }
@@ -38,13 +38,15 @@ export async function GET(req: NextRequest, { params }: UserIdParams) {
 
 // Update a user (Admin only)
 export async function PUT(req: NextRequest, { params }: UserIdParams) {
-  const { id } = params;
+  const { id } = await params;
    if (!ObjectId.isValid(id)) {
       return NextResponse.json({ message: 'Invalid user ID' }, { status: 400 });
     }
 
   try {
-    const { firstName, lastName, email, username, password, role, isActive } = await req.json();
+    const body = await req.json();
+    console.log(`PUT /api/admin/users/${id} body:`, body);
+    const { firstName, lastName, email, username, password, role, isActive } = body;
     
     const client = await clientPromise;
     const db = client.db();
@@ -88,7 +90,7 @@ export async function PUT(req: NextRequest, { params }: UserIdParams) {
 
 // Delete a user (Admin only)
 export async function DELETE(req: NextRequest, { params }: UserIdParams) {
-    const { id } = params;
+    const { id } = await params;
     if (!ObjectId.isValid(id)) {
       return NextResponse.json({ message: 'Invalid user ID' }, { status: 400 });
     }

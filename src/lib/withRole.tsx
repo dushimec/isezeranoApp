@@ -1,12 +1,12 @@
 
 import { useAuth } from '@/hooks/useAuth';
-import { USER_ROLES } from './user-roles';
+import { USER_ROLES, UserRole } from './user-roles';
 import { useRouter } from 'next/navigation';
 import { ComponentType } from 'react';
 
 export function withRole<P extends object>(
   WrappedComponent: ComponentType<P>,
-  role: USER_ROLES
+  role: UserRole
 ) {
   const WithRole = (props: P) => {
     const { user, loading } = useAuth();

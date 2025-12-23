@@ -197,15 +197,15 @@ export default {
   schedulePage: {
     title: "Gahunda",
     description: "Tegura gahunda y’imyitozo n’ibikorwa.",
-    createEvent: "Hanga Igikorwa",
+    createEvent: "Gahunda Nshya ",
     createDialogTitle: "Igikorwa Gishya",
     createDialogDesc: "Hitamo ubwoko bw’igikorwa hanyuma wuzuze ibisobanuro.",
     editDialogTitle: "Hindura {type}",
     editDialogDesc: "Hindura ibisobanuro by’iki gikorwa.",
     cancel: "Hagarika",
-    saveEvent: "Bika Igikorwa",
+    saveEvent: "Bika gahunda nshya",
     saveChanges: "Bika Impinduka",
-    upcomingEvents: "Ibikorwa biri imbere",
+    upcomingEvents: "Gahunda ziri imbere",
     eventsOn: "Ibikorwa kuri {date}",
     clearFilter: "Siba filtre",
     loading: "Iri kubika gahunda...",
@@ -223,6 +223,8 @@ export default {
     deleteConfirm: "Siba"
   },
   eventForm: {
+    rehearsal: "Imyitozo",
+    service: "Amateraniro",
     title: "Umutwe",
     date: "Itariki",
     pickDate: "Hitamo Itariki",

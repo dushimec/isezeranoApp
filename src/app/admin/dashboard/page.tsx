@@ -67,7 +67,7 @@ export default function AdminDashboardPage() {
             <DialogHeader>
               <DialogTitle>Create a New User</DialogTitle>
             </DialogHeader>
-            <UserRegistrationForm onUserCreated={handleUserCreated} />
+            <UserRegistrationForm onUserCreated={handleUserCreated} apiPath="/api/admin/users" />
           </DialogContent>
         </Dialog>
       </header>

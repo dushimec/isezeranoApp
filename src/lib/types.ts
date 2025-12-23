@@ -1,26 +1,85 @@
 import { ObjectId } from "mongodb";
 
-export type Role = 'SINGER' | 'SECRETARY' | 'DISCIPLINARIAN' | 'PRESIDENT';
+export type Role = 'ADMIN' | 'SECRETARY' | 'DISCIPLINARIAN' | 'PRESIDENT' | 'SINGER' | 'SECTION_LEADER';
 
 export interface User {
     id: string;
-    fullName: string;
-    email: string;
-    role: Role;
-    registrationNumber: string;
-    isActive: boolean;
+    firstName?: string;
+    lastName?: string;
+    fullName?: string;
+    username?: string;
+    profileImage?: string;
+    email?: string;
+    role?: Role;
+    registrationNumber?: string;
+    isActive?: boolean;
+    forcePasswordChange?: boolean;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 export interface UserDocument extends Document {
   _id: ObjectId;
-  fullName: string;
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
+  username?: string;
+  profileImage?: string;
   email: string;
   password?: string; 
   role: Role;
-  registrationNumber: string;
-  isActive: boolean;
+  registrationNumber?: string;
+  isActive?: boolean;
+  forcePasswordChange?: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export type AnnouncementPriority = 'LOW' | 'MEDIUM' | 'HIGH';
+
+export interface Announcement {
+  id: string;
+  title: string;
+  message: string;
+  priority?: AnnouncementPriority;
+  createdBy: User;
+  createdAt: Date;
+}
+
+export type TUser = User;
+
+export type EventType = 'REHEARSAL' | 'SERVICE' | 'OTHER';
+export interface Event {
+  id: string;
+  title: string;
+  type: EventType;
+  date: string;
+  attendees: any[];
+}
+
+export type ClaimStatus = 'PENDING' | 'IN_REVIEW' | 'RESOLVED' | 'REJECTED';
+export type ClaimSeverity = 'LOW' | 'MEDIUM' | 'HIGH';
+export interface Claim {
+  id: string;
+  title: string;
+  description?: string;
+  severity: ClaimSeverity;
+  status: ClaimStatus;
+  createdAt: string | Date;
+  attachment?: string;
+  isAnonymous?: boolean;
+  submittedById?: string;
+  submittedBy?: User;
+}
+
+export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE';
+export interface Attendance {
+  id: string;
+  userId?: string;
+  eventId?: string;
+  user?: User;
+  event?: Event;
+  status: AttendanceStatus;
 }
 
 export interface Rehearsal {
@@ -28,7 +87,6 @@ export interface Rehearsal {
     title: string;
     date: string;
     time: string;
-    location: string;
     notes?: string;
     attendees: ObjectId[];
     createdById: ObjectId;
@@ -39,7 +97,6 @@ export interface RehearsalDocument extends Document {
     title: string;
     date: Date;
     time: string;
-    location: string;
     notes?: string;
     attendees: ObjectId[];
     createdById: ObjectId;

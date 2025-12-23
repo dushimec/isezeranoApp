@@ -61,9 +61,9 @@ export default function AttendanceView() {
              {!loading && attendance.length === 0 && <TableRow><TableCell colSpan={4} className="text-center">No attendance records found.</TableCell></TableRow>}
             {attendance.map((record) => (
               <TableRow key={record.id}>
-                <TableCell>{`${record.user.firstName} ${record.user.lastName}`}</TableCell>
-                <TableCell>{record.event.title}</TableCell>
-                <TableCell>{format(new Date(record.event.date), 'PPP')}</TableCell>
+                <TableCell>{`${record.user?.firstName || ''} ${record.user?.lastName || ''}`}</TableCell>
+                <TableCell>{record.event?.title || ''}</TableCell>
+                <TableCell>{record.event?.date ? format(new Date(record.event.date), 'PPP') : ''}</TableCell>
                 <TableCell>
                     <Badge variant={record.status === 'PRESENT' ? 'default' : record.status === 'LATE' ? 'secondary' : 'destructive'}>
                         {record.status}

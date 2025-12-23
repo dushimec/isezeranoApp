@@ -6,3 +6,5 @@ export const USER_ROLES = {
   SINGER: 'Singer',
   SECTION_LEADER: 'Section Leader',
 };
+
+export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];

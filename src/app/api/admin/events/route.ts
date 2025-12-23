@@ -26,7 +26,6 @@ export async function getAllEvents() {
             date: r.date,
             type: 'REHEARSAL',
             attendees: attendanceByEvent[r._id.toHexString()] || [],
-            location: r.location
         })),
         ...services.map(s => ({ 
             id: s._id.toHexString(),
@@ -34,7 +33,6 @@ export async function getAllEvents() {
             date: s.date,
             type: 'SERVICE',
             attendees: attendanceByEvent[s._id.toHexString()] || [],
-            location: s.churchLocation
         }))
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 

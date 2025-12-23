@@ -48,7 +48,7 @@ interface MultiSelectProps extends React.ButtonHTMLAttributes<HTMLButtonElement>
   className?: string;
 }
 
-export const MultiSelect = React.forwardRef<HTMLButtonElement, MultiSelectProps>((
+export const MultiSelect = React.forwardRef<HTMLButtonElement | HTMLDivElement, MultiSelectProps>((
   {
     options,
     onValueChange,
@@ -108,13 +108,13 @@ export const MultiSelect = React.forwardRef<HTMLButtonElement, MultiSelectProps>
     onValueChange(newSelectedValues);
   }
 
-  const Com = asChild ? 'div' : 'button';
+  const Com: any = asChild ? 'div' : 'button';
 
   return (
     <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
       <PopoverTrigger asChild>
         <Com
-          ref={ref}
+          ref={ref as any}
           {...props}
           onClick={handleTogglePopover}
           className={cn(

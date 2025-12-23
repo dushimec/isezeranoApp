@@ -4,10 +4,10 @@ import clientPromise from '@/lib/db';
 import { getUserIdFromToken } from '@/lib/auth';
 import { ObjectId } from 'mongodb';
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const userId = await getUserIdFromToken(req);
-    const { id } = params;
+    const { id } = await params;
 
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

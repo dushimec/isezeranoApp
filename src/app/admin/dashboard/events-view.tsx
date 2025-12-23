@@ -53,7 +53,6 @@ export default function EventsView() {
               <TableHead>Title</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Date</TableHead>
-              <TableHead>Location</TableHead>
               <TableHead>Attendees</TableHead>
             </TableRow>
           </TableHeader>
@@ -68,8 +67,10 @@ export default function EventsView() {
                     {event.type}
                   </Badge>
                 </TableCell>
-                <TableCell>{format(new Date(event.date), 'PPP')}</TableCell>
-                <TableCell>{event.location}</TableCell>
+                <TableCell>
+                  <span className="hidden sm:inline">{format(new Date(event.date), 'PPP')}</span>
+                  <span className="sm:hidden">{format(new Date(event.date), 'P')}</span>
+                </TableCell>
                 <TableCell>
                     <Badge>{event.attendees.length}</Badge>
                 </TableCell>

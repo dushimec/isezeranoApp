@@ -1,7 +1,9 @@
 import { NextRequest } from 'next/server';
 import { jwtVerify, SignJWT } from 'jose';
-import { Role } from './types';
+import type { Role } from './types';
 
+export type { Role } from './types';
+export const JWT_SECRET = process.env.JWT_SECRET || '';
 
 if (!process.env.JWT_SECRET) {
   // This check is important for server-side code.

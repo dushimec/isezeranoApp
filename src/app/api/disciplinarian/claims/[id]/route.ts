@@ -5,14 +5,14 @@ import { ObjectId } from 'mongodb';
 import { ClaimStatus, UserDocument } from '@/lib/types';
 import { getUserIdFromToken } from '@/lib/auth';
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const disciplinarianId = await getUserIdFromToken(req);
     if (!disciplinarianId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     if (!ObjectId.isValid(id)) {
       return NextResponse.json({ error: 'Invalid claim ID' }, { status: 400 });
     }
@@ -66,9 +66,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const { id } = params;
+        const { id } = await params;
         if (!ObjectId.isValid(id)) {
           return NextResponse.json({ error: 'Invalid claim ID' }, { status: 400 });
         }

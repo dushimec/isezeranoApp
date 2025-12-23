@@ -220,6 +220,8 @@ export default {
     deleteConfirm: "Delete"
   },
   eventForm: {
+    rehearsal: "Rehearsal",
+    service: "Service",
     title: "Title",
     date: "Date",
     pickDate: "Pick a date",
